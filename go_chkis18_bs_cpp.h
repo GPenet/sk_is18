@@ -3,9 +3,9 @@
 //_______________ start  a band3 perm and UAs GUAs search 
 void BINDEXN::Copy(STD_B1_2 & b) {
 	ntvb=b.nvalidb;
-	memcpy(tvb, b.my_validb, ntvb * sizeof VALIDB);
+	memcpy(tvb, b.my_validb, ntvb * sizeof tvb[0]);
 	nt2 = b.nbi2;
-	memcpy(t2, b.my_bi2, nt2 * sizeof BI2);
+	memcpy(t2, b.my_bi2, nt2 * sizeof t2[0]);
 }
 void BINDEXN::Copy_no7clues(STD_B1_2 & b) {
 	nt2 = ntvb = 0;
@@ -260,9 +260,9 @@ void STD_B3::Build_tsock() {
 //________________  external loop 
 void BINDEXN::Copy(BINDEXN & b) {
 	ntvb = b.ntvb;
-	memcpy(tvb, b.tvb, ntvb * sizeof VALIDB);
+	memcpy(tvb, b.tvb, ntvb * sizeof tvb[0]);
 	nt2 = b.nt2;
-	memcpy(t2, b.t2, (nt2+1) * sizeof BI2);
+	memcpy(t2, b.t2, (nt2+1) * sizeof t2[0]);
 }
 
 uint64_t GCHK::FindSockets(uint64_t active, uint64_t lim) {
@@ -346,11 +346,11 @@ void GCHK::ExtractMin(uint64_t active, BINDEXN & bin1, BINDEXN & bin2) {
 	uint64_t limb1 = _popcnt64(active & BIT_SET_27) - 3,
 		limb2 = _popcnt64(active & BIT_SET_B2) - 3;
 	for (uint32_t i = 0; i < nextl1; i++) {
-		uint32_t or = 0,*t= extl1[i].tbfy;
+		uint32_t orw = 0,*t= extl1[i].tbfy;
 		for (uint32_t j = 0; j < extl1[i].ntbfy; j++) {
-			or |= t[j];
+			orw |= t[j];
 		}
-		if (_popcnt32( or)>(uint32_t)limb1) continue;//min 3 clues will end as 100% ratio
+		if (_popcnt32( orw)>(uint32_t)limb1) continue;//min 3 clues will end as 100% ratio
 		GetCpt_6clues(n_nob1, ntotb1, bin1.tvb, bin1.ntvb, extl1[i].bfx);
 
 		if (extl1[i].ntbfy == 1)
@@ -373,11 +373,11 @@ void GCHK::ExtractMin(uint64_t active, BINDEXN & bin1, BINDEXN & bin2) {
 
 	}
 	for (uint32_t i = 0; i < nextl2; i++) {
-		uint32_t or = 0, *t = extl2[i].tbfy;
+		uint32_t orw = 0, *t = extl2[i].tbfy;
 		for (uint32_t j = 0; j < extl2[i].ntbfy; j++) {
-			or |= t[j];
+			orw |= t[j];
 		}
-		if (_popcnt32(or ) > (uint32_t)limb2) continue;// will end as 100% ratio
+		if (_popcnt32(orw ) > (uint32_t)limb2) continue;// will end as 100% ratio
 		GetCpt_6clues(n_nob2, ntotb2, bin2.tvb, bin2.ntvb, extl2[i].bfx);
 
 		if (extl2[i].ntbfy == 1)
@@ -443,7 +443,7 @@ void  GCHK::ExtSplitX(BINDEXN & bin1no, BINDEXN & bin1yes,
 		if (F&wi.bf) {// all the group is "yes"
 			uint32_t n = wi.iend - wi.istart;
 			win.iend = bin1yes.ntvb + n;
-			memcpy(&vb2[bin1yes.ntvb], &vb1[wi.istart], n * sizeof  VALIDB);
+			memcpy(&vb2[bin1yes.ntvb], &vb1[wi.istart], n * sizeof  vb2[0]);
 			bin1yes.t2[bin1yes.nt2++] = win;
 			bin1yes.ntvb += n;
 			continue;

@@ -22,11 +22,11 @@ struct MINCOUNT {
 		}
 		minplus = mincount;
 	}
-	inline void SetMinplus(int nof, int and) {
+	inline void SetMinplus(int nof, int andw) {
 		minplus = mincount;
 		if (nof) {
 			minplus++;
-			if (!and) minplus++;
+			if (!andw) minplus++;
 		}
 
 	}
