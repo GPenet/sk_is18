@@ -49,4 +49,23 @@ b.2 Selecting valid band1;valid band2 pairs hitting all UAs (b1)
        depending on the number of clues forced by small residual uas 
     
  The process is halted as soon as possible when the first 18 clues appears
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<< Compiling the file
+The file names are given in line with g++ 
+
+a .cpp file is separate module for compilation
+a .h module can contain some code, but then is attached ot a .cpp module
+
+the main.cpp module is there to handle the command line and to read the entry ile, celling the function
+
+expected .cpp files are
+
+main.cpp 
+go-12sol-tables.cpp containing tables specific to the processing of solution grids and ED bands
+sk-bitfields.cpp some code for bit field of different sizes (mainly 128 bit fields)
+sk_t.cpp code shared in many applications
+zhb1b2b.cpp brute force solver limited ot 2 bands
+zhn.cpp brute force solver for the entire solution grid
+
+sk-is18.cpp the function main file
 
