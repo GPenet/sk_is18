@@ -56,16 +56,15 @@ void GCHK::Start(STD_B416 * bandx, int * tsort, int ip) {
 		//	<< band_order[0] << band_order[1] << band_order[2] << endl;
 #ifdef DEBUGKNOWN
 		puzknown_perm.Print3("known of the perm");
-		if (_popcnt32(puzknown_perm.bf.u32[0]) > 6) {
-			cout << "known not here" << endl;
+		uint64_t cc = _popcnt64(puzknown_perm.bf.u64[0]);
+		uint32_t	cc1= _popcnt32(puzknown_perm.bf.u32[0]),
+				cc2 = _popcnt32(puzknown_perm.bf.u32[0]);
+		if (cc > 12|| cc1>7 || cc2>7 ||	(ip && cc>11)) {
+			cout << "known not seenhere" << endl;
 			return;
 		}
-		if (ip && _popcnt32(puzknown_perm.bf.u32[0]) == 6
-			&& _popcnt32(puzknown_perm.bf.u32[1]) == 6
-			&& _popcnt32(puzknown_perm.bf.u32[1]) == 6) {
-			cout << "known will be seen for ip=0" << endl;
-			return;
-		}
+
+		
 #endif
 		// _____________ init bands 1+2 status 
 
@@ -116,14 +115,27 @@ void GCHK::Start(STD_B416 * bandx, int * tsort, int ip) {
 		for (uint32_t i = 0; i < 5; i++) cout << tcpt[1][i][0] << ";" << tcpt[1][i][1] << "  ";
 		cout << endl;
 		//G3_SplitBi2(1, 0, bin1, ib1, index_xy_b1, vab64b1);
-		p_cpt2g[31 + 2 * start_perm] +=
-			tcpt[0][0][0]* tcpt[1][4][1]
-			+ tcpt[0][1][0] * tcpt[1][4][1]
-			+ tcpt[0][2][0] * tcpt[1][3][1]
-			+ tcpt[0][3][0] * tcpt[1][2][1]
-			+ tcpt[0][4][0] * tcpt[1][1][1];
-		if (!start_perm)p_cpt2g[31 + 2 * start_perm] +=
-			tcpt[0][3][0] * tcpt[1][3][0];
+		uint64_t & pp = p_cpt2g[31 + 2 * start_perm];
+		if (start_perm) {// clues count band 3 strictly higher
+			pp +=
+				tcpt[0][0][0] * tcpt[1][4][1] //33 34 35 36 37
+				+ tcpt[0][1][0] * tcpt[1][3][1] //43 44 45 46 (not 477)
+				+ tcpt[0][2][0] * tcpt[1][3][1] //53 54 55 56
+				+ tcpt[0][3][0] * tcpt[1][2][1]; //63 64 65 (not 666)
+
+			if (start_perm)	pp+= tcpt[0][4][0] * tcpt[1][0][0]; //73  (not 747)
+			else pp += tcpt[0][4][0] * tcpt[1][1][1]; //73   747
+
+		}
+		else {
+			pp +=
+				tcpt[0][0][0] * tcpt[1][4][1] //33 34 35 36 37
+				+ tcpt[0][1][0] * tcpt[1][4][1] //43 44 45 46  477
+				+ tcpt[0][2][0] * tcpt[1][3][1] //53 54 55 56
+				+ tcpt[0][3][0] * tcpt[1][3][1] //63 64 65   666 
+				+ tcpt[0][4][0] * tcpt[1][1][1]; //73   747
+		}
+
 
 		//return;
 #endif
@@ -1066,39 +1078,68 @@ void GCHK::Do64uas() {//<=64 uas in the step
 		w.v = V;
 	}
 	if (1) {// stats to delete later 
-		p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[1].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb
-			+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb
-			+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;
-		if (!start_perm)p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].ntvb;
+		uint64_t & pp = p_cpt2g[30 + 2 * start_perm];
+		if (start_perm) {// clues count band 3 strictly higher
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 46
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb;//63 64 65
+			if (start_perm == 2)
+				pp += index_xy_b1.titem[4].ntvb* index_xy_b2.titem[0].ntvb;//73
+			else pp += index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+		else {
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 47
+				+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb//53 54 55 56
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].sum_vb//63 64 65 66
+				+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+
 	}
 	// start chunks one size band2 all bands1 to use
-	if (index_xy_b1.titem[0].ntvb) // valid bands size 3 in band 1 all band 2
-		DoChunk64(zs64b1, zs64b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
 
-	if (index_xy_b1.titem[1].ntvb) // valid bands size 4 in band 1 all band 2
-		DoChunk64(&zs64b1[index_xy_b1.titem[0].sum_vb], zs64b2,
-			index_xy_b1.titem[1].ntvb, index_xy_b2.ntotvb);
-
-	if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
-		DoChunk64(&zs64b1[index_xy_b1.titem[1].sum_vb], zs64b2,
-			index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
-
-	if (index_xy_b1.titem[3].ntvb) {// valid bands size 6 in band 1  
-		// band 2 <6, band 2 =6 if ip=0 (18 pattern 6;6;6)
-		if (index_xy_b2.titem[2].sum_vb)
+	if (start_perm) {// clues count band 3 strictly higher
+		if (index_xy_b1.titem[0].ntvb) // valid bands size 3 in band 1 all band 2
+			DoChunk64(zs64b1, zs64b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
+		if (index_xy_b1.titem[1].ntvb&& index_xy_b2.titem[3].sum_vb) // size 4 in band 1  band 2 <7
+			DoChunk64(&zs64b1[index_xy_b1.titem[0].sum_vb], zs64b2,
+				index_xy_b1.titem[1].ntvb, index_xy_b2.titem[3].sum_vb);
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk64(&zs64b1[index_xy_b1.titem[1].sum_vb], zs64b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[2].sum_vb)// size 6 in band 1  band 2 < 6
 			DoChunk64(&zs64b1[index_xy_b1.titem[2].sum_vb], zs64b2,
 				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[2].sum_vb);
-		if ((!start_perm) && index_xy_b2.titem[3].ntvb)// try 6;6;6 item[3]
-			DoChunk64(&zs64b1[index_xy_b1.titem[2].sum_vb], &zs64b2[index_xy_b2.titem[2].sum_vb],
-				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].ntvb);
+		if (start_perm == 2) {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[0].ntvb) //  size 7 band 1  3 band  
+				DoChunk64(&zs64b1[index_xy_b1.titem[3].sum_vb], zs64b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[0].ntvb);
+		}
+		else {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+				DoChunk64(&zs64b1[index_xy_b1.titem[3].sum_vb], zs64b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+		}
+
 	}
-	if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) // valid bands size 7 in band 1 3;4 band 2 
-		DoChunk64(&zs64b1[index_xy_b1.titem[2].sum_vb], zs64b2,
-			index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+
+	else { //higher or equal for band 3 add 747 477 666  (666 worst case)
+		if (index_xy_b1.titem[1].sum_vb) // size 3/4 band 1 all band 2
+			DoChunk64(zs64b1, zs64b2, index_xy_b1.titem[1].sum_vb, index_xy_b2.ntotvb);
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk64(&zs64b1[index_xy_b1.titem[1].sum_vb], zs64b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[3].sum_vb)// size 6 in band 1  band 2 < 7
+			DoChunk64(&zs64b1[index_xy_b1.titem[2].sum_vb], zs64b2,
+				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].sum_vb);
+		if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+			DoChunk64(&zs64b1[index_xy_b1.titem[3].sum_vb], zs64b2,
+				index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+	}
+
+
 
 }
 void  GCHK::DoChunk64(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb) {
@@ -1200,41 +1241,74 @@ void GCHK::Do128uas() {//<=128 uas in the step
 	//}
 
 	if (1) {// stats to delete later 
-		p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[1].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb
-			+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb
-			+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;
-		if (!start_perm)p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].ntvb;
+		uint64_t & pp = p_cpt2g[30 + 2 * start_perm];
+		if (start_perm) {// clues count band 3 strictly higher
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 46
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb;//63 64 65
+			if (start_perm == 2)
+				pp += index_xy_b1.titem[4].ntvb* index_xy_b2.titem[0].ntvb;//73
+			else pp += index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+		else {
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 47
+				+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb//53 54 55 56
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].sum_vb//63 64 65 66
+				+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+
 	}
-
-
 	// start chunks one size band2 all bands1 to use
-	if (index_xy_b1.titem[0].ntvb) // valid bands size 3 in band 1 all band 2
-		DoChunk128(zs128b1, zs128b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
-	
-	if (index_xy_b1.titem[1].ntvb) // valid bands size 4 in band 1 all band 2
-		DoChunk128 (&zs128b1[index_xy_b1.titem[0].sum_vb], zs128b2, 
-			index_xy_b1.titem[1].ntvb,	index_xy_b2.ntotvb);
 
-	if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
-		DoChunk128(&zs128b1[index_xy_b1.titem[1].sum_vb], zs128b2, 
-			index_xy_b1.titem[2].ntvb,	index_xy_b2.titem[3].sum_vb);
+	if (start_perm) {// clues count band 3 strictly higher
+		if (index_xy_b1.titem[0].ntvb) // size 3  band 1 all band 2
+			DoChunk128(zs128b1, zs128b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
 
-	if (index_xy_b1.titem[3].ntvb) {// valid bands size 6 in band 1  
-		// band 2 <6, band 2 =6 if ip=0 (18 pattern 6;6;6)
-		if (index_xy_b2.titem[2].sum_vb)
+		if (index_xy_b1.titem[1].ntvb&& index_xy_b2.titem[3].sum_vb) // size 4 in band 1  band 2 <7
+			DoChunk128(&zs128b1[index_xy_b1.titem[0].sum_vb], zs128b2,
+				index_xy_b1.titem[1].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk128(&zs128b1[index_xy_b1.titem[1].sum_vb], zs128b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[2].sum_vb)// size 6 in band 1  band 2 < 6
 			DoChunk128(&zs128b1[index_xy_b1.titem[2].sum_vb], zs128b2,
 				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[2].sum_vb);
-		if ((!start_perm )&& index_xy_b2.titem[3].ntvb)// try 6;6;6 item[3]
-			DoChunk128(&zs128b1[index_xy_b1.titem[2].sum_vb], &zs128b2[index_xy_b2.titem[2].sum_vb],
-				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].ntvb);
+		if (start_perm == 2) {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[0].ntvb) //  size 7 band 1  3 band  
+				DoChunk64(&zs64b1[index_xy_b1.titem[3].sum_vb], zs64b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[0].ntvb);
+
+		}
+		else {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+				DoChunk128(&zs128b1[index_xy_b1.titem[3].sum_vb], zs128b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+		}
 	}
-	if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) // valid bands size 7 in band 1 3;4 band 2 
-		DoChunk128(&zs128b1[index_xy_b1.titem[2].sum_vb], zs128b2,
-			index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+
+	else { //higher or equal for band 3 add 747 477 666  (666 worst case)
+		if (index_xy_b1.titem[1].sum_vb) // size 3/4 band 1 all band 2
+			DoChunk128(zs128b1, zs128b2, index_xy_b1.titem[1].sum_vb, index_xy_b2.ntotvb);
+
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk128(&zs128b1[index_xy_b1.titem[1].sum_vb], zs128b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[3].sum_vb)// size 6 in band 1  band 2 < 7
+			DoChunk128(&zs128b1[index_xy_b1.titem[2].sum_vb], zs128b2,
+				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+			DoChunk128(&zs128b1[index_xy_b1.titem[3].sum_vb], zs128b2,
+				index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+	}
+
+
 
 }
 void  GCHK::DoChunk128(ZS128 * a, ZS128 * b, uint64_t na, uint64_t nb) {
@@ -1352,42 +1426,72 @@ void GCHK::Do256uas() {// > 128  <=256 uas in the step
 		w.v2 = V2;
 	}
 	if (1) {// stats to delete later 
-		p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[1].ntvb* index_xy_b2.ntotvb
-			+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb
-			+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb
-			+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;
-		if (!start_perm)p_cpt2g[30 + 2 * start_perm] +=
-			index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].ntvb;
+		uint64_t & pp = p_cpt2g[30 + 2 * start_perm];
+		if (start_perm) {// clues count band 3 strictly higher
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 46
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[2].sum_vb;//63 64 65
+			if (start_perm==2)
+				pp+= index_xy_b1.titem[4].ntvb* index_xy_b2.titem[0].ntvb;//73
+			else pp+= index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+		else {
+			pp =
+				index_xy_b1.titem[0].ntvb* index_xy_b2.ntotvb//33 34 35 36 37
+				+ index_xy_b1.titem[1].ntvb* index_xy_b2.titem[3].sum_vb//43 44 45 47
+				+ index_xy_b1.titem[2].ntvb* index_xy_b2.titem[3].sum_vb//53 54 55 56
+				+ index_xy_b1.titem[3].ntvb* index_xy_b2.titem[3].sum_vb//63 64 65 66
+				+ index_xy_b1.titem[4].ntvb* index_xy_b2.titem[1].sum_vb;//73  74
+		}
+
 	}
-
-
 	// start chunks one size band2 all bands1 to use
-	if (index_xy_b1.titem[0].ntvb) // valid bands size 3 in band 1 all band 2
-		DoChunk256(zs256b1, zs256b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
 
-	if (index_xy_b1.titem[1].ntvb) // valid bands size 4 in band 1 all band 2
-		DoChunk256(&zs256b1[index_xy_b1.titem[0].sum_vb], zs256b2,
-			index_xy_b1.titem[1].ntvb, index_xy_b2.ntotvb);
+	if (start_perm) {// clues count band 3 strictly higher
+		if (index_xy_b1.titem[0].ntvb) // size 3  band 1 all band 2
+			DoChunk256(zs256b1, zs256b2, index_xy_b1.titem[0].ntvb, index_xy_b2.ntotvb);
 
-	if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
-		DoChunk256(&zs256b1[index_xy_b1.titem[1].sum_vb], zs256b2,
-			index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+		if (index_xy_b1.titem[1].ntvb&& index_xy_b2.titem[3].sum_vb) // size 4 in band 1  band 2 <7
+			DoChunk256(&zs256b1[index_xy_b1.titem[0].sum_vb], zs256b2,
+				index_xy_b1.titem[1].ntvb, index_xy_b2.titem[3].sum_vb);
 
-	if (index_xy_b1.titem[3].ntvb) {// valid bands size 6 in band 1  
-		// band 2 <6, band 2 =6 if ip=0 (18 pattern 6;6;6)
-		if (index_xy_b2.titem[2].sum_vb)
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk256(&zs256b1[index_xy_b1.titem[1].sum_vb], zs256b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[2].sum_vb)// size 6 in band 1  band 2 < 6
 			DoChunk256(&zs256b1[index_xy_b1.titem[2].sum_vb], zs256b2,
 				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[2].sum_vb);
-		if ((!start_perm )&& index_xy_b2.titem[3].ntvb)// try 6;6;6 item[3]
-			DoChunk256(&zs256b1[index_xy_b1.titem[2].sum_vb], &zs256b2[index_xy_b2.titem[2].sum_vb],
-				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].ntvb);
+		if (start_perm == 2) {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[0].ntvb) //  size 7 band 1  3 band  
+				DoChunk256(&zs256b1[index_xy_b1.titem[3].sum_vb], zs256b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[0].ntvb);
+		}
+		else {
+			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+				DoChunk256(&zs256b1[index_xy_b1.titem[3].sum_vb], zs256b2,
+					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+		}
 	}
 
-	if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) // valid bands size 7 in band 1 3;4 band 2 
-		DoChunk256(&zs256b1[index_xy_b1.titem[2].sum_vb], zs256b2,
-			index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+	else { //higher or equal for band 3 add 747 477 666  (666 worst case)
+		if (index_xy_b1.titem[1].sum_vb) // size 3/4 band 1 all band 2
+			DoChunk256(zs256b1, zs256b2, index_xy_b1.titem[1].sum_vb, index_xy_b2.ntotvb);
+
+		if (index_xy_b1.titem[2].ntvb && index_xy_b2.titem[3].sum_vb) //  size 5 in band 1  band 2 <7
+			DoChunk256(&zs256b1[index_xy_b1.titem[1].sum_vb], zs256b2,
+				index_xy_b1.titem[2].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[3].ntvb&&index_xy_b2.titem[3].sum_vb)// size 6 in band 1  band 2 < 7
+			DoChunk256(&zs256b1[index_xy_b1.titem[2].sum_vb], zs256b2,
+				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[3].sum_vb);
+
+		if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[1].sum_vb) //  size 7 band 1  3/4 band2  
+			DoChunk256(&zs256b1[index_xy_b1.titem[3].sum_vb], zs256b2,
+				index_xy_b1.titem[4].ntvb, index_xy_b2.titem[1].sum_vb);
+	}
+
 }
 void  GCHK::DoChunk256(ZS256 * a, ZS256 * b, uint64_t na, uint64_t nb) {
 	if (aigstop) return;
@@ -1464,8 +1568,11 @@ int GCHK::Is_B12_Not_Unique() {
 	if (myua) {//not unique do the best with the UA
 		uint64_t cc64 = _popcnt64(myua&BIT_SET_2X);
 		if (cc64 < 12) {// this should never be check for a bug
+			cerr << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
+
+#ifdef DEBUGONE
 			cout << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
-			cout << Char2Xout(wb12bf) << " b12 at call ntusb2="<< ntusb2 << " stepp_cpt2g[10] "<< p_cpt2g[10] << endl;
+			cout << Char2Xout(wb12bf) << " b12 at call ntusb2=" << ntusb2 << " stepp_cpt2g[10] " << p_cpt2g[10] << endl;
 			for (int i = 0; i < nclues_step; i++) cout << tclues[i] << " ";
 			cout << "\t";
 			for (int i = 0; i < nclues; i++) cout << tcluesxy[i] << " ";
@@ -1479,8 +1586,8 @@ int GCHK::Is_B12_Not_Unique() {
 			for (uint32_t i = 0; i < n; i++) {
 				uint64_t cc = _popcnt64(t[i] & BIT_SET_2X);
 				if (cc > 12)break;
-				cout << Char2Xout(t[i]) << " " << i << " "<<cc<< endl;
-				
+				cout << Char2Xout(t[i]) << " " << i << " " << cc << endl;
+
 			}
 			for (uint32_t i = 0; i < ntusb1; i++) {
 				uint64_t cc = _popcnt64(tusb1[i] & BIT_SET_2X);
@@ -1494,8 +1601,7 @@ int GCHK::Is_B12_Not_Unique() {
 				cout << Char2Xout(tusb2[i]) << " b2 i=" << i << " " << cc << endl;
 
 			}
-
-
+#endif
 			aigstop = 1;
 			return 1;
 		}
@@ -1521,7 +1627,7 @@ void GCHK::CleanAll() {
 		n_to_clean = 0;
 		return;
 	}
-	cout << " entry clean " << n_to_clean << endl;
+	//cout << " entry clean " << n_to_clean << endl;
 	for (uint64_t i = 0; i < n_to_clean; i++) {
 		uint64_t bf = to_clean[i];
 		if (bf == puzknown_perm.bf.u64[0]) {
@@ -2179,10 +2285,6 @@ int ZHOU::CallMultipleB3(ZHOU & o, uint32_t bf, int diag) {
 	//__________end assign last lot start solver
 	zh_g.go_back = 0;	zh_g.nsol = 0; zh_g.lim = 1;// modevalid is set to  1
 	int ir = Full17Update();
-	if (diag) {
-		cout << "after update" << endl;
-		ImageCandidats();
-	}
 	if (ir == 2) return 0;// solved can not be multiple
 	Guess17(0, diag);
 
@@ -2240,12 +2342,6 @@ int ZHOU::Full17Update() {
 	return 1;
 }
 void ZHOU::Guess17(int index, int diag) {
-	if (diag) {
-		char ws[82];
-		cout << zh_g.pairs.String3X(ws) << " pairs " << endl;
-		cout << zh_g2.triplets.String3X(ws) << " triplets " << endl;
-		cout << zh_g2.quads.String3X(ws) << " quads " << endl;
-	}
 	BF128 w = zh_g.pairs;
 	if (w.isEmpty())w = zh_g2.triplets;
 	if (w.isEmpty())w = zh_g2.quads;
@@ -2256,16 +2352,12 @@ void ZHOU::Guess17(int index, int diag) {
 	int xcell = w.getFirst128(),
 		cell = From_128_To_81[xcell],
 		digit = zh_g2.grid0[cell];
-	if (diag)
-		cout << "guess17 index=" << index << " cell " << cellsFixedData[cell].pt << endl;
 
 	// true first if possible
 	if (FD[digit][0].On(xcell)) {
 		ZHOU * mynext = (this + 1);
 		*mynext = *this;
 		mynext->SetaCom(digit, cell, xcell);
-		if (diag)cout << "guess true"
-			<< digit + 1 << cellsFixedData[cell].pt << endl;
 		mynext->Compute17Next(index + 1, diag);
 		if (zh_g.go_back) return;
 
@@ -2277,8 +2369,6 @@ void ZHOU::Guess17(int index, int diag) {
 			ZHOU * mynext = (this + 1);
 			*mynext = *this;
 			mynext->SetaCom(idig, cell, xcell);
-			if (diag)cout << "guess false "
-				<< idig + 1 << cellsFixedData[cell].pt << endl;
 			mynext->Compute17Next(index + 1, diag);
 			if (zh_g.go_back) return;
 		}
@@ -2287,7 +2377,6 @@ void ZHOU::Guess17(int index, int diag) {
 void ZHOU::Compute17Next(int index, int diag) {
 	int ir = Full17Update();
 	if (!ir) return;// locked 
-	if (diag > 1) { cout << "index=" << index << endl; ImageCandidats(); }
 	if (ir == 2) {//solved
 		if (index) {// store false as ua
 			BF128 & wua = zh_g2.cells_assigned;
@@ -2307,39 +2396,7 @@ void ZHOU::Compute17Next(int index, int diag) {
 	}
 	Guess17(index, diag);// continue the process
 }
-/*
-void G17B3HANDLER::Init( ) {
-	G17B & bab = g17b;
-	smin = bab.smin;
-	uasb3of = bab.uasb3_2;	nuasb3of = bab.nuasb3_2;
-	uasb3if = bab.uasb3_1;	nuasb3if = bab.nuasb3_1;
-	andoutf = bab.b3_andout;
-	int tbitsrows[8] = { 0, 07, 07000, 07007, 07000000, 07000007, 07007000, 07007007 };
-	known_b3 = rknown_b3 = 0;
-	ndead = BIT_SET_27;
-	active_b3 =smin.critbf;// active cells in field
-	wactive0 = BIT_SET_27 ^ active_b3;//  active cells out field
-	nmiss = 6 - smin.mincount;
-	nb3 = 6;
-	stack_count = bab.stack_countf;
-	for (int istack = 0, stp = 0111; istack < 3; istack++, stp <<= 1)
-		if (stack_count.u16[istack] > 5) {// critical stack
-			wactive0 &= ~(07007007 << (3 * istack));// clear outfield
-			register int m2stack = stp & smin.mini_bf2, shrink = TblShrinkMask[m2stack];
-			if (m2stack) {// common cell(s) to assign
-				register int Mask = tbitsrows[shrink] << (3 * istack);
-				//adjust count and known
-				known_b3 |= Mask & (~smin.pairs27);// and set the common cell as assigned
-				smin.mini_bf2 &= ~stp; // clear the 2pairs bit(s) in stack
-				active_b3 &= (~Mask);// clear the  field bf
-				smin.critbf &= (~Mask);
-				smin.pairs27 &= (~Mask);
-				smin.mincount -= _popcnt32(shrink);
-			}
-		}
 
-}
-*/
 
 uint32_t G17B3HANDLER::IsMultiple(int bf) {
 	p_cpt2g[54] ++;
@@ -2349,7 +2406,6 @@ uint32_t G17B3HANDLER::IsMultiple(int bf) {
 	rknown_b3 = bf;
 	GCHK & bab = gchk;
 	// check first if all tuab3 is hit
-	cout << Char27out(bf) << " call multiple " << endl;
 	int ir = zhou[1].CallMultipleB3(zhou[0], bf, 0);
 	return ua;
 }
@@ -2378,7 +2434,6 @@ void G17B3HANDLER::CriticalAssignCell(int Ru) {// assign a cell within the criti
 
 
 void G17B3HANDLER::Go_Critical() {// critical situation all clues in pairs tripl:ets
-	//if (g17b.debug17 > 1 && known_b3)cout << Char27out(known_b3) << " entry critical" << endl;
 	active_b3 = smin.critbf;
 	Critical2pairs();// assign 2 pairs in minirow to common cell
 	CriticalLoop();
@@ -2387,7 +2442,6 @@ void G17B3HANDLER::Go_Critical() {// critical situation all clues in pairs tripl
 
 //=============== sub critical process   missing(s)  in the critical area
 void G17B3HANDLER::Go_SubcriticalMiniRow() {
-	if (diagh)cout << "entry Go_SubcriticalMiniRow() ndead=" << ndead << endl;
 	int c2[3] = { 3, 5, 6 };// 2 cells in a mini row
 	int bit = 1 << ndead, mask = 7 << (3 * ndead);
 	for (int i = ndead; i < 9; i++, bit <<= 1, mask <<= 3) {
@@ -2395,7 +2449,6 @@ void G17B3HANDLER::Go_SubcriticalMiniRow() {
 		register int M = active_sub & mask;
 		if (!M)continue;
 		ndead = i;
-		if (diagh)cout << Char27out(M) << " mini row to process i=" << i << endl;
 		if (bit & smin.mini_bf1) {// it was a gua2 pair assign both
 			G17B3HANDLER hn = *this;
 			hn.smin.mini_bf1 ^= bit;
@@ -2468,7 +2521,6 @@ void G17B3HANDLER::ShrinkUasOfB3() {
 }
 
 void G17B3HANDLER::Go_miss1_b3() {// not called if more than 1 needed
-	if (diagh) cout << Char27out(known_b3) << " entry Go_miss1_b3()" << endl;
 	wua = wactive0;
 	if (known_b3 &&nuasb3of)ShrinkUasOfB3();// if known from up stream
 	if (smin.mincount) {
@@ -2476,7 +2528,6 @@ void G17B3HANDLER::Go_miss1_b3() {// not called if more than 1 needed
 			int uabr = IsMultiple(known_b3 | active_b3);
 			if (uabr) {// on ua outfield seen
 				p_cpt2g[56] ++;
-				if (diagh) cout << Char27out(uabr) << " nmiss1 first ua of found" << endl;
 				andoutf = uabr;
 				nuasb3of = 1;
 			}
@@ -2489,7 +2540,6 @@ void G17B3HANDLER::Go_miss1_b3() {// not called if more than 1 needed
 	}
 	//if (1) return;
 	if (nuasb3of) wua &= andoutf;
-	if (diagh) cout << Char27out(wua) << " nmiss1 b3 wua" << endl;
 	if (wua) { // apply first UA to use or all out field cells
 		uint32_t res;
 		p_cpt2g[58] ++;
@@ -2507,7 +2557,6 @@ void G17B3HANDLER::Go_miss2_b3() {
 		if (!nuasb3of) {// subcritical in hn if solved
 			int uabr = IsMultiple(known_b3 | active_b3);
 			if (uabr) {// on ua outfield seen
-				if (diagh) cout << Char27out(uabr) << " nmiss2 b3 first ua of found" << endl;
 				uasb3of[0] = uabr;
 				nuasb3of = 1;
 			}
@@ -2519,7 +2568,6 @@ void G17B3HANDLER::Go_miss2_b3() {
 	}
 	wua = wactive0;
 	if (nuasb3of)wua &= uasb3of[0];// use first ua
-	if (diagh) cout << Char27out(wua) << " nmiss2 b3 wua" << endl;
 	if (wua) { // apply first UA to use or all out field cells
 		uint32_t res;
 		while (bitscanforward(res, wua)) {
@@ -2535,7 +2583,6 @@ void G17B3HANDLER::Go_miss3_b3() {// always first direct entry
 		if (!nuasb3of) {// subcritical in hn if solved
 			int uabr = IsMultiple(known_b3 | active_b3);
 			if (uabr) {// on ua outfield seen
-				if (diagh) cout << Char27out(uabr) << " nmiss3b3 first ua of found" << endl;
 				uasb3of[0] = uabr;
 				nuasb3of = 1;
 			}
@@ -2547,7 +2594,6 @@ void G17B3HANDLER::Go_miss3_b3() {// always first direct entry
 	}
 	wua = wactive0;
 	if (nuasb3of)wua &= uasb3of[0];// use first ua
-	if (diagh) cout << Char27out(wua) << " nmiss3 b3 wua" << endl;
 	if (wua) { // apply first UA to use or all out field cells
 		uint32_t res;
 		while (bitscanforward(res, wua)) {
@@ -2586,7 +2632,6 @@ void GCHK::Out17(uint32_t bfb3) {
 	}
 	for (int i = 0, bit = 1; i < 27; i++, bit <<= 1)if (bfb3 & bit)
 		ws[54 + i] = genb12.grid0[54 + i] + '1';
-	//fout1 << ws << ";" << genb12.nb12 / 64 << ";" << genb12.i1t16 << ";" << genb12.i2t16 << endl;
 	a_18_seen = 1;
 	aigstop = 1; 
 
