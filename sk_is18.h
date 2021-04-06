@@ -614,6 +614,7 @@ struct GCHK {
 	uint32_t band_order[3];
 
 	//___________________ studied solution 
+	char * ze;// given solution grid
 	char zsol[82];// solution grid morphed
 	int grid0[81];// same 0 based
 	STD_B416 * bands_abc[3],bA,bB;

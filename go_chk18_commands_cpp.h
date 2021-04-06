@@ -253,6 +253,7 @@ back:
 
 int  Is18(char * ze) {
 #ifdef DEBUGKNOWN
+	gchk.ze = ze;
 	if (strlen(ze) < 163) return -1;// skip blank lines
 	char * w = &ze[82];
 	gchk.puzknown.SetAll_0();
@@ -289,24 +290,63 @@ int  Is18(char * ze) {
 	bandminlex.Getmin(zs0, &perm_ret);
 	int ib1 = perm_ret.i416, ib1a = t416_to_n6[ib1];
 	if (ib1 == 28)return -1;
-	cout << ib1 << "\tib1 mins=" << t16_min_clues[ib1] << endl;
 	bax[0].InitBand2_3(ib1, ze, perm_ret, 0);
 	bandminlex.Getmin(&zs0[27], &perm_ret);
 	int ib2 = perm_ret.i416, ib2a = t416_to_n6[ib2];
 	if (ib2 == 28)return -1;
 	bax[1].InitBand2_3(ib2, &ze[27], perm_ret, 1);
-	cout << ib2 << "\tib2 mins=" << t16_min_clues[bax[1].i416] << endl;
 	bandminlex.Getmin(&zs0[54], &perm_ret);
 	int ib3 = perm_ret.i416, ib3a = t416_to_n6[ib3];
 	if (ib3 == 28)return -1;
 	bax[2].InitBand2_3(ib3, &ze[54], perm_ret, 2);
-	cout << ib3 << "\tib3 mins=" << t16_min_clues[bax[2].i416] << endl;
 	//_________________________________ expand bands 
-	for (int i = 0; i < 3; i++) {
-		bax[i].InitExpand(bi2x[i], vabx[i]);
-		bax[i].ExpandOneBand();
-		cout << "end expand i=" << i<<"\tnbi2="<< bax[i].nbi2
-			<< "\tnvalid=" << bax[i].nvalidb<<" nlast ndex="<< bax[i].my_bi2[bax[i].nbi2-1].iend <<endl;
+	for (int ib = 0; ib < 3; ib++) {
+		bax[ib].InitExpand(bi2x[ib], vabx[ib]);
+		bax[ib].ExpandOneBand();
+#ifdef DEBUGONE
+		cout << ib1 << "\tib1 mins=" << t16_min_clues[ib1] << endl;
+		cout << ib2 << "\tib2 mins=" << t16_min_clues[bax[1].i416] << endl;
+		cout << ib3 << "\tib3 mins=" << t16_min_clues[bax[2].i416] << endl;
+		cout << "end expand i=" << ib << "\tnbi2=" << bax[ib].nbi2
+			<< "\tnvalid=" << bax[ib].nvalidb << " nlast ndex=" << bax[ib].my_bi2[bax[ib].nbi2 - 1].iend << endl;
+#endif
+
+#ifdef DEBUGKNOWN
+#ifdef DEBUGONE
+		uint32_t R = gchk.puzknown.bf.u32[ib];
+		if (_popcnt32(R) > 7) continue;
+		cout << Char27out(R) << " searched valid band" << endl;
+		uint32_t aig = 1;
+		STD_B416 &b= bax[ib];
+		for (uint32_t i = 0; i < b.nbi2; i++) { // all index 2
+			BI2 wi = b.my_bi2[i];
+			if ((R&wi.bf) == wi.bf) {
+				cout <<Char27out(wi.bf )<< "valid must be index " << i << endl;
+				for (uint32_t j = wi.istart; j < wi.iend; j++) {
+					VALIDB wj = b.my_validb[j];
+					if ((wj.bf& (~R))) continue;
+					if (!wj.bf) {
+						cout << "bug empty bf located in j="<< j << endl;
+						return 0;
+					}
+					cout << Char27out(wj.bf& (~R))<<"\t" ;
+
+					cout << Char27out(wj.bf)<<" j=" << j << endl;
+					if (R == wj.bf) {
+						cout << "expected seen in in j=" << j << endl;
+						aig = 0;
+						break;
+					}
+				}
+				if (aig) {
+					cout << "missing valid" << endl;
+					return 0;
+				}
+			}
+		}
+
+#endif
+#endif
 	}
 
 	int tsort[3];

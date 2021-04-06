@@ -137,7 +137,8 @@ int main(int narg, char *argv[]) {
 		npuz++;
 		if (npuz <= vx[2])continue;
 		cout <<ze<< " Is18()   npuz="<<npuz << endl;
-		Is18(ze);
+		if (Is18(ze) < 0)
+			cout << "puz N°" << npuz << " has a band i416=29 (2 clues)" << endl;
 		if (npuz >= vx[3])break;
 
 	}
