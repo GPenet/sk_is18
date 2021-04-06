@@ -2227,11 +2227,11 @@ next:
 			goto next;
 		}
 	}
-	cout << Char27out(sn3->all_previous_cells) << "sol to check" << endl;
+	//cout << Char27out(sn3->all_previous_cells) << "sol to check" << endl;
 	// this is a possible nclues do final check
 	if (zhou[1].CallMultipleB3(zhou[0], sn3->all_previous_cells,0)) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
-		cout << Char27out(ua) << "ua to add" << endl;
+		//cout << Char27out(ua) << "ua to add" << endl;
 		if (nuaw < 300)tuaw[nuaw++] = ua;
 		if (ispot < (nclues - 1)) {// new ua for next spot
 			sn3->possible_cells = ua;
