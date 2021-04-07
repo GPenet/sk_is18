@@ -252,8 +252,8 @@ back:
 
 
 int  Is18(char * ze) {
-#ifdef DEBUGKNOWN
 	gchk.ze = ze;
+#ifdef DEBUGKNOWN
 	if (strlen(ze) < 163) return -1;// skip blank lines
 	char * w = &ze[82];
 	gchk.puzknown.SetAll_0();

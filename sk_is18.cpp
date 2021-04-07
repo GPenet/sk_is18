@@ -6,7 +6,7 @@
 
 #define SEARCH17SOL
 
-#define DEBUGKNOWN
+//#define DEBUGKNOWN
 #ifdef DEBUGKNOWN
 #endif
 
@@ -14,7 +14,7 @@
 #ifdef DEBUGONE
 #endif
 
-#define DEBUGINIT
+//#define DEBUGINIT
 #ifdef DEBUGEINIT
 #endif
 
@@ -23,6 +23,10 @@
 #endif
 //#define DEBUGL1L2
 #ifdef DEBUGL1L2
+#endif
+
+//#define DEBUGSTEP 827
+#ifdef DEBUGSTEP
 #endif
 
 //#define GTEST17_ON 1

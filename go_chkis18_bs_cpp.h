@@ -364,7 +364,7 @@ uint64_t GCHK::FindSockets(uint64_t active, uint64_t lim) {
 		}
 	}
 #ifdef DEBUGEXL
-	cout << "FindSockets lim=" << lim << "\tnt1=" << nextl1 << "\tnt2=" << nextl2 << endl;
+	//cout << "FindSockets lim=" << lim << "\tnt1=" << nextl1 << "\tnt2=" << nextl2 << endl;
 #endif
 	if (nextl1 | nextl2) {
 		//for (uint32_t i = 0; i < nextl1; i++) extl1[i].Debug();
@@ -422,9 +422,9 @@ void GCHK::ExtractMin(uint64_t active, BINDEXN & bin1, BINDEXN & bin2) {
 			extlw = extl1[i];
 			extlw.noxyes = (ntotb2 - n_nob2)* n_nob1;
 #ifdef DEBUGEXL
-			cout << Char27out(extl1[i].bfx) << " t1";
-			cout << "\t" << n_nob1 << "\t" << ntotb1 << "\t" << n_nob2 << "\t" << ntotb2
-				<< "\t =" << ratio1 << "\t" << ntotb1 * ntotb2 << "\t" << ratio << endl;
+			//cout << Char27out(extl1[i].bfx) << " t1";
+			//cout << "\t" << n_nob1 << "\t" << ntotb1 << "\t" << n_nob2 << "\t" << ntotb2
+			//	<< "\t =" << ratio1 << "\t" << ntotb1 * ntotb2 << "\t" << ratio << endl;
 #endif
 		}
 
@@ -448,9 +448,9 @@ void GCHK::ExtractMin(uint64_t active, BINDEXN & bin1, BINDEXN & bin2) {
 			extlw = extl2[i];
 			extlw.noxyes = (ntotb1 - n_nob1) * n_nob2;
 #ifdef DEBUGEXL
-			cout << Char27out(extl2[i].bfx) << " t2";
-			cout << "\t" << n_nob1 << "\t" << ntotb1 << "\t" << n_nob2 << "\t" << ntotb2
-				<< "\t =" << ratio1 << "\t" << ntotb1 * ntotb2 << "\t" << ratio << endl;
+			//cout << Char27out(extl2[i].bfx) << " t2";
+			//cout << "\t" << n_nob1 << "\t" << ntotb1 << "\t" << n_nob2 << "\t" << ntotb2
+			//	<< "\t =" << ratio1 << "\t" << ntotb1 * ntotb2 << "\t" << ratio << endl;
 #endif
 		}
 	}
@@ -552,12 +552,9 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 				ir = FindSockets(activeloop,4);
 				if (ir)ExtractMin(activeloop, bin_b1, bin_b2);
 			}
-#ifdef DEBUGEXL
-			else 	cout << "finf3 minratio= " << minratio << endl;
-#endif
 		}
 #ifdef DEBUGEXL
-		else 	cout << "finf2 minratio= " << minratio << endl;
+		//else 	cout << "finf2 minratio= " << minratio << endl;
 		cout << "final selection minratio=" << minratio << endl;
 #endif
 		if (minratio >= 100) break;
@@ -572,7 +569,7 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 				ExtSplitX(bin_b1, bin_b1yes, extlw.bfx, activerb1);
 #ifdef DEBUGEXL
 				cout << "back X " << bin_b1yes.ntvb << " " << bin_b1.ntvb << endl;
-				cout << Char27out(activerb1) << " back active b1" << endl;
+				//cout << Char27out(activerb1) << " back active b1" << endl;
 #endif
 
 #ifdef DEBUGKNOWN
@@ -600,14 +597,14 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 				ExtSplitY(bin_b2,			extlw.tbfy, extlw.ntbfy, activerb2);
 #ifdef DEBUGEXL
 				cout << "back Y " << bin_b2.nt2 << " " << bin_b2.ntvb << endl;
-				cout << Char27out(activerb2) << " back active b2" << endl;
+				//cout << Char27out(activerb2) << " back active b2" << endl;
 #endif
 			}
 			else {// this is a band2 X band1 Y
 				ExtSplitX(bin_b2, bin_b2yes,	extlw.bfx, activerb2);
 #ifdef DEBUGEXL
 				cout << "back X " << bin_b2yes.ntvb << " " << bin_b2.ntvb << endl;
-				cout << Char27out(activerb2) << " back active b2" << endl;
+				//cout << Char27out(activerb2) << " back active b2" << endl;
 #endif
 #ifdef DEBUGKNOWN
 				if (!kpfilt[0]) {// forget if the first is there
@@ -630,10 +627,10 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 #endif
 
 
-				ExtSplitY(bin_b1,	extlw.tbfy, extlw.ntbfy,  activerb1);
+				ExtSplitY(bin_b1,	extlr.tbfy, extlr.ntbfy,  activerb1);
 #ifdef DEBUGEXL
 				cout <<"end loopb1 "<<loopb1<< " back Y " << bin_b1.nt2 << " " << bin_b1.ntvb << endl;
-				cout << Char27out(activerb1) << " back active b1" << endl;
+				//cout << Char27out(activerb1) << " back active b1" << endl;
 #endif
 			}
 		}
@@ -965,12 +962,21 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 				//for (uint32_t i = 0; i < ntusb2; i++)
 					//cout << Char2Xout(tusb2[i]) << "  " << i << endl;
 			}
-			else if (loopb1   >2){
-				aigstop = 1;
-				return;
-			}
+			//else if (loopb1   >2){
+				//aigstop = 1;
+				//return;
+			//}
 #endif
 
+#ifdef DEBUGSTEP
+			if (p_cpt2g[10] == DEBUGSTEP) {
+				cout << "step to debug start the main loop nuas= " << ntusb2 << " cpt10=" << p_cpt2g[10] << endl;
+				cout << "index b1"; index_xy_b1.Debug(); cout << endl;
+				cout << "index b2"; index_xy_b2.Debug(); cout << endl;
+
+			}
+			else cout << " cpt10=" << p_cpt2g[10] << endl;
+#endif
 
 			if (ntusb2 <= 64) Do64uas();
 			else if (ntusb2 <= 128)  Do128uas();
