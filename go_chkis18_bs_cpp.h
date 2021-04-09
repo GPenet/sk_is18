@@ -594,9 +594,9 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 
 #endif
 
-				ExtSplitY(bin_b2,			extlw.tbfy, extlw.ntbfy, activerb2);
+				ExtSplitY(bin_b2,			extlr.tbfy, extlr.ntbfy, activerb2);
 #ifdef DEBUGEXL
-				cout << "back Y " << bin_b2.nt2 << " " << bin_b2.ntvb << endl;
+				cout << "end loopb1 " << loopb1 << "back Y " << bin_b2.nt2 << " " << bin_b2.ntvb << endl;
 				//cout << Char27out(activerb2) << " back active b2" << endl;
 #endif
 			}
@@ -630,6 +630,7 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 				ExtSplitY(bin_b1,	extlr.tbfy, extlr.ntbfy,  activerb1);
 #ifdef DEBUGEXL
 				cout <<"end loopb1 "<<loopb1<< " back Y " << bin_b1.nt2 << " " << bin_b1.ntvb << endl;
+				//extlr.Debug();
 				//cout << Char27out(activerb1) << " back active b1" << endl;
 #endif
 			}
@@ -674,9 +675,6 @@ void GCHK::Go2b_Ext_Loop(uint64_t activeloop, uint32_t mode2) {
 				ir = FindSockets(activeloop, 4);
 				if (ir)ExtractMin(activeloop, bin2_b1, bin2_b2);
 			}
-#ifdef DEBUGEXL
-			else 	cout << "finf3 minratio= " << minratio << endl;
-#endif
 		}
 #ifdef DEBUGEXL
 		else 	cout << "finf2 minratio= " << minratio << endl;
@@ -955,13 +953,13 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 			//return;
 #endif
 #ifdef DEBUGONE
-			if ( loopb1==2) {
-				cout << "start the main loop nuas= " << ntusb2 << " cpt10=" << p_cpt2g[10] << endl;
-				cout << "index b1"; index_xy_b1.Debug(); cout << endl;
-				cout << "index b2"; index_xy_b2.Debug(); cout << endl;
+			//if ( p_cpt2g[10]== 3671) {
+				//cout << "start the main loop nuas= " << ntusb2 << " cpt10=" << p_cpt2g[10] << endl;
+				//cout << "index b1"; index_xy_b1.Debug(); cout << endl;
+				//cout << "index b2"; index_xy_b2.Debug(); cout << endl;
 				//for (uint32_t i = 0; i < ntusb2; i++)
 					//cout << Char2Xout(tusb2[i]) << "  " << i << endl;
-			}
+			//}
 			//else if (loopb1   >2){
 				//aigstop = 1;
 				//return;
@@ -973,9 +971,15 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 				cout << "step to debug start the main loop nuas= " << ntusb2 << " cpt10=" << p_cpt2g[10] << endl;
 				cout << "index b1"; index_xy_b1.Debug(); cout << endl;
 				cout << "index b2"; index_xy_b2.Debug(); cout << endl;
+				//fb2 = index_xy_b2.and_g;// including more common cells
+				//acb2 = index_xy_b2.or_g;// all these cells can be active in the step
+				//fb12 = fb1 | fb2;
 
+
+				cout << Char2Xout(fb12) << "fb12 and " << endl;;
+				cout << Char2Xout(acb12) << "acb12 or " << endl;;
 			}
-			else cout << " cpt10=" << p_cpt2g[10] << endl;
+			//else cout << " cpt10=" << p_cpt2g[10] << endl;
 #endif
 
 			if (ntusb2 <= 64) Do64uas();
@@ -1234,7 +1238,7 @@ inline void GCHK::Do64uas_11(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb) {
 	register uint64_t * Rs = &to_clean[n_to_clean];
 	for (; Ra >= a; Ra--) {
 		register ZS64 * Rb = &b[nb - 1];
-		register uint64_t va = (*Ra).v, bfa = (*Ra).bf | fb12;
+		register uint64_t va = (*Ra).v, bfa = (*Ra).bf ;
 		for (; Rb >= b; Rb--)
 			if (!(Rb->v&va))		*Rs++ = bfa | Rb->bf;
 	}
@@ -1334,7 +1338,7 @@ void GCHK::Do128uas() {//<=128 uas in the step
 				index_xy_b1.titem[3].ntvb, index_xy_b2.titem[2].sum_vb);
 		if (start_perm == 2) {
 			if (index_xy_b1.titem[4].ntvb && index_xy_b2.titem[0].ntvb) //  size 7 band 1  3 band  
-				DoChunk64(&zs64b1[index_xy_b1.titem[3].sum_vb], zs64b2,
+				DoChunk128(&zs128b1[index_xy_b1.titem[3].sum_vb], zs128b2,
 					index_xy_b1.titem[4].ntvb, index_xy_b2.titem[0].ntvb);
 
 		}
@@ -1382,10 +1386,9 @@ void  GCHK::DoChunk128(ZS128 * a, ZS128 * b, uint64_t na, uint64_t nb) {
 			uint64_t ny = iend2 - ideb2;
 			uint64_t ideb1 = 0, iend1 = XCHUNK128;
 			if (iend1 > n1)iend1 = n1;
-
 			while (ideb1 < n1) {// X chunk
 				uint64_t nx = iend1 - ideb1;
-				Do128uas_11(&z1[ideb1], &z2[ideb2], nx, ny);
+			Do128uas_11(&z1[ideb1], &z2[ideb2], nx, ny);
 				ideb1 = iend1; iend1 += XCHUNK128;
 				if (iend1 > n1)iend1 = n1;
 			}
@@ -1402,10 +1405,10 @@ inline void GCHK::Do128uas_11(ZS128 * a, ZS128 * b, uint64_t na, uint64_t nb) {
 		register ZS128 * Rb = &b[nb - 1];
 		ZS128 za = *Ra;
 		BF128 va = za.v;
-		register uint64_t  bfa = za.bf | fb12;
-		for (; Rb >= b; Rb--) 	if ((Rb->v&va).isEmpty())
-			//Rs++;
+		register uint64_t  bfa = za.bf; 
+		for (; Rb >= b; Rb--) 	if ((Rb->v&va).isEmpty()) {
 			*Rs++ = bfa | Rb->bf;
+		}
 	}
 	n_to_clean = Rs - to_clean;
 	if (n_to_clean > 10000)CleanAll();
@@ -1586,7 +1589,7 @@ inline void GCHK::Do256uas_11(ZS256 * a, ZS256 * b, uint64_t na, uint64_t nb) {
 		register ZS256 * Rb = &b[nb - 1];
 		ZS256 za = *Ra;
 		BF128 va = za.v, va2 = za.v2;
-		register uint64_t  bfa = za.bf | fb12;
+		register uint64_t  bfa = za.bf;
 		for (; Rb >= b; Rb--) {
 			if ((Rb->v&va).isEmpty() && (Rb->v2&va2).isEmpty())
 				*Rs++ = bfa | Rb->bf;
@@ -1623,9 +1626,9 @@ int GCHK::Is_B12_Not_Unique() {
 		uint64_t cc64 = _popcnt64(myua&BIT_SET_2X);
 		if (cc64 < 12) {// this should never be check for a bug
 			cerr << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
+			cout << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
 
 #ifdef DEBUGONE
-			cout << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
 			cout << Char2Xout(wb12bf) << " b12 at call ntusb2=" << ntusb2 << " stepp_cpt2g[10] " << p_cpt2g[10] << endl;
 			for (int i = 0; i < nclues_step; i++) cout << tclues[i] << " ";
 			cout << "\t";
@@ -1700,6 +1703,11 @@ void GCHK::CleanAll() {
 		//tuguan.Debug3();
 
 #endif
+#ifdef DEBUGSTEP
+	if (p_cpt2g[10] == DEBUGSTEP) {
+		cout << "entry to_clean n_to_clean=" << n_to_clean << endl;
+	}
+#endif	
 	uint64_t nw = n_to_clean;
 	n_to_clean = 0;
 	for (uint64_t i = 0; i < nw; i++) {

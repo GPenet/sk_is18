@@ -10,7 +10,7 @@
 #ifdef DEBUGKNOWN
 #endif
 
-//#define DEBUGONE
+#define DEBUGONE
 #ifdef DEBUGONE
 #endif
 
@@ -25,7 +25,7 @@
 #ifdef DEBUGL1L2
 #endif
 
-//#define DEBUGSTEP 827
+//#define DEBUGSTEP 3671
 #ifdef DEBUGSTEP
 #endif
 
