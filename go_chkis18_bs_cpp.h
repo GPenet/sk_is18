@@ -209,12 +209,12 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 #ifdef DO2X2
 	GoM10GUas2x2();// find guas 2x2
 #endif
-#ifdef DEBUGEINIT
+#ifdef DEBUGINIT
 	cout << "\tua bands1+2   \t" << genuasb12.nua << endl;;
-	//cout << "table uas" << endl;
-	//uint64_t *t = genuasb12.tua;
-	//uint32_t n = genuasb12.nua;
-	//for (uint32_t i = 0; i < n; i++) cout << Char2Xout(t[i]) << " " << i << endl;
+	cout << "table uas" << endl;
+	uint64_t *t = genuasb12.tua;
+	uint32_t n = genuasb12.nua;
+	for (uint32_t i = 0; i < n; i++) cout << Char2Xout(t[i]) << " " << i << endl;
 	cout << "\nnguas socket2  \t" << genb12.ntua2
 		<< "\tnguas socket3  \t" << genb12.ntua3
 		<< "  sockets  2;3\t" << tuguan.ng2 << "\t" << tuguan.nguan << endl;
@@ -317,6 +317,7 @@ void STD_B3::Build_tsock() {
 //________________  external loop 
 void BINDEXN::Copy(BINDEXN & b) {
 	ntvb = b.ntvb;
+	// for (uint32_t i = 0; i < ntvb; i++) tvb[i] = b.tvb[i];
 	memcpy(tvb, b.tvb, ntvb * sizeof tvb[0]);
 	nt2 = b.nt2;
 	memcpy(t2, b.t2, (nt2+1) * sizeof t2[0]);
@@ -526,6 +527,14 @@ void  GCHK::ExtSplitX(BINDEXN & bin1no, BINDEXN & bin1yes,
 }
 
 
+int CheckBf(BINDEXN & binw, uint32_t bfw) {
+	register VALIDB * tvb = binw.tvb;
+	for (uint32_t i = 0; i < binw.ntvb; i++) {
+		if (tvb[i].bf == bfw)return i;
+	}
+	return -1;
+}
+
 void GCHK::Go2_Ext_Loop() {	//_____________ outer loop 
 	// Copy valid bands in working areas
 	//______________________________
@@ -581,7 +590,7 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 						cout << Char27out(extlw.bfx) << " extlw.bfx b1" << endl;
 
 						if (loopb1 == 1)
-							Go2b_Ext_Loop(BIT_SET_2X | activerb1, 1);
+							Go2b_Ext_Loop(BIT_SET_2X , 1);
 						else  Go3(bin_b1yes, bin_b2);
 
 					}
@@ -608,12 +617,12 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 #endif
 #ifdef DEBUGKNOWN
 				if (!kpfilt[0]) {// forget if the first is there
-					if (extlw.bfx&puzknown_perm.bf.u32[1]) {//hit
+					if (extlw.bfx & puzknown_perm.bf.u32[1]) {//hit
 						kpfilt[0] = 1;// this must be in this ip
 						cout << " loopb1 mode 2 to use for known=" << loopb1 << endl;
 						cout<<"\t\t" << Char27out(extlw.bfx) << " extlw.bfx b2" << endl;
 						if (loopb1 == 1)
-							Go2b_Ext_Loop(((uint64_t)activerb2 << 32) | BIT_SET_27, 2);
+							Go2b_Ext_Loop(BIT_SET_2X, 2);
 						else  Go3(bin_b1, bin_b2yes);
 
 					}
@@ -621,7 +630,7 @@ void GCHK::Go2_Ext_Loop() {	//_____________ outer loop
 #else
 
 				if (loopb1 == 1)
-					Go2b_Ext_Loop(((uint64_t)activerb2 << 32) | BIT_SET_27, 2);
+					Go2b_Ext_Loop(BIT_SET_2X, 2);
 				else  Go3(bin_b1, bin_b2yes);
 
 #endif
@@ -656,15 +665,52 @@ void GCHK::Go2b_Ext_Loop(uint64_t activeloop, uint32_t mode2) {
 	else {// b1 all b2 yes
 		bin2_b1.Copy(bin_b1);
 		bin2_b2.Copy(bin_b2yes);
+#ifdef DEBUGKNOWN
+		if (CheckBf(bin_b1, puzknown_perm.bf.u32[0]) < 0) {
+			cout << "entry first not seen b1 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+		if (CheckBf(bin2_b1, puzknown_perm.bf.u32[0]) < 0) {
+			cout << "entry first not seen copie b1 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+		if (CheckBf(bin_b2yes, puzknown_perm.bf.u32[1]) < 0) {
+			cout << "entry first not seen b2 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+		if (CheckBf(bin2_b2, puzknown_perm.bf.u32[1]) < 0) {
+			cout << "entry first not seen copie b2 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+#endif
+
 	}
 	uint32_t loopb2 = 0;
 	uint32_t activerb1, activerb2;
 	while (++loopb2 < 6) {
+#ifdef DEBUGKNOWN
+		//int CheckBf(BINDEXN & binw, uint32_t bfw) 
+		if (CheckBf(bin2_b1, puzknown_perm.bf.u32[0]) < 0) {
+			cout << "not seen b1 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+		if (CheckBf(bin2_b2, puzknown_perm.bf.u32[1]) < 0) {
+			cout << "not seen b2 valid to find" << endl;
+			aigstop = 1;
+			return;
+		}
+#endif
+
 #ifdef DEBUGEXL
 		if (aigstop)cout << "seen aigstop=1" << endl;
 		cout << Char2Xout(activeloop) << "==== loop first " << loopb2 << endl;
 #endif
-		if (aigstop)break;
+		if (aigstop) return;
 		minratio = 1000;
 		uint64_t ir = FindSockets(activeloop, 2);
 		if (ir)  ExtractMin(activeloop, bin2_b1, bin2_b2); 
@@ -690,7 +736,7 @@ void GCHK::Go2b_Ext_Loop(uint64_t activeloop, uint32_t mode2) {
 				ExtSplitX(bin2_b1, bin2_b1yes, extlw.bfx, activerb1);
 #ifdef DEBUGEXL
 				cout << "back X " << bin2_b1yes.ntvb << " " << bin2_b1.ntvb << endl;
-				cout << Char27out(activerb1) << " back active b1" << endl;
+				cout << Char27out(activerb1) << " back active b1" <<"kpfilt[1]="<< kpfilt[1] << endl;
 #endif
 
 #ifdef DEBUGKNOWN
@@ -710,7 +756,7 @@ void GCHK::Go2b_Ext_Loop(uint64_t activeloop, uint32_t mode2) {
 				//Go3(bin2_b1yes, bin2_b2);
 				ExtSplitY(bin2_b2, extlw.tbfy, extlw.ntbfy, activerb2);
 #ifdef DEBUGEXL
-cout << "back Y " << bin2_b2.nt2 << " " << bin2_b2.ntvb << endl;
+				cout << "back Y " << bin2_b2.nt2 << " " << bin2_b2.ntvb << endl;
 				cout << Char27out(activerb2) << " back active b2" << endl;
 #endif
 			}
@@ -718,7 +764,7 @@ cout << "back Y " << bin2_b2.nt2 << " " << bin2_b2.ntvb << endl;
 				ExtSplitX(bin2_b2, bin2_b2yes, extlw.bfx, activerb2);
 #ifdef DEBUGEXL
 				cout << "back X " << bin2_b2yes.ntvb << " " << bin2_b2.ntvb << endl;
-				cout << Char27out(activerb2) << " back active b2" << endl;
+				cout << Char27out(activerb2) << " back active b2" << "kpfilt[1]=" << kpfilt[1] << endl;
 #endif
 
 #ifdef DEBUGKNOWN
@@ -836,14 +882,6 @@ INDEX_XY & ixyw,VALIDB64 * pvb ){// build tables per size
 	ixyw.and_g = wand;
 	ixyw.or_g = wor;
 	return 0;
-}
-
-int CheckBf(BINDEXN & binw, uint32_t bfw) {
-	register VALIDB * tvb= binw.tvb;
-	for (uint32_t i = 0; i < binw.ntvb; i++) {
-		if (tvb[i].bf == bfw)return i;
-	}
-	return -1;
 }
 
 void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
@@ -2658,6 +2696,7 @@ void GCHK::Out17(uint32_t bfb3) {
 		ws[cell] = ze[cell] ;
 	}
 	cout << ws << " one sol in entry mode" << endl;
+	if(zp)strcpy(zp, ws);
 	a_18_seen = 1;
 	aigstop = 1; 
 

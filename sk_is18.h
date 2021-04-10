@@ -615,6 +615,7 @@ struct GCHK {
 
 	//___________________ studied solution 
 	char * ze;// given solution grid
+	char * zp;// first 18 if any
 	char zsol[82];// solution grid morphed
 	int grid0[81];// same 0 based
 	STD_B416 * bands_abc[3],bA,bB;
@@ -627,13 +628,13 @@ struct GCHK {
 		void Init(uint32_t bf, int mod) { bfx = bf; ntbfy = 0; mode = mod; }
 		void Debug() {
 			if (mode == 1) {
-				cout << Char27out(bfx) << " bfx b1" << endl;
+				cout << Char27out(bfx) << " bfx b1 ntbfy= " << ntbfy << endl;
 				for (uint32_t i1 = 0; i1 < ntbfy; i1++) {
 					cout << "\t\t" << Char27out(tbfy[i1]) << " bfy" << endl;
 				}
 			}
 			else {
-				cout <<"\t\t"<< Char27out(bfx) << " bfx b2" << endl;
+				cout <<"\t\t"<< Char27out(bfx) << " bfx b2 ntbfy= " << ntbfy << endl;
 				for (uint32_t i1 = 0; i1 < ntbfy; i1++) {
 					cout << Char27out(tbfy[i1]) << " bfy" << endl;
 				}

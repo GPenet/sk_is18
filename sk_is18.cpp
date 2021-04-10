@@ -15,7 +15,7 @@
 #endif
 
 //#define DEBUGINIT
-#ifdef DEBUGEINIT
+#ifdef DEBUGINIT
 #endif
 
 #define DEBUGEXL

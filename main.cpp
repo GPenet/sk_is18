@@ -57,7 +57,7 @@ int Search_ccd(char * ww)
 SGO sgo;
 ofstream  fout1;
 FINPUT finput;
-extern int  Is18(char * ze);
+extern int  Is18(char * ze, char * zp);
 
 int main(int narg, char *argv[]) {
 	cerr << "mainstart" << endl;
@@ -131,13 +131,14 @@ int main(int narg, char *argv[]) {
 		fout1.open(zn);
 	}
 	char * ze = finput.ze;
+	char zp[200];
 	uint64_t npuz = 0;
 	while (finput.GetLigne()) {
 		if (strlen(ze) < 81) continue;// skip blank lines
 		npuz++;
 		if (npuz <= vx[2])continue;
 		cout <<ze<< " Is18()   npuz="<<npuz << endl;
-		if (Is18(ze) < 0)
+		if (Is18(ze,zp) < 0)
 			cout << "puz N°" << npuz << " has a band i416=29 (2 clues)" << endl;
 		if (npuz >= vx[3])break;
 

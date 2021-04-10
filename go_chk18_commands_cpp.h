@@ -251,8 +251,9 @@ back:
 }
 
 
-int  Is18(char * ze) {
+int  Is18(char * ze, char * zp) {
 	gchk.ze = ze;
+	gchk.zp = zp;
 #ifdef DEBUGKNOWN
 	if (strlen(ze) < 163) return -1;// skip blank lines
 	char * w = &ze[82];
