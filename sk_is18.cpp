@@ -6,11 +6,15 @@
 
 #define SEARCH17SOL
 
-//#define DEBUGKNOWN
+
+//#define DEFPHASE -5
+#ifdef DEFPHASE
+#endif
+#define DEBUGKNOWN
 #ifdef DEBUGKNOWN
 #endif
 
-#define DEBUGONE
+//#define DEBUGONE
 #ifdef DEBUGONE
 #endif
 
@@ -18,7 +22,7 @@
 #ifdef DEBUGINIT
 #endif
 
-#define DEBUGEXL
+//#define DEBUGEXL
 #ifdef DEBUGEXL
 #endif
 //#define DEBUGL1L2
@@ -43,14 +47,14 @@
 #define XCHUNK256 100
 #define YCHUNK256 100
 
-#define UALIMSIZE 20
+#define UALIMSIZE 22
 #define GUALIMSIZE 18
 #define TUASIZE 5000
 #define TUASIZE_ONE 50
 
 #define UA32_10 0xffc00000
 #define UA64_54 0x3fffffffffffff
-#define TUA64_12SIZE 3000
+#define TUA64_12SIZE 2000
 #define ADD_N128 4
 //============================================== 
 /* all bands seen
@@ -122,7 +126,7 @@ ZS64 zs64b1[MAXEXP7], zs64b2[MAXEXP7];
 ZS128 zs128b1[MAXEXP7], zs128b2[MAXEXP7];
 ZS256 zs256b1[MAXEXP7], zs256b2[MAXEXP7];
 
-uint64_t to_clean[100000];
+uint64_t to_clean[2000000];
 
 GENUAS_B12 genuasb12;
 GEN_BANDES_12 genb12;

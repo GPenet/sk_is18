@@ -59,7 +59,7 @@ struct ZH2B_GLOBAL { // global variables for the game table
 	// ==============bands sols handling
 	// sols collection ZH2B_1D
 	BF64 *tsolw, *tuaw; // belong to the caller 
-	BF64 mysol, mystart, andsol, myandsol;
+	BF64  pairs, mysol, mystart, andsol, myandsol;
 	BF64 sols_buffer[3000], ua_buffer[3000];
 
 	uint32_t nuaold, nua, ndigits;
@@ -71,7 +71,7 @@ struct ZH2B_GLOBAL { // global variables for the game table
 	int modeguess;
 	int  puz0[54], gangster[9];
 	int nsolw;
-	char * zsol, out54[55];// bands 12 in output mode
+	char * zsol, out54[55], puzc[55];// bands 12 in output mode
 	char zdebug[82];
 
 	ZH2B_GLOBAL();
@@ -118,6 +118,10 @@ struct ZH2B {// size 32 bytes
 	int Update();
 	int FullUpdate();
 	void ComputeNext();
+	void GuessInCell();
+	void GuessFirstCell();
+
+	int GuessHiddenBivalue();
 	void GuessValidB12();
 	void GuessGo(int dig, BF64 & wsol);
 

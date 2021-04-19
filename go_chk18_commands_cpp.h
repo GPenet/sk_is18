@@ -6,12 +6,12 @@ const char * libs_c17_00_cpt2g[70] = {
 	"2  loop b1 ",//2
 	"3  loop b2",//3
 	"4  dead loop b2",
-	"5  step 64",
-	"6  step 128",
-	"7  step 192",
-	"8  step 256",
-	"9  step>256",
-	"10 all steps",//10
+	"5  steps",
+	"6  n_to_clean",
+	"7  pass filters",
+	"8  call bf 12",
+	"9  addua",
+	"10 call 3b",//10
 	"11 not critical 1",//11
 	"12 not critical 2",//12
 	"13 not critical >2",//13
@@ -23,16 +23,16 @@ const char * libs_c17_00_cpt2g[70] = {
 	"20 entry critical",
 	"21 chehk critical",
 	"22","23",
-	"24 bb crit ",//4
-	"25 bb miss12 ",//5
-	"26 bb miss more ",//6
-	"27 calls brute force",//7
-	"28 XY brute force",//8
-	"29 valid brute force",//9
-	"30 ip0 count1",	"31 ip0 count2",	
+	"24 bb crit ",//24
+	"25 bb miss12 ",//25
+	"26 bb miss more ",//26
+	"27 ",//27
+	"28 XY brute force",//28
+	"29 ",//29
+	"30 ip0 count1 stats ip",	"31 ip0 count2",	
 	"32 ip1 count1",	"33 ip1 count2",	
-	"34 ip2 count1 ",	"35 ip2 count2",	
-	"36",	"37",	"38",	"39",
+	"34 ip2 count1 stepb2",	"35 ip2 count2",	
+	"36 stepb2 ",	"37 stepb2 ngua",	"38",	"39",
 	"40",	"41",	"42",	"43",	"44",	"45",	"46",	"47",	"48",	"49",
 	"50",	"51",	"52",	"53",	"54",	"55",	"56",	"57",	"58",	"59",
 	"60",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
@@ -267,7 +267,7 @@ int  Is18(char * ze, char * zp) {
 	}
 #endif
 	gchk.a_18_seen = 0;
-	ze[81] = 0; //kill outfield
+	//ze[81] = 0; //kill outfield
 	memset(p_cpt2g, 0, sizeof p_cpt2g);
 	zh_g.modevalid = 1;
 	zh_g2.grid0 = gchk.grid0;

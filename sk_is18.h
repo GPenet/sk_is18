@@ -304,7 +304,7 @@ struct GENUAS_B12 {// for uas collection in bands 1+2 using brute force
 
 	//=============== uas collector 
 	int limsize, floors;
-	uint64_t  tuaold[1000],// previous non hit uas infinal table of uas for bands 1+2
+	uint64_t  tuaold[1000],// previous non hit uas in final table of uas for bands 1+2
 		tua[TUA64_12SIZE]// 
 		, tuab1b2[200];// collecting bands uas in 2x mode
 	uint32_t nuaold, nua, nuab1b2,
@@ -504,6 +504,7 @@ struct TU_GUAN {// GUAN process (used GUA all kinds)
 	}
 	void DoStepb1();// reduce tables 
 	void DoStepb2();// reduce tables again
+	void DoStepb1_2();// reduce tables no loop b2
 	//void SetValidVector();
 	void SetValidV23();
 
@@ -651,11 +652,11 @@ struct GCHK {
 	void ExtSplitX(BINDEXN & bin1no, BINDEXN & bin1yes,
 		uint32_t bf, uint32_t & activer);
 	//_______________  loops XY 
-	G17TMORE moreuas_AB, moreuas_AB_small, moreuas_AB_big;
+	G17TMORE moreuas_12_13, moreuas_14, moreuas_15, moreuas_AB, moreuas_AB_small, moreuas_AB_big;
 	uint64_t tusb1[2000], tusb2_12[1000], tusb2[1000]; 
 	uint32_t ntusb1, ntusb2, ntusb2_12; 
 	uint32_t ntvb1go;
-	uint32_t  ntua_128, ntua_256;
+	//uint32_t   ntua_128, ntua_256;
 	uint64_t fb1, acb1, fb2, fb12,  acb2, acb12;
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
 	int nclues_step, nclues;
@@ -664,11 +665,21 @@ struct GCHK {
 	int G3_SplitBi2( int mode,int kill7,
 		BINDEXN & binw ,uint32_t ibi2,
 		INDEX_XY & indxyw,VALIDB64 * pvb );
+
+	void G3_SplitAll(int mode, BINDEXN & binw,  
+		INDEX_XY & indxyw, VALIDB64 * pvb);
 	
 	//============ main loop process
 	BF128 v128uas, vc128[54];
 	BF128 v256uas, vc256[54];// 128 to 256 uas
 	uint64_t v64uas, vc64[54];
+	BF128 v64_192uas, vc64_192[54],bv192;
+	BF128 v192_320uas, vc192_320[54],bv320;
+	BF128 v320_448uas, vc320_448[54],bv448;
+	BF128 v448_576uas, vc448_576[54],bv576;
+	BF128 v576_704uas, vc576_704[54],bv704;
+	BF128 v704_832uas, vc704_832[54],bv832;
+	BF128 v832_960uas, vc832_960[54],bv960;
 
 
 
@@ -712,19 +723,12 @@ struct GCHK {
 	void Go3(BINDEXN & bin1, BINDEXN & bin2);
 	void Apply_Band1_Step();
 	int Apply_Band2_Step();
+	int Apply_Band1_2_Step();
 	//___________ extract potential valid bands 1+2 (no more uas)
 	void Do64uas();
 	void DoChunk64(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb);
 	void Do64uas_11(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb);
-	//________ same 65 to 128 uas
-	void Do128uas();
-	void DoChunk128(ZS128 * a, ZS128 * b, uint64_t na, uint64_t nb);
-	void Do128uas_11(ZS128 * a, ZS128 * b, uint64_t na, uint64_t nb);
-
-	//________ same >128 uas
-	void Do256uas();
-	void DoChunk256(ZS256 * a, ZS256 * b, uint64_t na, uint64_t nb);
-	void Do256uas_11(ZS256 * a, ZS256 * b, uint64_t na, uint64_t nb);
+	
 
 	//_______ processing potential valid bands 1+2
 	void CleanAll();
