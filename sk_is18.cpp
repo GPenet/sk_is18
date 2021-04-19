@@ -10,7 +10,7 @@
 //#define DEFPHASE -5
 #ifdef DEFPHASE
 #endif
-#define DEBUGKNOWN
+//#define DEBUGKNOWN
 #ifdef DEBUGKNOWN
 #endif
 
