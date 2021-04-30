@@ -225,10 +225,11 @@ int STD_B3::IsGua(int i81) {
 	}
 	return 0;
 }
+
 int STD_B3::Is2Rows(int i81_1, int i81_2) {// GUAS 2X2 
 	GEN_BANDES_12::SGUA2 w1 = genb12.tsgua2[i81_1], w2 = genb12.tsgua2[i81_2];
-	uint32_t rows = 0, d1 = w1.dig1, d2 = w1.dig2,pat=0;
-	int tcol[4],* tdcol[4];
+	uint32_t rows = 0, d1 = w1.dig1, d2 = w1.dig2, pat = 0;
+	int tcol[4], *tdcol[4];
 	tcol[0] = w1.col1;
 	tcol[1] = w1.col2;
 	tcol[2] = w2.col1;
@@ -239,20 +240,18 @@ int STD_B3::Is2Rows(int i81_1, int i81_2) {// GUAS 2X2
 	tdcol[2] = &band0[w2.col1];
 	tdcol[3] = &band0[w2.col2];
 
-	for (int irow = 0,drow=0; irow < 3; irow++,drow+=9) {
+	for (int irow = 0, drow = 0; irow < 3; irow++, drow += 9) {
 		for (int icol = 0; icol < 4; icol++) {
-			int col= tcol[icol],cell=drow+col, c = band0[cell];
+			int col = tcol[icol], cell = drow + col, c = band0[cell];
 			if (c == d1 || c == d2) {
 				rows |= 1 << irow;
 				pat |= 1 << (cell);
 			}
 		}
 	}
-	pat2x2[i81_1] = pat;
-	if (_popcnt32(rows) == 2) return 1; else return 0;
+	//pat2x2[i81_1] = pat;
+	if (_popcnt32(rows) == 2) return pat; else return 0;
 }
-
-
 int STD_B3::IsGua3(int i81) {
 	GEN_BANDES_12::SGUA3 w81 = genb12.tsgua3[i81];
 	int *g = genb12.gang27,//the gangster 
@@ -277,31 +276,6 @@ int STD_B3::IsGua3(int i81) {
 		return 1;
 	}
 	return 0;
-}
-
-void STD_B3::PrintB3Status() {
-	cout << "band3 status" << endl;
-	for (int i = 0, ij = 0; i < 3; i++) {
-		for (int j = 0; j < 9; j++, ij++) cout << band0[ij] + 1;
-		cout << endl;
-	}
-	cout << endl<<"gua2 gua4 gua6s" << endl;
-	for (int i = 0; i < 81; i++){
-		int w = guas.ua_pair[i];
-		if (w) cout << Char27out(w) << " i81=" << i << endl;
-	}
-	cout  << "gua3s" << endl;
-	for (int i = 0; i < 81; i++) {
-		int w = guas.ua_triplet[i];
-		if (w) cout << Char27out(w) << " i81=" << i << endl;
-	}
-	char ws[129];
-	const char* w3 = "123456789...---...123456789";
-	cout << w3 << w3 << w3 << endl;;
-	cout << guas.isguasocket2.String128(ws) << " sock2" << endl;
-	cout << guas.isguasocket2_46.String128(ws) << " sock2_46" << endl;
-	cout << guas.isguasocket3.String128(ws) << " sock3" << endl;
-	cout << issocket2x2.String128(ws) << " sock 2x2" << endl;
 }
 
 //==================== sockets UA2s UA3s control

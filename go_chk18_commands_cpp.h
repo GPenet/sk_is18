@@ -19,7 +19,8 @@ const char * libs_c17_00_cpt2g[70] = {
 	"15 fout1 expand",//15
 	"16 critical + sub critical",//16
 	"17 add 1 from active",//17
-	"18","19",
+	"18 final checkb3",
+	"19 ua to add upstream",
 	"20 entry critical",
 	"21 chehk critical",
 	"22","23",
@@ -254,6 +255,7 @@ back:
 int  Is18(char * ze, char * zp) {
 	gchk.ze = ze;
 	gchk.zp = zp;
+	gchk.GuapatsInit();
 #ifdef DEBUGKNOWN
 	if (strlen(ze) < 163) return -1;// skip blank lines
 	char * w = &ze[82];

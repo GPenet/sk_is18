@@ -7,7 +7,7 @@
 #define SEARCH17SOL
 
 
-//#define DEFPHASE -5
+//#define DEFPHASE -3
 #ifdef DEFPHASE
 #endif
 //#define DEBUGKNOWN

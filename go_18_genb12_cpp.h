@@ -17,11 +17,6 @@ void GEN_BANDES_12::InitialSockets2Setup() {//load permanent data
 		int rd1 = i - 9 * w.i9;//relative d1;d2		
 		w.id1 = rd1 / 3 + 3 * w.col1;
 		w.id2 = rd1 % 3 + 3 * w.col2;
-		if (0) {
-			cout << "sua2=" << w.i_81 << " i9=" << w.i9 + 1
-				<< " cols12 " << w.col1 + 1 << w.col2 + 1
-				<< " id1;id2 " << w.id1 << ";" << w.id2 << endl;
-		}
 	}
 }
 void GEN_BANDES_12::SecondSockets2Setup() {
@@ -65,7 +60,7 @@ void GEN_BANDES_12::SecondSockets2Setup() {
 		SecondSockets2MoreUAs();
 		if (nua2) {
 			//tactive2[nactive2++]=i81;
-			if (nua2 > 20)nua2 = 20;
+			//if (nua2 > 20)nua2 = 20;
 			ntua2 += nua2;
 			w.nua = nua2;
 			w.iguan = tuguan.nguan;
@@ -75,6 +70,13 @@ void GEN_BANDES_12::SecondSockets2Setup() {
 	}
 	//cout << "endSecondSockets2Setup ntua2=" << ntua2
 	//	<< " nactive i81=" << nactive2 << endl;
+}
+void GEN_BANDES_12::SetUpGuas2() {
+	for (int imini = 0, i = 0; imini < 9; imini++) {
+		for (int j = 0; j < 3; j++, i++) {
+
+		}
+	}
 }
 
 void ZH2B::Init_2digits_banda(BF64  cellsbf) {
@@ -421,7 +423,7 @@ void GEN_BANDES_12::SecondSockets3Setup() {
 		}
 		if (nua2) {
 			//tactive3[nactive3++] = i81;
-			if (nua2 > 20)nua2 = 20;
+			//if (nua2 > 20)nua2 = 20;
 			ntua3 += nua2;
 			w.nua = nua2;
 			w.iguan = tuguan.nguan;
