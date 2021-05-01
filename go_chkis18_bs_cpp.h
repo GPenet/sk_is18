@@ -1150,7 +1150,7 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 			Apply_Band2_Step_GUAs();
 			//tuguan.DoStepb2();// reduce guas
 #ifdef DEBUGL1L2
-			cout<<Char2Xout(fb12) << "\t bf ib2=" << ib2;
+			cout << Char2Xout(fb12) << "\t bf ib2=" << ib2 << endl;;
 			//tuguan.Debug3();
 			//index_xy_b2.Debug();cout << endl;
 			//continue;
@@ -1630,6 +1630,8 @@ int GCHK::Is_B12_Not_Unique() {
 void GCHK::CleanAll() {
 	if (!n_to_clean) return;
 	//if (p_cpt2g[6]) {	n_to_clean = 0; return;	}//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	//cout << "entry to_clean n_to_clean=" << n_to_clean << " p_cpt2g[6]" << p_cpt2g[6]
+	//	<< " ntub2=" << ntusb2 << endl;
 
 	p_cpt2g[6] += n_to_clean;
 #ifdef DEBUGKNOWN
@@ -1682,9 +1684,9 @@ void GCHK::CleanAll() {
 
 #endif
 #ifdef DEBUGSTEP
-	//cout << "entry to_clean n_to_clean=" << n_to_clean <<" p_cpt2g[6]"<< p_cpt2g[6] 
-	//	<<" ntub2=" << ntusb2 << endl;
-	if (p_cpt2g[10] == DEBUGSTEP) {
+	cout << "entry to_clean n_to_clean=" << n_to_clean <<" p_cpt2g[6]"<< p_cpt2g[6] 
+		<<" ntub2=" << ntusb2 << endl;
+	if (p_cpt2g[6] == DEBUGSTEP) {
 		cout << "entry to_clean n_to_clean=" << n_to_clean 		<< endl;
 	}
 #endif	
@@ -1876,6 +1878,17 @@ void GCHK::Clean_valid_bands3B() {
 	cout << "nmiss=" << nmiss << endl;
 	cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua<< endl;
 #endif
+#ifdef DEBUCLEANB
+	if (DEBUCLEANB == p_cpt2g[10]) {
+		cout << "debug clean p_cpt2g[10]"<< DEBUCLEANB << endl;
+		cout << "nmiss=" << nmiss << endl;
+		cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua << endl;
+		cout << Char2Xout(wb12bf) << " valid bands 1+2" << endl;
+		smin.Status("debug clean status");
+	}
+#endif
+
+
 	if ((nmiss == 2 && smin.minplus < nclues_b3) || nmiss > 2) 	ExpandB3();	
 	else {
 		G17B3HANDLER hh0;
@@ -2122,6 +2135,14 @@ void GCHK::ExpandB3() {
 	cout << "entry expandb3 for nlues="<<nclues_b3 << endl;
 	//for (uint32_t i = 0; i < nuasb3_1; i++)		cout << Char27out(uasb3_1[i])<<endl;
 #endif
+#ifdef DEBUCLEANB
+	if (DEBUCLEANB == p_cpt2g[10]) {
+		cout << "debug clean p_cpt2g[10]" << DEBUCLEANB << endl;
+		cout << "entry expandb3 for nlues=" << nclues_b3 << endl;
+
+	}
+#endif
+
 	struct SPB3 {// spots to find band 3 minimum valid solutions
 		// ====================== constant after initialization
 		uint32_t  possible_cells, all_previous_cells, active_cells, iuab3;
@@ -2183,7 +2204,7 @@ next:
 		if (nuasb3_1 < 500)uasb3_1[nuasb3_1++] = ua;
 		if (_popcnt32(ua) < 5)p_cpt2g[19]++;
 
-		if (ispot < (nclues - 1)) {// new ua for next spot
+		if (ispot < (nclues_b3 - 1)) {// new ua for next spot
 			sn3->possible_cells = ua;
 			s3 = sn3; 
 		}
@@ -2573,6 +2594,10 @@ void GCHK::FinalCheckB3(uint32_t bfb3) {
 	Out17(bfb3);
 }
 void GCHK::Out17(uint32_t bfb3) {
+#ifdef DEBUGSTEP
+	cout << "debugstep for out17 p_cpt2g[10]="<< p_cpt2g[10] << endl;
+#endif
+	
 	// mapping of the output on band_order[ib] 
 	uint32_t map[81];
 	for (int i = 0; i < 3; i++)	for (int j = 0; j < 27; j++)

@@ -29,10 +29,12 @@
 #ifdef DEBUGL1L2
 #endif
 
-//#define DEBUGSTEP 3671
+//#define DEBUGSTEP 0
 #ifdef DEBUGSTEP
 #endif
-
+//#define DEBUCLEANB 736
+#ifdef DEBUCLEANB
+#endif
 //#define GTEST17_ON 1
 /* control of the UAs generation
 	UALIMSIZE to test the range 18-20

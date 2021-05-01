@@ -134,12 +134,22 @@ int main(int narg, char *argv[]) {
 	char zp[200];
 	uint64_t npuz = 0;
 	while (finput.GetLigne()) {
+
 		if (strlen(ze) < 81) continue;// skip blank lines
 		npuz++;
 		if (npuz <= vx[2])continue;
+		long tdebp = GetTimeMillis();
+
 		cout <<ze<< " Is18()   npuz="<<npuz << endl;
-		if (Is18(ze,zp) < 0)
-			cout << "puz N°" << npuz << " has a band i416=29 (2 clues)" << endl;
+		int ir = Is18(ze, zp);
+		if (ir < 0)	cout << "puz " << npuz << "  band 29 (2 clues)" << endl;
+		long tendp = GetTimeMillis();
+
+		fout1 << ze << " " << tendp - tdebp<<" ";
+		if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
+		else if (ir == 0) 			fout1 << " no 18" << endl;
+		else fout1 << endl;
+
 		if (npuz >= vx[3])break;
 
 	}
