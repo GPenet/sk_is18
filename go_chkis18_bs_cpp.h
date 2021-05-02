@@ -266,16 +266,20 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 			gvc2 = gvcells.v32[c1];
 			gvb2 = &gvs_start.v32[c1];
 			//guapats3[c1] = pat;
-			/*
+	/*
 #ifdef DEBUGKNOWN
-			cout << "gua3s table for i=" << c1 << endl;
-			for (uint32_t i = 0; i < w.nua; i++) {
-				register uint64_t Rw = w.tua[i] & BIT_SET_2X;
-				cout << Char2Xout(Rw) << " i=" << i << endl;
+			if (c1 == 1 && start_perm==2) {
+				cout << "gua3s table for i=" << c1 << endl;
+				for (uint32_t i = 0; i < w.nua; i++) {
+					register uint64_t Rw = w.tua[i] & BIT_SET_2X;
+					cout << Char2Xout(Rw) << " i=" << i << endl;
+				}
+
 			}
 
 #endif
-			*/
+	*/
+			
 		}
 		//______ switch from UA list to cell map in vectors
 		uint32_t nua1 = (w.nua <= 128) ? w.nua : 128;
@@ -295,7 +299,7 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 				register uint64_t Rw = w.tua[i] & BIT_SET_2X;
 				while (bitscanforward64(cc64, Rw)) {// look for  possible cells
 					Rw ^= (uint64_t)1 << cc64;// clear bit
-					gvc2[From_128_To_81[cc64]].clearBit(i);
+					gvc2[From_128_To_81[cc64]].clearBit(i-128);
 				}
 			}
 		}
@@ -1419,21 +1423,6 @@ void GCHK::Apply_Band2_Step_GUAs() {// build band 2 step vectors
 	for (uint32_t i = 0; i < nguapats; i++) {
 		SetUpStepV(tc, ntc, gvs_b1.vpx[i], gvs_b2.vpx[i], gvcells.vpx[i]);
 	}
-	if (0 &&p_cpt2g[3] < 2) {
-		cout << "b2stepguas" << endl;
-		for (int i = 0; i < 27; i++) {
-			if (gvs_b2.v21[i].bf.u64[0])
-				cout << i << "\t" << Char64out(gvs_b2.v21[i].bf.u64[0]) << endl;
-		}
-		for (int i = 0; i < 9; i++) {
-			if (gvs_b2.v31[i].bf.u64[0])
-				cout << i << "\t" << Char64out(gvs_b2.v31[i].bf.u64[0]) << endl;
-		}
-		for (uint32_t i = 0; i < nguapats; i++) {
-			if (gvs_b2.vpx[i].bf.u64[0])
-				cout << i << "\t" << Char64out(gvs_b2.vpx[i].bf.u64[0]) << endl;
-		}
-	}
 
 }
 
@@ -1645,6 +1634,7 @@ void GCHK::CleanAll() {
 		if (bf == puzknown_perm.bf.u64[0]) {
 			cout << Char2Xout(bf)
 				<< "\t\tclean all seen bf i=" << i << " forced to one clean p_cpt2g[10]=" << p_cpt2g[10] << endl;
+			cout << Char2Xout(fb1|fb2) << " step applied" << endl;
 			to_clean[0] = bf;
 			n_to_clean = 1;
 			kpfilt[2] = 1;
@@ -1785,9 +1775,20 @@ int GCHK::Clean_valid_bands3A() {
 		smin.pairs27 |= 1<<i2;
 	}
 	for (uint32_t i3 = 0; i3 < 9; i3++) {
+
 		if(SetUpStepV(tcluesxy, nclues, gvs_b2.v31[i3], vect, gvcells.v31[i3]))
 			if (SetUpStepV(tcluesxy, nclues, gvs_b2.v32[i3], vect, gvcells.v32[i3]))
 				continue; // if all uas are hit pattern b3 not forced true
+/*
+#ifdef DEBUGKNOWN
+		if (i3 == 1) {
+			gvs_b2.v31[i3].Print("gvs_b2.v31[i3]=1 ");
+			gvs_b2.v32[i3].Print("gvs_b2.v32[i3]=1 ");
+
+		}
+#endif
+*/
+
 		smin.mini_triplet |= 1 << i3;
 		uasb3_1[nuasb3_1++] = guapats3[i3];
 	}
@@ -2196,12 +2197,10 @@ next:
 	// this is a possible nclues do final check
 
 	p_cpt2g[18]++;
-	//cout << Char27out(sn3->all_previous_cells) << "ua to check" << endl;
+	///cout << Char27out(sn3->all_previous_cells) << "ua to check" << endl;
 	if (zhou[1].CallMultipleB3(zhou[0], sn3->all_previous_cells,0)) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
 		NewUaB3();
-		//cout << Char27out(ua) << "ua to add" << endl;
-		if (nuasb3_1 < 500)uasb3_1[nuasb3_1++] = ua;
 		if (_popcnt32(ua) < 5)p_cpt2g[19]++;
 
 		if (ispot < (nclues_b3 - 1)) {// new ua for next spot
@@ -2372,7 +2371,7 @@ void ZHOU::Compute17Next(int index, int diag) {
 
 
 uint32_t G17B3HANDLER::IsMultiple(int bf) {
-	p_cpt2g[54] ++;
+	p_cpt2g[29] ++;
 	if (bf == rknown_b3) return 0;
 	if (_popcnt32(bf) > 25) return 0;
 	uint32_t ua = 0;
@@ -2587,7 +2586,7 @@ void GCHK::FinalCheckB3(uint32_t bfb3) {
 	p_cpt2g[18]++;
 	register uint32_t ir = zhou[1].CallMultipleB3(zhou[0], bfb3, 0);
 	if (ir) {
-		moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
+		//moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
 		NewUaB3();
 		return;
 	}
@@ -2622,6 +2621,7 @@ void GCHK::Out17(uint32_t bfb3) {
 
 }
 void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
+	if (1) return;
 	register uint32_t ua = zh_g2.cells_assigned.bf.u32[2],
 		cc = _popcnt32(ua),
 		cc0 = (uint32_t)_popcnt64(zh_g2.cells_assigned.bf.u64[0]);
@@ -2653,32 +2653,55 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 		uint32_t biti27 = (7 << (3 * imini)) ^ ua,
 			i27;// this is the index 0-26
 		bitscanforward(i27, biti27);
-		//cout << "add imini=" << imini << " i27=" << i27 << endl;
+		//if (p_cpt2g[40]++ < 100) {
+			//fout1 << Char27out(ua)<<" ";
+			//fout1 << Char2Xout(zh_g2.cells_assigned.bf.u64[0]) 
+			//	<< " "<< p_cpt2g[10]<<" "<< p_cpt2g[40] << endl;
+			//cout << "add imini=" << imini << " i27=" << i27 << endl;
+			//cout << Char27out(ua) << " ";
+			//cout << Char2Xout(zh_g2.cells_assigned.bf.u64[0])
+				//<< " " << p_cpt2g[10] << " " << p_cpt2g[40] << endl;
+			//cout << Char64out(gvs_start.v21[i27].bf.u64[0]) << " start 127" << endl;
+
+		//}
 		int lastind =gvs_start.v21[i27].getLast128();
 		if (lastind >= 127) {//already more than one 128 bits vector
 			int lastind2 = gvs_start.v22[i27].getLast128();
+			//if (p_cpt2g[40] < 100) cout << "lastind2" << lastind2 << endl;
 			if (lastind2 >= 127)return;// limit is 256 uas	
 			// add to the second vector
-			gvs_start.v22[i27].setBit(lastind2);// active everywhere 
-			gvs_b1.v22[i27].setBit(lastind2);
-			gvs_b2.v22[i27].setBit(lastind2);
+			lastind2++;
+			gvs_start.v22[i27].Set(lastind2);// active everywhere 
+			gvs_b1.v22[i27].Set(lastind2);
+			gvs_b2.v22[i27].Set(lastind2);
 			AddUaToVector(ua12, gvcells.v22[i27], lastind2);// setup vector for the new ua 
 			return;
 		}
 		// add to the first vector
-
-		gvs_start.v21[i27].setBit(lastind);// active everywhere 
-		gvs_b1.v21[i27].setBit(lastind);
-		gvs_b2.v21[i27].setBit(lastind);
+		lastind++;
+		gvs_start.v21[i27].Set(lastind);// active everywhere 
+		gvs_b1.v21[i27].Set(lastind);
+		gvs_b2.v21[i27].Set(lastind);
 		AddUaToVector(ua12,gvcells.v21[i27], lastind);// setup vector for the new ua 
+		//if (p_cpt2g[40] < 1000) {
+			//cout << "lastind=" << lastind << endl;
+			//cout << Char64out(gvs_start.v21[i27].bf.u64[0]) << " end 127" << endl;
+		//}
 		return;
 	}
 	if (cc == 3) {// one of the 3 GUA3s add to the table
+		p_cpt2g[41]++;
 		int lastind = gvs_start.v31[imini].getLast128();
+#ifdef DEBUGKNOWN
+		cout << "lastind=" << lastind << endl;
+		cout <<  Char27out(ua) << " ";
+		cout << Char2Xout(ua12)   << endl;
+#endif
 		if (lastind >= 127) {//already more than one 128 bits vector
 			int lastind2 = gvs_start.v32[imini].getLast128();
 			if (lastind2 >= 127)return;// limit is 256 uas	
 			// add to the second vector
+			lastind2++;
 			gvs_start.v32[imini].setBit(lastind2);// active everywhere 
 			gvs_b1.v32[imini].setBit(lastind2);
 			gvs_b2.v32[imini].setBit(lastind2);
@@ -2686,7 +2709,7 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 			return;
 		}
 		// add to the first vector
-
+		lastind++;
 		gvs_start.v31[imini].setBit(lastind);// active everywhere 
 		gvs_b1.v31[imini].setBit(lastind);
 		gvs_b2.v31[imini].setBit(lastind);

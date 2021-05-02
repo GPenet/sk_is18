@@ -29,12 +29,14 @@ const char * libs_c17_00_cpt2g[70] = {
 	"26 bb miss more ",//26
 	"27 ",//27
 	"28 XY brute force",//28
-	"29 ",//29
-	"30 ip0 count1 stats ip",	"31 ip0 count2",	
+	"29 call multipleb3",//29
+	"30 ip0 count1 stats ",	"31 ip0 count2",	
 	"32 ip1 count1",	"33 ip1 count2",	
 	"34 ip2 count1 stepb2",	"35 ip2 count2",	
 	"36 stepb2 ",	"37 stepb2 ngua",	"38",	"39",
-	"40",	"41",	"42",	"43",	"44",	"45",	"46",	"47",	"48",	"49",
+	"40 adduasb3 gua2",	
+	"41 adduasb3 gua3",	
+	"42",	"43",	"44",	"45",	"46",	"47",	"48",	"49",
 	"50",	"51",	"52",	"53",	"54",	"55",	"56",	"57",	"58",	"59",
 	"60",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
 };
