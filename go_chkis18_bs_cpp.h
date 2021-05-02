@@ -2176,7 +2176,7 @@ next:
 		// nextspot:take the next available ua to loop
 		for (uint32_t i = s3->iuab3 + 1; i < nuasb3_1; i++) {
 			if (uasb3_1[i] & filter)continue;
-			if (ispot >= nclues-1) 	goto next;//passing the limit
+			if (ispot >= nclues_b3-1) 	goto next;//passing the limit
 			sn3->iuab3 = i;
 			register uint32_t Ru = uasb3_1[i] & sn3->active_cells;
 			if (!Ru)goto next;
@@ -2197,9 +2197,14 @@ next:
 	// this is a possible nclues do final check
 
 	p_cpt2g[18]++;
-	///cout << Char27out(sn3->all_previous_cells) << "ua to check" << endl;
+#ifdef DEBUGKNOWN
+	//cout << Char27out(sn3->all_previous_cells) << "ua to check" << endl;
+#endif
 	if (zhou[1].CallMultipleB3(zhou[0], sn3->all_previous_cells,0)) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
+#ifdef DEBUGKNOWN
+		//cout << Char27out(ua) << "ua to add" << endl;
+#endif
 		NewUaB3();
 		if (_popcnt32(ua) < 5)p_cpt2g[19]++;
 
