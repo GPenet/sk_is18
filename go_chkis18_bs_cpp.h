@@ -282,7 +282,10 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 			
 		}
 		//______ switch from UA list to cell map in vectors
-		uint32_t nua1 = (w.nua <= 128) ? w.nua : 128;
+		//uint32_t nua1 = (w.nua <= 128) ? w.nua : 128;
+
+		// here set max first lot to 64 room for add 64 later
+		uint32_t nua1 = (w.nua <= 64) ? w.nua : 64;
 		*gvb1 = maskLSB[nua1];
 		uint32_t cc64;// build cells vectors A
 		for (uint32_t i = 0; i < nua1; i++) {
@@ -292,6 +295,7 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 				gvc1[From_128_To_81[cc64]].clearBit(i);
 			}
 		}
+		/*
 		if (w.nua > 128) {
 			nua1 = (w.nua <= 256) ? w.nua : 256;
 			*gvb2 = maskLSB[nua1-128];
@@ -303,6 +307,7 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 				}
 			}
 		}
+		*/
 
 	}
 
@@ -396,7 +401,9 @@ void GCHK::Go1GUas2x2() {// collect guas 2 sockets 2 digits
 						guapats[igua] = pat;
 						BF128 * gvc1=gvcells.vpx[igua], *gvb1= &gvs_start.vpx[igua];
 						//______ switch from UA list to cell map in vectors
-						uint32_t nua1 = (zh2b5_g.nuaf5 <= 128) ? zh2b5_g.nuaf5 : 128;
+						//uint32_t nua1 = (zh2b5_g.nuaf5 <= 128) ? zh2b5_g.nuaf5 : 128;
+						// here set max to 64, room for add later
+						uint32_t nua1 = (zh2b5_g.nuaf5 <= 64) ? zh2b5_g.nuaf5 : 64;
 						*gvb1 = maskLSB[nua1];
 						uint32_t cc64;// build cells vectors A
 						for (uint32_t i = 0; i < nua1; i++) {
@@ -1381,11 +1388,11 @@ void GCHK::Apply_Band1_Step_GUAs() {// build band 1 step vectors
 	}
 	for (int i = 0; i < 27; i++) {
 		SetUpStepV(tc, ntc, gvs_start.v21[i], gvs_b1.v21[i], gvcells.v21[i]);
-		SetUpStepV(tc, ntc, gvs_start.v22[i], gvs_b1.v22[i], gvcells.v22[i]);
+		//SetUpStepV(tc, ntc, gvs_start.v22[i], gvs_b1.v22[i], gvcells.v22[i]);
 	}
 	for (int i = 0; i < 9; i++) {
 		SetUpStepV(tc, ntc, gvs_start.v31[i], gvs_b1.v31[i], gvcells.v31[i]);
-		SetUpStepV(tc, ntc, gvs_start.v32[i], gvs_b1.v32[i], gvcells.v32[i]);
+		//SetUpStepV(tc, ntc, gvs_start.v32[i], gvs_b1.v32[i], gvcells.v32[i]);
 	}
 	for (uint32_t i = 0; i < nguapats; i++) {
 		SetUpStepV(tc, ntc, gvs_start.vpx[i], gvs_b1.vpx[i], gvcells.vpx[i]);
@@ -1414,11 +1421,11 @@ void GCHK::Apply_Band2_Step_GUAs() {// build band 2 step vectors
 	}
 	for (int i = 0; i < 27; i++) {
 		SetUpStepV(tc, ntc, gvs_b1.v21[i], gvs_b2.v21[i], gvcells.v21[i]);
-		SetUpStepV(tc, ntc, gvs_b1.v22[i], gvs_b2.v22[i], gvcells.v22[i]);
+		//SetUpStepV(tc, ntc, gvs_b1.v22[i], gvs_b2.v22[i], gvcells.v22[i]);
 	}
 	for (int i = 0; i < 9; i++) {
 		SetUpStepV(tc, ntc, gvs_b1.v31[i], gvs_b2.v31[i], gvcells.v31[i]);
-		SetUpStepV(tc, ntc, gvs_b1.v32[i], gvs_b2.v32[i], gvcells.v32[i]);
+		//SetUpStepV(tc, ntc, gvs_b1.v32[i], gvs_b2.v32[i], gvcells.v32[i]);
 	}
 	for (uint32_t i = 0; i < nguapats; i++) {
 		SetUpStepV(tc, ntc, gvs_b1.vpx[i], gvs_b2.vpx[i], gvcells.vpx[i]);
@@ -1764,7 +1771,7 @@ int GCHK::Clean_valid_bands3A() {
 	BF128 vect;
 	for (uint32_t i2 = 0; i2 < 27; i2++) {
 		if(SetUpStepV(tcluesxy,nclues,  gvs_b2.v21[i2], vect,gvcells.v21[i2]))
-			if(SetUpStepV(tcluesxy, nclues,  gvs_b2.v22[i2],vect, gvcells.v22[i2]))
+			//if(SetUpStepV(tcluesxy, nclues,  gvs_b2.v22[i2],vect, gvcells.v22[i2]))
 				continue; // if all uas are hit pattern b3 not forced true
 		register uint32_t	bit =1<<(i2/3);
 		smin.mini_bf3 |= smin.mini_bf2&bit;
@@ -1777,7 +1784,7 @@ int GCHK::Clean_valid_bands3A() {
 	for (uint32_t i3 = 0; i3 < 9; i3++) {
 
 		if(SetUpStepV(tcluesxy, nclues, gvs_b2.v31[i3], vect, gvcells.v31[i3]))
-			if (SetUpStepV(tcluesxy, nclues, gvs_b2.v32[i3], vect, gvcells.v32[i3]))
+			//if (SetUpStepV(tcluesxy, nclues, gvs_b2.v32[i3], vect, gvcells.v32[i3]))
 				continue; // if all uas are hit pattern b3 not forced true
 /*
 #ifdef DEBUGKNOWN
@@ -1880,8 +1887,9 @@ void GCHK::Clean_valid_bands3B() {
 	cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua<< endl;
 #endif
 #ifdef DEBUCLEANB
-	if (DEBUCLEANB == p_cpt2g[10]) {
-		cout << "debug clean p_cpt2g[10]"<< DEBUCLEANB << endl;
+	if ( p_cpt2g[10]==134 ||
+		p_cpt2g[10] == 174   ) {
+		cout << "debug clean p_cpt2g[10]"<< p_cpt2g[10] << endl;
 		cout << "nmiss=" << nmiss << endl;
 		cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua << endl;
 		cout << Char2Xout(wb12bf) << " valid bands 1+2" << endl;
@@ -2137,7 +2145,7 @@ void GCHK::ExpandB3() {
 	//for (uint32_t i = 0; i < nuasb3_1; i++)		cout << Char27out(uasb3_1[i])<<endl;
 #endif
 #ifdef DEBUCLEANB
-	if (DEBUCLEANB == p_cpt2g[10]) {
+	if (p_cpt2g[10] == 134 ||	p_cpt2g[10] == 174) {
 		cout << "debug clean p_cpt2g[10]" << DEBUCLEANB << endl;
 		cout << "entry expandb3 for nlues=" << nclues_b3 << endl;
 
@@ -2200,8 +2208,17 @@ next:
 #ifdef DEBUGKNOWN
 	//cout << Char27out(sn3->all_previous_cells) << "ua to check" << endl;
 #endif
+#ifdef DEBUCLEANB
+	if (p_cpt2g[10] == 134 ||
+		p_cpt2g[10] == 174) {
+		cout << "debug expznd B3 p_cpt2g[10]" << p_cpt2g[10] << endl;
+		cout << Char27out(sn3->all_previous_cells) << " bfb3" << endl;
+		}
+#endif
 	if (zhou[1].CallMultipleB3(zhou[0], sn3->all_previous_cells,0)) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
+		if (nuasb3_1 < 300)uasb3_1[nuasb3_1++] = ua;
+
 #ifdef DEBUGKNOWN
 		//cout << Char27out(ua) << "ua to add" << endl;
 #endif
@@ -2591,7 +2608,15 @@ void GCHK::FinalCheckB3(uint32_t bfb3) {
 	p_cpt2g[18]++;
 	register uint32_t ir = zhou[1].CallMultipleB3(zhou[0], bfb3, 0);
 	if (ir) {
-		//moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
+
+#ifdef DEBUCLEANB
+		if (p_cpt2g[10] == 134 ||
+			p_cpt2g[10] == 174 ) {
+			cout << "debug FinalCheckB3 p_cpt2g[10]" << p_cpt2g[10] << endl;
+			cout << Char27out(bfb3) << " bfb3" << endl;
+		}
+#endif
+		moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
 		NewUaB3();
 		return;
 	}
@@ -2619,26 +2644,31 @@ void GCHK::Out17(uint32_t bfb3) {
 		int cell = tcf[i];
 		ws[cell] = ze[cell] ;
 	}
-	cout << ws << " one sol in entry mode" << endl;
+	cout << ws << " one sol in entry mode p_cpt2g[10]=" << p_cpt2g[10] << endl;
+	cout << Char2Xout(wb12bf) << " b12  ip=" << start_perm << endl;
 	if(zp)strcpy(zp, ws);
 	a_18_seen = 1;
 	aigstop = 1; 
 
 }
 void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
-	if (1) return;
+
+	//if (1) return;
 	register uint32_t ua = zh_g2.cells_assigned.bf.u32[2],
 		cc = _popcnt32(ua),
 		cc0 = (uint32_t)_popcnt64(zh_g2.cells_assigned.bf.u64[0]);
 	register uint64_t ua12 = zh_g2.cells_assigned.bf.u64[0];
 
 	if (cc > 4) return; // see later if something of interest here
+	if(cc0>18)return;
+	if (cc0 > 16)return;
 	p_cpt2g[19]++;// 2;3 or 4 cells in band 3
 
 	//cout << Char27out(ua) << " ua band3 in newuab3" << endl;
 	//cout << Char2Xout(ua12) << " ua band12 in newuab3" << endl;
 
 	if (cc == 4) {// pattern  add ua to existing patterns or open a new one
+		if (1) return;
 		uint32_t ipat = npatx;
 		for (uint32_t ip = 0; ip < npatx; ip++)if (ua == tpatx[ip]) {
 			ipat = ip; break;
@@ -2646,6 +2676,7 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 		BF128 v0 = gvs_start.vpx[ipat], *vc = gvcells.vpx[ipat];
 		int lastind = v0.getLast128();
 		if (lastind >= 127)return;// limit is 127
+		if (lastind > 110 && cc0 > 14) return;
 		lastind++;
 		gvs_start.vpx[ipat].setBit(lastind);// active everywhere 
 		gvs_b1.vpx[ipat].setBit(lastind); 
@@ -2658,63 +2689,29 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 		uint32_t biti27 = (7 << (3 * imini)) ^ ua,
 			i27;// this is the index 0-26
 		bitscanforward(i27, biti27);
-		//if (p_cpt2g[40]++ < 100) {
-			//fout1 << Char27out(ua)<<" ";
-			//fout1 << Char2Xout(zh_g2.cells_assigned.bf.u64[0]) 
-			//	<< " "<< p_cpt2g[10]<<" "<< p_cpt2g[40] << endl;
-			//cout << "add imini=" << imini << " i27=" << i27 << endl;
-			//cout << Char27out(ua) << " ";
-			//cout << Char2Xout(zh_g2.cells_assigned.bf.u64[0])
-				//<< " " << p_cpt2g[10] << " " << p_cpt2g[40] << endl;
-			//cout << Char64out(gvs_start.v21[i27].bf.u64[0]) << " start 127" << endl;
-
-		//}
 		int lastind =gvs_start.v21[i27].getLast128();
-		if (lastind >= 127) {//already more than one 128 bits vector
-			int lastind2 = gvs_start.v22[i27].getLast128();
-			//if (p_cpt2g[40] < 100) cout << "lastind2" << lastind2 << endl;
-			if (lastind2 >= 127)return;// limit is 256 uas	
-			// add to the second vector
-			lastind2++;
-			gvs_start.v22[i27].Set(lastind2);// active everywhere 
-			gvs_b1.v22[i27].Set(lastind2);
-			gvs_b2.v22[i27].Set(lastind2);
-			AddUaToVector(ua12, gvcells.v22[i27], lastind2);// setup vector for the new ua 
-			return;
-		}
+		if (lastind >= 127)return;//already more than one 128 bits vector
+		if (lastind > 110 && cc0 > 14) return;
+		p_cpt2g[40]++;
+		//cout <<lastind<< "  i27=" << i27 << "\t";
+		//cout << Char2Xout(zh_g2.cells_assigned.bf.u64[0])
+		//		<< " " << p_cpt2g[10] << " " << p_cpt2g[40] <<" size" <<cc0<< endl;
+
 		// add to the first vector
 		lastind++;
 		gvs_start.v21[i27].Set(lastind);// active everywhere 
 		gvs_b1.v21[i27].Set(lastind);
 		gvs_b2.v21[i27].Set(lastind);
 		AddUaToVector(ua12,gvcells.v21[i27], lastind);// setup vector for the new ua 
-		//if (p_cpt2g[40] < 1000) {
-			//cout << "lastind=" << lastind << endl;
-			//cout << Char64out(gvs_start.v21[i27].bf.u64[0]) << " end 127" << endl;
-		//}
 		return;
 	}
 	if (cc == 3) {// one of the 3 GUA3s add to the table
-		p_cpt2g[41]++;
 		int lastind = gvs_start.v31[imini].getLast128();
-#ifdef DEBUGKNOWN
-		cout << "lastind=" << lastind << endl;
-		cout <<  Char27out(ua) << " ";
-		cout << Char2Xout(ua12)   << endl;
-#endif
-		if (lastind >= 127) {//already more than one 128 bits vector
-			int lastind2 = gvs_start.v32[imini].getLast128();
-			if (lastind2 >= 127)return;// limit is 256 uas	
-			// add to the second vector
-			lastind2++;
-			gvs_start.v32[imini].setBit(lastind2);// active everywhere 
-			gvs_b1.v32[imini].setBit(lastind2);
-			gvs_b2.v32[imini].setBit(lastind2);
-			AddUaToVector(ua12, gvcells.v32[imini], lastind2);// setup vector for the new ua 
-			return;
-		}
+		if (lastind >= 127)return;//already more than one 128 bits vector
+		if (lastind > 110 && cc0 > 14) return;
 		// add to the first vector
 		lastind++;
+		p_cpt2g[41]++;
 		gvs_start.v31[imini].setBit(lastind);// active everywhere 
 		gvs_b1.v31[imini].setBit(lastind);
 		gvs_b2.v31[imini].setBit(lastind);
