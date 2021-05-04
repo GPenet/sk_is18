@@ -2400,7 +2400,17 @@ uint32_t G17B3HANDLER::IsMultiple(int bf) {
 	rknown_b3 = bf;
 	GCHK & bab = gchk;
 	// check first if all tuab3 is hit
+	ua = gchk.moreuas_b3.Check(bf);
+	if(ua)	return ua;//  send back the ua
+
+
 	int ir = zhou[1].CallMultipleB3(zhou[0], bf, 0);
+	if (ir) {// setup the ua found 
+		ua = zh_g2.cells_assigned.bf.u32[2];
+		gchk.moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
+		gchk.NewUaB3();
+	}
+
 	return ua;
 }
 
