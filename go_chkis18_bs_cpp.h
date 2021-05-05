@@ -210,6 +210,7 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 	memset(&gvs_start, 0, sizeof gvs_start);
 	for (int i = 0; i < 27; i++) gvs_start.v21->bf.u64[0] = 1; //dummy ua always hit
 	for (int i = 0; i < 9; i++) gvs_start.v31->bf.u64[0] = 1; //dummy ua always hit
+	for (int i = 0; i < 256; i++) gvs_start.vpx->bf.u64[0] = 1; //dummy ua always hit
 	zh1b_g.modegua = 1;//must be to kill  filter in GUAs 6_7 more
 
 	// process dopied from 17 search
@@ -218,7 +219,7 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 	tuguan.ng2 = tuguan.nguan;
 	genb12.SecondSockets3Setup();// collect GUA3s 
 	for (uint32_t i = 0; i < tuguan.nguan; i++) {
-		BF128 * gvc1, *gvc2, *gvb1, *gvb2;
+		BF128 * gvc1,  *gvb1;
 		GUAN w = tuguan.tguan[i];
 		if (w.ncol == 2) {// this is a gua2 or gua4/6 in a mini row
 			uint32_t pat = myband3.guas.ua_pair[w.i81],
@@ -236,8 +237,8 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 				bitscanforward(c1, pat2);// now free cell in minirow
 				gvc1 = gvcells.v21[c1];
 				gvb1 = &gvs_start.v21[c1];
-				gvc2 = gvcells.v22[c1];
-				gvb2 = &gvs_start.v22[c1];
+				//gvc2 = gvcells.v22[c1];
+				//gvb2 = &gvs_start.v22[c1];
 				/*
 #ifdef DEBUGKNOWN
 				if (c1 == 3) {
@@ -263,8 +264,8 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 			c1 /= 3;// now index 0_8 of the mini row
 			gvc1 = gvcells.v31[c1];
 			gvb1 = &gvs_start.v31[c1];
-			gvc2 = gvcells.v32[c1];
-			gvb2 = &gvs_start.v32[c1];
+			//gvc2 = gvcells.v32[c1];
+			//gvb2 = &gvs_start.v32[c1];
 			//guapats3[c1] = pat;
 	/*
 #ifdef DEBUGKNOWN
@@ -2678,13 +2679,13 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 	//cout << Char2Xout(ua12) << " ua band12 in newuab3" << endl;
 
 	if (cc == 4) {// pattern  add ua to existing patterns or open a new one
-		if (1) return;
+		//if (1) return;
 		uint32_t ipat = npatx;
 		for (uint32_t ip = 0; ip < npatx; ip++)if (ua == tpatx[ip]) {
 			ipat = ip; break;
 		}
 		BF128 v0 = gvs_start.vpx[ipat], *vc = gvcells.vpx[ipat];
-		int lastind = v0.getLast128();
+		int lastind = v0.getLast128();// never empty
 		if (lastind >= 127)return;// limit is 127
 		if (lastind > 110 && cc0 > 14) return;
 		lastind++;
@@ -2699,7 +2700,7 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 		uint32_t biti27 = (7 << (3 * imini)) ^ ua,
 			i27;// this is the index 0-26
 		bitscanforward(i27, biti27);
-		int lastind =gvs_start.v21[i27].getLast128();
+		int lastind =gvs_start.v21[i27].getLast128();// never empty
 		if (lastind >= 127)return;//already more than one 128 bits vector
 		if (lastind > 110 && cc0 > 14) return;
 		p_cpt2g[40]++;
@@ -2716,7 +2717,7 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 		return;
 	}
 	if (cc == 3) {// one of the 3 GUA3s add to the table
-		int lastind = gvs_start.v31[imini].getLast128();
+		int lastind = gvs_start.v31[imini].getLast128();// never empty
 		if (lastind >= 127)return;//already more than one 128 bits vector
 		if (lastind > 110 && cc0 > 14) return;
 		// add to the first vector
