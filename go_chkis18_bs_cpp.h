@@ -229,6 +229,8 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 				gvc1 = gvcells.vpx[nguapats];
 				gvb1 = &gvs_start.vpx[nguapats];
 				guapats[nguapats++]=pat;
+#ifdef DEBUGPAT4
+#endif
 			}
 			else {// standard gua2 find the 27 index
 				uint32_t c1;
@@ -1084,6 +1086,7 @@ void GCHK::G3_SplitAll(int mode,  BINDEXN & binw, INDEX_XY & ixyw, VALIDB64 * pv
 
 
 void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
+	//if (p_cpt2g[1]) return;//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 	p_cpt2g[1]++;
 #ifdef DEBUGEXL
 	cout << "go3\t" << bin1.ntvb << "\t " << bin2.ntvb << endl;
@@ -1117,6 +1120,7 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 		}
 		else continue;
 #endif
+		//if (ib1) return;//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 		if (aigstop) return;
 		if(G3_SplitBi2(1, 0,bin1, ib1, index_xy_b1, vab64b1))
@@ -1152,7 +1156,10 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 					<< " this is the expected bi2 band 2" << endl;
 			}
 			else continue;
-#endif			
+#endif	
+			//if (ib2>6) return;//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 			if (aigstop) return;
 			p_cpt2g[3]++;			
 			if(G3_SplitBi2(2,no7_b2, bin2, ib2, index_xy_b2, vab64b2))
@@ -1888,8 +1895,7 @@ void GCHK::Clean_valid_bands3B() {
 	cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua<< endl;
 #endif
 #ifdef DEBUCLEANB
-	if ( p_cpt2g[10]==134 ||
-		p_cpt2g[10] == 174   ) {
+	if ( p_cpt2g[10]== DEBUCLEANB) {
 		cout << "debug clean p_cpt2g[10]"<< p_cpt2g[10] << endl;
 		cout << "nmiss=" << nmiss << endl;
 		cout << "nuasb3_1=" << nuasb3_1 << " npatx=" << npatx << " nua=" << myband3.nua << endl;
@@ -2146,10 +2152,10 @@ void GCHK::ExpandB3() {
 	//for (uint32_t i = 0; i < nuasb3_1; i++)		cout << Char27out(uasb3_1[i])<<endl;
 #endif
 #ifdef DEBUCLEANB
-	if (p_cpt2g[10] == 134 ||	p_cpt2g[10] == 174) {
-		cout << "debug clean p_cpt2g[10]" << DEBUCLEANB << endl;
-		cout << "entry expandb3 for nlues=" << nclues_b3 << endl;
-
+	if (p_cpt2g[10] == DEBUCLEANB) {
+		cout << "debug clean p_cpt2g[10]" << DEBUCLEANB 
+		 << " entry expandb3 for nlues=" << nclues_b3 << endl;
+		for (uint32_t i = 0; i < nuasb3_1; i++)		cout << Char27out(uasb3_1[i])<<endl;
 	}
 #endif
 
@@ -2408,7 +2414,10 @@ uint32_t G17B3HANDLER::IsMultiple(int bf) {
 	int ir = zhou[1].CallMultipleB3(zhou[0], bf, 0);
 	if (ir) {// setup the ua found 
 		ua = zh_g2.cells_assigned.bf.u32[2];
-		gchk.moreuas_b3.Add(zh_g2.cells_assigned.bf.u32[2]);
+		gchk.moreuas_b3.Add(ua);
+#ifdef DEBUGPAT4
+		cout << "call new from is multiple p_cpt2g[10]=" << p_cpt2g[10] << endl;
+#endif
 		gchk.NewUaB3();
 	}
 
@@ -2680,19 +2689,27 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 
 	if (cc == 4) {// pattern  add ua to existing patterns or open a new one
 		//if (1) return;
-		uint32_t ipat = npatx;
-		for (uint32_t ip = 0; ip < npatx; ip++)if (ua == tpatx[ip]) {
+		if (nguapats >= 128) return;
+		uint32_t ipat = nguapats;
+		for (uint32_t ip = 0; ip < nguapats; ip++)if (ua == guapats[ip]) {
 			ipat = ip; break;
 		}
+		if (ipat == nguapats)guapats[nguapats++] = ua;
 		BF128 v0 = gvs_start.vpx[ipat], *vc = gvcells.vpx[ipat];
 		int lastind = v0.getLast128();// never empty
 		if (lastind >= 127)return;// limit is 127
 		if (lastind > 110 && cc0 > 14) return;
 		lastind++;
+		p_cpt2g[42]++;
 		gvs_start.vpx[ipat].setBit(lastind);// active everywhere 
 		gvs_b1.vpx[ipat].setBit(lastind); 
 		gvs_b2.vpx[ipat].setBit(lastind);		
 		AddUaToVector(ua12, vc, lastind);// setup vector for the new ua 
+#ifdef DEBUGPAT4
+		cout << lastind << "  ipat=" << ipat << "\t" << Char27out(ua) << " ";
+		cout << Char2Xout(zh_g2.cells_assigned.bf.u64[0])
+			<< " " << p_cpt2g[10] << " " << p_cpt2g[40] << " size" << cc0 << endl;
+#endif
 		return;
 	}
 	uint32_t imini;	bitscanforward(imini, ua);	imini /= 3;
