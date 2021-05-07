@@ -1673,8 +1673,8 @@ int GCHK::Is_B12_Not_Unique() {
 void GCHK::CleanAll() {
 	if (!n_to_clean) return;
 	//if (p_cpt2g[6]) {	n_to_clean = 0; return;	}//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	cout << "entry to_clean n_to_clean=" << n_to_clean << " p_cpt2g[6]" << p_cpt2g[6]
-		<< " ntub2=" << ntusb2 << endl;
+	//cout << "entry to_clean n_to_clean=" << n_to_clean << " p_cpt2g[6]" << p_cpt2g[6]
+	//	<< " ntub2=" << ntusb2 << endl;
 
 	p_cpt2g[6] += n_to_clean;
 #ifdef DEBUGKNOWN
