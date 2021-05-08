@@ -213,6 +213,8 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 	nguapats = 0;// no pattern over  gua2s gua3s
 	memset(&gvcells, 255, sizeof gvcells); // all gua cells vectors to no hit
 	memset(&gvs_start, 0, sizeof gvs_start);
+	memset(&gvs_b1, 0, sizeof gvs_start);
+	memset(&gvs_b2, 0, sizeof gvs_start);
 	zh1b_g.modegua = 1;//must be to kill  filter in GUAs 6_7 more
 
 	// process dopied from 17 search
@@ -1653,6 +1655,9 @@ int GCHK::Is_B12_Not_Unique() {
 		}
 #endif
 		if (cc64 < 18) {
+#ifdef DEBUGPAT4
+			cout << Char2Xout(myua) << " debug clean addua if not unique p_cpt2g[50]="<< p_cpt2g[50] << endl;
+#endif
 			if(cc64 < 14)moreuas_12_13.Add(myua);
 			else if (cc64 == 14)moreuas_14.Add(myua);
 			else if (cc64 == 15)moreuas_15.Add(myua);
@@ -1788,6 +1793,11 @@ void GCHK::CleanAll() {
 				<< " nua=" << genuasb12.nua 
 				<<" npatx="<< nguapats << endl;
 		}
+		else if (p_cpt2g[50]> DEBUCLEANB) {
+			aigstop = 1;
+			return;
+		}
+
 #endif
 		//this one pass all uas filter, check band 3 limit
 		nclues_b3 = 18 - (uint32_t)_popcnt64(bf);
@@ -1872,7 +1882,11 @@ int GCHK::Clean_valid_bands3A() {
 		if (p_cpt2g[50] == DEBUCLEANB) {
 			cout << Char27out(guapats[i])<< " patx included i=" << i << endl;
 			cout << Char27out(gvs_b2.vpx[i].bf.u32[0]) << " deb vect b2" << endl;
+			if (i == 26) {
+				cout << Char27out(gvs_b1.vpx[i].bf.u32[0]) << " deb vect b1" << endl;
+				cout << Char27out(gvs_start.vpx[i].bf.u32[0]) << " deb vect start" << endl;
 
+			}
 		}
 #endif		
 		tpatx[npatx++] = guapats[i];
@@ -2762,7 +2776,7 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 #ifdef DEBUGPAT4
 		cout << lastind << "  ipat=" << ipat << "\t" << Char27out(ua) << " ";
 		cout << Char2Xout(zh_g2.cells_assigned.bf.u64[0])
-			<< " " << p_cpt2g[10] << " " << p_cpt2g[40] << " size" << cc0 << endl;
+			<< " " << p_cpt2g[50] << " " << p_cpt2g[40] << " size" << cc0 << endl;
 #endif
 		if (lastind > 128)return;// limit is 127
 		if (lastind > 110 && cc0 > 14) return;
