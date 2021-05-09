@@ -29,11 +29,18 @@
 #ifdef DEBUGL1L2
 #endif
 
-//#define DEBUGSTEP 0
+//#define DEBUGSTEP 154643
 #ifdef DEBUGSTEP
 #endif
-//#define DEBUCLEANB 736
+//#define DEBUCLEANB 7505
 #ifdef DEBUCLEANB
+#endif
+//#define DEBUGPAT4
+#ifdef DEBUGPAT4
+#endif
+
+//#define NEWPAT4
+#ifdef NEWPAT4
 #endif
 //#define GTEST17_ON 1
 /* control of the UAs generation

@@ -249,7 +249,7 @@ struct MORE32 {// FIFO table of more for band b
 
 	}
 
-	inline int Check(uint32_t v) {// check oldest first
+	uint32_t Check(uint32_t v) {// check oldest first
 		if (!nt) return 0;
 		register uint32_t V = v, *Rt = &t[curt], *Rtl;
 	loop1:// form curt to 0
@@ -258,7 +258,7 @@ struct MORE32 {// FIFO table of more for band b
 		if (nt < maxt) return 0;
 		Rtl = &t[curt];
 		Rt = &t[maxt];
-		while (--Rt > Rtl)if (!((*Rt) & V))return 1;
+		while (--Rt > Rtl)if (!((*Rt) & V))return (*Rt);
 		return 0;
 	}
 
@@ -304,18 +304,42 @@ struct MOREALL {// FIFO table of more for bands 1+2
 
 struct GVCELLS {// vectors cells for guas
 	BF128 v21[27][54]; // first 128 uas GUA2
-	BF128 v22[27][54]; // next 128 uas GUA2
 	BF128 v31[9][54]; // first 128 uas GUA3
-	BF128 v32[9][54]; // next 128 uas GUA3
-	BF128 vpx[256][54]; // room for 256 atterns 4/6 in band3
 }gvcells;
 struct GVSTEPS {// base vectors start,loopb1,loopb2
 	BF128 v21[27];
-	BF128 v22[27];
 	BF128 v31[9];
-	BF128 v32[9];
-	BF128 vpx[256];
 }gvs_start,gvs_b1,gvs_b2;
+
+struct G4TABLE {
+	BF128 tua4[3000];
+	uint32_t ntua4;
+	inline void Init() { ntua4 = 0; }
+	inline void Add(BF128 & a) {
+		if (ntua4 < 3000)tua4[ntua4++] = a;
+	}
+	void Shrink(G4TABLE & o,uint64_t bf) {
+		ntua4 = 0;
+		for (uint32_t i = 0; i < o.ntua4; i++)
+			if (!(bf & o.tua4[i].bf.u64[0]))
+				tua4[ntua4++] = o.tua4[i];
+	}
+	void Catch(uint64_t bf , uint32_t * td, uint32_t & ntd) {
+		for (uint32_t i = 0; i < ntua4; i++)
+			if (!(bf & tua4[i].bf.u64[0]))
+				td[ntd++] = tua4[i].bf.u32[2];
+	}
+	void Debug(int nodet=1) {
+		cout << "g4t_.. status ntua4=" << ntua4 << endl;
+		if (nodet)return;
+		for (uint32_t i = 0; i < ntua4; i++) {
+			cout << Char27out(tua4[i].bf.u32[2]) << "\t";
+			cout << Char2Xout(tua4[i].bf.u64[0]) << " ";
+				cout <<_popcnt64(tua4[i].bf.u64[0] )<< endl;
+		}
+	}
+
+}g4t_start,g4t_b1,g4t_b2;
 
 //================== UA collector 2 bands 
 
@@ -658,8 +682,9 @@ struct GCHK {
 	void ExtSplitX(BINDEXN & bin1no, BINDEXN & bin1yes,
 		uint32_t bf, uint32_t & activer);
 	//_______________  loops XY 
-	G17TMORE moreuas_12_13, moreuas_14, moreuas_15, moreuas_AB, moreuas_AB_small, moreuas_AB_big;
-	MOREALL mall9, mall10, mall11, mall12, mallxx;// uas seen in 18 check per size
+	G17TMORE moreuas_12_13, moreuas_14, moreuas_15, 
+		moreuas_AB, moreuas_AB_small, moreuas_AB_big;
+	//MOREALL mall9, mall10, mall11, mall12, mallxx;// uas seen in 18 check per size
 	uint64_t tusb1[2000], tusb2_12[1000], tusb2[1000]; 
 	uint32_t ntusb1, ntusb2, ntusb2_12; 
 	uint32_t ntvb1go;
