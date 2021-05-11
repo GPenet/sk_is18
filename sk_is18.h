@@ -312,11 +312,11 @@ struct GVSTEPS {// base vectors start,loopb1,loopb2
 }gvs_start,gvs_b1,gvs_b2;
 
 struct G4TABLE {
-	BF128 tua4[3000];
+	BF128 tua4[2000];
 	uint32_t ntua4;
 	inline void Init() { ntua4 = 0; }
 	inline void Add(BF128 & a) {
-		if (ntua4 < 3000)tua4[ntua4++] = a;
+		if (ntua4 < 2000)tua4[ntua4++] = a;
 	}
 	void Shrink(G4TABLE & o,uint64_t bf) {
 		ntua4 = 0;
@@ -328,6 +328,8 @@ struct G4TABLE {
 		for (uint32_t i = 0; i < ntua4; i++)
 			if (!(bf & tua4[i].bf.u64[0]))
 				td[ntd++] = tua4[i].bf.u32[2];
+		//if(ntd<256)td[ntd++] = tua4[i].bf.u32[2];
+		//		else return;
 	}
 	void Debug(int nodet=1) {
 		cout << "g4t_.. status ntua4=" << ntua4 << endl;
@@ -617,10 +619,9 @@ struct GCHK {
 
 	//_______________ GUAs 
 	MINCOUNT smin;
-	uint32_t guapats[256], nguapats,// active not gua2s gua3s
-		guapats2[27], guapats3[9],
+	uint32_t guapats2[27], guapats3[9],
 		nclues_b3,wactive0,
-		tpatx[128],npatx,
+		tpatx[2000],npatx,
 		andmiss1, noutmiss1;
 	void GuapatsInit() {
 		for (int i = 0,mask=7,ij=0; i < 9; i++,mask<<=3) 
@@ -685,7 +686,7 @@ struct GCHK {
 	G17TMORE moreuas_12_13, moreuas_14, moreuas_15, 
 		moreuas_AB, moreuas_AB_small, moreuas_AB_big;
 	//MOREALL mall9, mall10, mall11, mall12, mallxx;// uas seen in 18 check per size
-	uint64_t tusb1[2000], tusb2_12[1000], tusb2[1000]; 
+	uint64_t tusb1[3000],  tusb2[2000]; 
 	uint32_t ntusb1, ntusb2, ntusb2_12; 
 	uint32_t ntvb1go;
 	//uint32_t   ntua_128, ntua_256;
@@ -723,26 +724,12 @@ struct GCHK {
 
 
 	//________ clean and valid
-	uint32_t uasb3_1[2000], uasb3_2[2000], uas_in[2000],
-		nuasb3_1, nuasb3_2, nuas_in, b3_andout;
+	uint32_t uasb3_1[10000], uasb3_2[2000], 
+		nuasb3_1, nuasb3_2,  b3_andout;
 
 	int Clean_valid_bands3A();
 	void Clean_valid_bands3B();
 
-	
-	//======================= band b  index 3 reduction
-	//uint32_t  indf;
-	
-
-	//=============== band B when band A is locked 
-	//BF128  final81_2, final81_3;
-	//BANDB sbb;
-	//_____  initial infield outfield and more  
-	uint32_t btuaif[256], btuaof[3000], tuaif[3000],
-		nbif, nbof;
-	uint32_t more_of[128], nmoreof, more_if[128], nmoreif;
-	uint32_t  mode_ab, myuab, filt32, 
-		mincluesb,maxcluesb,	mincluesc, maxcluesc ;
 	MORE32 moreuas_b3;
 	//==================== current band 3 to process
 	uint32_t  ncluesb3;

@@ -210,7 +210,6 @@ void GCHK::Go1_Collect_Uas() {// catch uas and guas
 	if (genuasb12.Initgen()) return;
 	//if (start_perm) return;
 	// _____ GUAs 
-	nguapats = 0;// no pattern over  gua2s gua3s
 	memset(&gvcells, 255, sizeof gvcells); // all gua cells vectors to no hit
 	memset(&gvs_start, 0, sizeof gvs_start);
 	memset(&gvs_b1, 0, sizeof gvs_start);
@@ -807,7 +806,7 @@ INDEX_XY & ixyw,VALIDB64 * pvb ){// build tables per size
 	uint32_t buffer[100000],
 		nv[5] = { 0,0,0,0,0 }, // count per size
 		// see define ZSTx
-		stv[5] = { 0,200,1000,5000,10000 },// start in buffer per size
+		stv[5] = { 0,200,1500,7000,20000 },// start in buffer per size
 		*psv[5]; // pointers to starts
 	for (int i = 0; i < 5; i++) psv[i] = &buffer[stv[i]];
 	BI2 biw = binw.t2[ibi2];
@@ -1003,10 +1002,15 @@ void GCHK::Go3(BINDEXN & bin1, BINDEXN & bin2) {
 			Apply_Band2_Step_GUAs();
 
 #ifdef DEBUGL1L2
-			cout << Char2Xout(fb12) << "\t bf ib2=" << ib2<<" p_cpt2g[3]="<< p_cpt2g[3] << endl;;
-			//tuguan.Debug3();
-			//index_xy_b2.Debug();cout << endl;
-			//continue;
+			//if (p_cpt2g[3] > 95) continue;
+			cout << Char2Xout(fb12) << "\t bf ib2=" << ib2<<" p_cpt2g[3]="<< p_cpt2g[3]
+				<< " ngpats4=" << g4t_start.ntua4 << endl;;
+			if (p_cpt2g[3] == DEBUGL1L2) {
+				index_xy_b2.Debug();
+				cout  << endl;
+				//continue;
+			}
+			g4t_b2.Debug();
 #endif	
 
 			// and process the step depending on the uas size
@@ -1292,6 +1296,11 @@ void  GCHK::DoChunk64(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb) {
 #ifdef DEBUGKNOWN
 	cout << "chunk " << na << " x " << nb << " = " << na * nb << endl;
 #endif
+#ifdef DEBUGL1L2
+	//if (p_cpt2g[3] == DEBUGL1L2) 
+		//cout << "chunk " << na << " x " << nb << " = " << na * nb << endl;
+
+#endif
 	ZS64 * z1, *z2;
 	uint64_t n1, n2;
 	if (na < nb) { z1 = a; z2 = b; n1 = na; n2 = nb; }
@@ -1317,6 +1326,11 @@ void  GCHK::DoChunk64(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb) {
 	}
 }
 inline void GCHK::Do64uas_11(ZS64 * a, ZS64 * b, uint64_t na, uint64_t nb) {
+#ifdef DEBUGL1L2
+	//if (p_cpt2g[3] == DEBUGL1L2)
+		//cout << "chunk det " << na << " x " << nb << " n_to_clean " << n_to_clean << endl;
+
+#endif	
 	//check a matrix band 1 band2 for potential 2 bands valid 11 clues
 	register ZS64 * Ra = &a[na - 1];
 	register uint64_t * Rs = &to_clean[n_to_clean];
@@ -1403,6 +1417,11 @@ int GCHK::Is_B12_Not_Unique() {
 }
 
 void GCHK::CleanAll() {
+#ifdef DEBUGL1L2
+	if (p_cpt2g[3] == DEBUGL1L2)
+		cout << " entry clean " << n_to_clean << " p_cpt2g[50]="<< p_cpt2g[50] << endl;
+
+#endif	
 	if (!n_to_clean) return;
 	p_cpt2g[6] += n_to_clean;
 #ifdef DEBUGKNOWN
@@ -1443,6 +1462,11 @@ void GCHK::CleanAll() {
 #endif
 	for (uint64_t i = 0; i < nw; i++) {
 		p_cpt2g[50]++;
+#ifdef DEBUGL1L2
+		//if (p_cpt2g[3] == DEBUGL1L2)
+			//cout << " entry clean " << n_to_clean << " p_cpt2g[50]=" << p_cpt2g[50] << endl;
+		//if (p_cpt2g[50] > 160648901) cout << p_cpt2g[50] <<" ntusb1"<< ntusb1 << endl;
+#endif			
 		if (aigstop) return;
 		register uint64_t bf = to_clean[i];
 
@@ -1484,20 +1508,16 @@ void GCHK::CleanAll() {
 #ifdef DEFPHASE
 		if (DEFPHASE == -4) 			continue;
 #endif
+		//this one pass all uas filter, check band 3 limit
+		nclues_b3 = 18 - (uint32_t)_popcnt64(bf);
 #ifdef DEBUCLEANB
 		if (p_cpt2g[50] == DEBUCLEANB) {
 			cout << Char2Xout(wb12bf) << " valid bands 1+2 to clean p_cpt2g[50]="<< p_cpt2g[50]
 				<< " nua=" << genuasb12.nua 
-				<<" npatx="<< nguapats << endl;
-		}
-		else if (p_cpt2g[50]> DEBUCLEANB) {
-			aigstop = 1;
-			return;
+				<<" npats4="<< g4t_start.ntua4 << " nclues_b3 =" << nclues_b3 << endl;
 		}
 
 #endif
-		//this one pass all uas filter, check band 3 limit
-		nclues_b3 = 18 - (uint32_t)_popcnt64(bf);
 		if (Clean_valid_bands3A()) {
 #ifdef DEBUGKNOWN
 			cout << "myband3.nclues=" << nclues_b3<< " clues xy ";
@@ -1506,6 +1526,11 @@ void GCHK::CleanAll() {
 			smin.Status(" status after Clean_valid_bands3A ");
 #endif
 			p_cpt2g[8]++;
+#ifdef DEBUCLEANB
+			if (p_cpt2g[50] == DEBUCLEANB) {
+				cout << "debug clean call Is_B12_Not_Unique() " << endl;;
+			}
+#endif				
 			if (Is_B12_Not_Unique()) continue;
 			else 	zhou[0].PartialInitSearch17(tclues, nclues+ nclues_step);
 			p_cpt2g[10]++;
@@ -1555,7 +1580,11 @@ int GCHK::Clean_valid_bands3A() {
 	if (smin.mincount > nclues_b3)return 0;	
 
 	//_________________________ quick check of more 
-
+#ifdef DEBUCLEANB
+	if (p_cpt2g[50] == DEBUCLEANB) {
+		cout << "debug clean 3A catch   g4t_b2.ntua4= "<< g4t_b2.ntua4 << endl;;
+	}
+#endif	
 	g4t_b2.Catch(wb12bf, tpatx, npatx);// build tpatx table
 
 	register uint32_t  nout = 0, andout = BIT_SET_27;
@@ -1564,6 +1593,11 @@ int GCHK::Clean_valid_bands3A() {
 	if (smin.mincount > (nclues_b3 - 2)) {//  look for uas outfield
 		register int  Rfilt = smin.critbf;
 		if (smin.mincount == nclues_b3) {// first outfield is enough
+#ifdef DEBUCLEANB
+			if (p_cpt2g[50] == DEBUCLEANB) {
+				cout << "debug clean 3A check outfield miss 0  " << endl;;
+			}
+#endif			
 			for (uint32_t i2 = 0; i2 < npatx; i2++)
 				if (!(tpatx[i2] & Rfilt))	return 0; //not ok
 			for (uint32_t i = 0; i < myband3.nua; i++)
@@ -2418,12 +2452,16 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 	register uint64_t ua12 = zh_g2.cells_assigned.bf.u64[0];
 
 	if (cc > 4) return; // see later if something of interest here
-	if(cc0>18)return;
 	if (cc0 > 16)return;
 	p_cpt2g[19]++;// 2;3 or 4 cells in band 3
 
 	if (cc == 4) {// pattern  add ua to existing patterns or open a new one
-		// add ua everywhere 
+		//if (cc0 > 14)return;		// add ua everywhere 
+		//if (g4t_start.ntua4 > 500) {
+			//if (cc0 > 12)return;
+			//if (g4t_start.ntua4 >600)if (cc0 > 10)return;
+		//}
+
 		g4t_start.Add(zh_g2.cells_assigned);
 		g4t_b1.Add(zh_g2.cells_assigned);
 		g4t_b2.Add(zh_g2.cells_assigned);
