@@ -20,16 +20,14 @@ void GEN_BANDES_12::InitialSockets2Setup() {//load permanent data
 	}
 }
 void GEN_BANDES_12::SecondSockets2Setup() {
-	ntua2 = 0; nactive2 = 0;
 	Build_CheckUAs_Subsets_Table();
 	for (i81 = 0; i81 < 81; i81++) {// initial socket 2
 		SGUA2 & w = tsgua2[i81];
 		w.dig1 = gang27[w.id1];
 		w.dig2 = gang27[w.id2];
 		w.digs = (1 << w.dig1) | (1 << w.dig2);
-		//cout << "i81=" << i81 <<" digs 1_2"<< w.dig1<< w.dig2 << endl;
-		//if (1) continue;
-		if(!myband3.IsGua(i81))continue;
+		int iret81 = myband3.IsGua(i81);
+		if (iret81 < -1) continue;// not gua2 4 6
 		// build revised gangster
 		memcpy(w.gangcols, gangb12, sizeof gangb12);
 		w.gangcols[w.col1] ^= w.digs;
@@ -40,7 +38,7 @@ void GEN_BANDES_12::SecondSockets2Setup() {
 		zh2b5_g.modevalid = 0;
 		w.nua = 0;
 		//w.nua_start = ntua2;
-		w.tua= tuguan.pguabuf;
+		w.tua = guaw.tua;
 		ptua2 = w.tua;
 		nua2 = 0;
 		//================== GUA collector 2 bands 
@@ -59,13 +57,13 @@ void GEN_BANDES_12::SecondSockets2Setup() {
 		}
 		SecondSockets2MoreUAs();
 		if (nua2) {
-			//tactive2[nactive2++]=i81;
-			//if (nua2 > 20)nua2 = 20;
-			ntua2 += nua2;
-			w.nua = nua2;
-			w.iguan = tuguan.nguan;
-			tuguan.AddGuan(ptua2, nua2,
-				(1 << w.col1) | (1 << w.col2), w.digs, i81);
+			if (nua2 > 30)nua2 = 30;
+			guaw.Init(iret81, nua2);
+			if (iret81 >= 0) {// gua2 index 0_26
+				tguas.AddStart(guaw);
+			}
+			else // this is a gua46 i81 store uas in g4t_start
+				g4t_start.AddGua(guaw, myband3.guas.ua_pair[i81]);
 		}
 	}
 	//cout << "endSecondSockets2Setup ntua2=" << ntua2
@@ -371,13 +369,13 @@ void GEN_BANDES_12::InitialSockets3Setup() {//load permanent data
 	}
 }
 void GEN_BANDES_12::SecondSockets3Setup() {
-	ntua3 = 0; nactive3 = 0;
 	for (int i81 = 0; i81 < 81; i81++) {// initial socket 2
 		SGUA3 &w = tsgua3[i81];
 		w.dig1 = gang27[w.id1];
 		w.dig2 = gang27[w.id2];
 		w.dig3 = gang27[w.id3];
-		if(!myband3.IsGua3(i81))continue;
+		int iret81 = myband3.IsGua3(i81);
+		if(iret81<0)continue;
 		// Setup the perms for gangsters in minirow
 		int bita = 1 << w.dig1, bitb = 1 << w.dig2, bitc = 1 << w.dig3,
 			digs=bita|bitb|bitc;
@@ -389,10 +387,9 @@ void GEN_BANDES_12::SecondSockets3Setup() {
 		p = triplet_perms[1];// for per abc -> cab
 		p[0] = bita | bitc; p[1] = bitb | bita; p[2] = bitc | bitb;
 		w.nua = 0;
-		w.tua = tuguan.pguabuf;
+		w.tua = guaw.tua;
 		ptua2 = w.tua;
 		nua2 = 0;
-
 		int tp3f[2][3] = { {1,2,0},{2,0,1} };// perms no valid digit
 		for (int ip = 0; ip < 2; ip++) {
 			// build revised gangster
@@ -422,18 +419,11 @@ void GEN_BANDES_12::SecondSockets3Setup() {
 			}
 		}
 		if (nua2) {
-			//tactive3[nactive3++] = i81;
-			//if (nua2 > 20)nua2 = 20;
-			ntua3 += nua2;
-			w.nua = nua2;
-			w.iguan = tuguan.nguan;
-			int c = w.col1, mini = 7 << c;;
-			tuguan.AddGuan(ptua2, nua2, mini, digs, i81);
+			if (nua2 > 30)nua2 = 30;
+			guaw.Init(iret81+27,nua2);
+			tguas.AddStart(guaw);
 		}
 	}
-	//cout << "endSecondSockets3Setup ntua3=" << ntua3
-	//	<< " nactive i81=" << nactive3 << endl;
-
 
 }
 

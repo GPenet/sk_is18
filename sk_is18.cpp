@@ -7,7 +7,7 @@
 #define SEARCH17SOL
 
 
-//#define DEFPHASE -3
+//#define DEFPHASE -2
 #ifdef DEFPHASE
 #endif
 //#define DEBUGKNOWN
@@ -121,10 +121,10 @@ uint64_t  p_cpt2g[70];
 //   X is split in yes and others
 //   X yes is processed with Y
 //   then Y is reduced to yes
-BI2 bi2_b1w[250], bi2_b1yes[250];
-BI2 bi2_b2w[250], bi2_b2yes[250];
-BI2 bi2_b1w2[250], bi2_b1yes2[250];
-BI2 bi2_b2w2[250], bi2_b2yes2[250];
+BI2_32 bi2_b1w[250], bi2_b1yes[250];
+BI2_32 bi2_b2w[250], bi2_b2yes[250];
+BI2_32 bi2_b1w2[250], bi2_b1yes2[250];
+BI2_32 bi2_b2w2[250], bi2_b2yes2[250];
 #define MAXEXP7 1200000
 VALIDB vab1w[MAXEXP7], vab1yes[MAXEXP7]; 
 VALIDB vab2w[MAXEXP7], vab2yes[MAXEXP7]; 
@@ -133,9 +133,7 @@ VALIDB vab2w2[MAXEXP7], vab2yes2[MAXEXP7];
 
 VALIDB64 vab64b1[MAXEXP7], vab64b2[MAXEXP7];
 
-ZS64 zs64b1[MAXEXP7], zs64b2[MAXEXP7];
-ZS128 zs128b1[MAXEXP7], zs128b2[MAXEXP7];
-ZS256 zs256b1[MAXEXP7], zs256b2[MAXEXP7];
+ZS128 zs128b1[MAXEXP7], zs128b2[MAXEXP7];;
 
 uint64_t to_clean[2000000];
 

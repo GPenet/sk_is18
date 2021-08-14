@@ -170,20 +170,17 @@ int STD_B3::IsGua(int i81) {
 		else if (c2 == d2) {r2 = irow; cell2 = 9 * irow + w81.col2;	}
 		else r3 = irow;
 	}
-	//cout << "cells 1_2  " << cell1 << cell2 <<" r 1_2 "<<r1<<r2<< endl;
-	//if (1) return 0;;
 	ua = (1 << cell1) | (1 << cell2);
 	if (r1 == r2) {// gua2
 		guas.ua_pair[i81] = ua;
 		int i27 = 9 * r1 + w81.i9;// index 0-26 of the pair
+		ua27_bf[i27] = ua;
 		guas.isguasocket2.Set_c(i81);
 		int imini= 3 * r1 + w81.i9 / 3;
 		guas.ua2_imini[i81] = imini;
-		guas.ua2pair27[i81] = (7 << (3 * imini))^ua;
+		ua2pair27[i27] = (7 << (3 * imini))^ua;
 		guas.ua2bit[i81] = 1 << imini;
-		//cout << "set gua2 i81=" << i81 << " imini=" << 3 * r1 + w81.i9 / 3 
-		//	<<	" guas.ua2_i27="<< guas.ua2_i27[i81] << endl;;
-		return 1;
+		return i27;
 	}
 	// is it a gua4 gua6 catch data to use
 	int tc[2], ntc = 0,digs=w81.digs;//colums with the 2 digits
@@ -202,7 +199,7 @@ int STD_B3::IsGua(int i81) {
 		ua |= (1 << cella) | (1 << cellb) | (1 << cellc) | (1 << celld);
 		guas.ua_pair[i81] = ua;
 		guas.isguasocket2_46.Set_c(i81);
-		return 4;
+		return -1;
 	}
 	if (ntc) {
 		int c = band0[9 * r3 + tc[0]];
@@ -211,7 +208,7 @@ int STD_B3::IsGua(int i81) {
 			ua |= (1 << cella) | (1 << cellb);
 			guas.ua_pair[i81] = ua;
 			guas.isguasocket2_46.Set_c(i81);
-			return 2;
+			return -1;
 		}
 	}
 	// last  is gua6 with d1,r2 ; d2,r1
@@ -221,9 +218,9 @@ int STD_B3::IsGua(int i81) {
 		ua |= (1 << cella) | (1 << cellb) | (1 << cellc) | (1 << celld);
 		guas.ua_pair[i81] = ua;
 		guas.isguasocket2_46.Set_c(i81);
-		return 8;
+		return -1;
 	}
-	return 0;
+	return -2;
 }
 
 int STD_B3::Is2Rows(int i81_1, int i81_2) {// GUAS 2X2 
@@ -271,11 +268,12 @@ int STD_B3::IsGua3(int i81) {
 		guas.triplet_imini[i81] = imini;// valid triplet
 		guas.isguasocket3.Set_c(i81);
 		guas.ua_triplet[i81] = 7 << (3 * imini);
+		minirows_bf[imini] = 7 << (3 * imini);
 		guas.ua3_imini[i81] = imini;
 		guas.ua3bit[i81] =1<< imini;
-		return 1;
+		return imini;
 	}
-	return 0;
+	return -1;
 }
 
 //==================== sockets UA2s UA3s control

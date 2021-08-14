@@ -5,9 +5,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"1  entries go3 ext loop ",//1
 	"2  loop b1 ",//2
 	"3  loop b2",//3
-	"4  dead loop b2",
-	"5  steps",
-	"6  n_to_clean",
+	"4  active b2",
+	"5  steps ",
+	"6  entry n_to_clean",
 	"7  pass filters",
 	"8  call bf 12",
 	"9  addua",
@@ -37,8 +37,15 @@ const char * libs_c17_00_cpt2g[70] = {
 	"40 adduasb3 gua2",	
 	"41 adduasb3 gua3",	
 	"42 adduasb3 gua4", 
-	"43",	"44",	"45",	"46",	"47",	"48",	"49",
-	"50",	"51",	"52",	"53",	"54",	"55",	"56",	"57",	"58",	"59",
+	"43",	"44",	"45",	"46",	"47",	"48",	
+	"49",
+	"50 somme ntusb1",	
+	"51 somme ntusb2",	
+	"52 somme ntusb1 steps",	
+	"53 call 128 chunk",	
+	"54 count matrix",
+	"55 count entry clean",
+	"56 count clean1",	"57",	"58",	"59",
 	"60",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
 };
 
@@ -63,7 +70,7 @@ void STD_B416::InitBand2_3(int i16, char * ze, BANDMINLEX::PERM & p
 
 //29      9       567     7398    51516   237762  803574  =1100826
 #define MAXEXP7 1200000
-BI2 bi2x[3][250];
+BI2_32 bi2x[3][250];
 VALIDB vabx[3][MAXEXP7];
 //VALIDB1 vab1_1[MAXEXP7];
 void STD_B416::ExpandOneBand() {
@@ -153,17 +160,17 @@ next:
 		}
 		if (s->ispot == 1) {// open a new index2
 			if (notfirst) {// save previous if active
-				BI2 & pr = my_bi2[nbi2];
+				BI2_32 & pr = my_bi2[nbi2];
 				if (pr.istart != pr.iend) {
 					nbi2++;
-					BI2 & pn = my_bi2[nbi2];
+					BI2_32 & pn = my_bi2[nbi2];
 					pn.istart = pn.iend = pr.iend;
 				}
 			}
 			notfirst = 1;
-			BI2 & pn = my_bi2[nbi2];// init the ne status
+			BI2_32 & pn = my_bi2[nbi2];// init the ne status
 			pn.bf = sn->all_previous_cells;
-			pn.active = sn->active_cells;
+			//pn.active = sn->active_cells;
 			memcpy(pn.tval, tclues, sizeof pn.tval);
 		}
 		if (!sn->nua)goto no_more_uas;
@@ -175,7 +182,7 @@ next:
 	}
 no_more_uas: 	
 	{	
-		BI2 & pi = my_bi2[nbi2];
+		BI2_32 & pi = my_bi2[nbi2];
 		register uint32_t R0 = sn->all_previous_cells;// ^pi.bf;
 		my_validb[pi.iend++].Enter(R0, &tclues[2]);
 		if (s->ispot < 6) {//if below 7 loop  for redundant clues
@@ -249,7 +256,7 @@ no_more_uas:
 back:
 	if (--s >= spt)goto next;
 	// save the last index if
-	BI2 & pr = my_bi2[nbi2];
+	BI2_32 & pr = my_bi2[nbi2];
 	if (pr.istart != pr.iend) 	nbi2++;
 	nvalidb=pr.iend;
 }
