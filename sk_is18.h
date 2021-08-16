@@ -782,10 +782,11 @@ struct GCHK {
 	uint64_t tusb1[3000], tusb1_128[128], tusb2[2000], tusr[1000];
 	uint32_t ntusb1, ntusb1_128, ntusb2, ntusr;
 	uint32_t ntvb1go;
+	uint32_t miss2ok[30][3], nmiss2ok;
 	//uint32_t   ntua_128, ntua_256;
 	uint64_t fb1, acb1, fb2, fb12, fb12c, acb2, acb12, acb12c;
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
-	int nclues_step, nclues;
+	int nclues_step, nclues,nmiss;
 	uint64_t n_to_clean, n_to_clean2;
 	ZS128 * G3_Split(int mode, int kill7,	BINDEXN & binw, uint32_t ibi2,
 		INDEXB & indxb, ZS128 * pvb);
@@ -826,7 +827,7 @@ struct GCHK {
 	MORE32 moreuas_b3;
 	//==================== current band 3 to process
 	uint32_t  ncluesb3;
-	int   nmiss;
+	G17B3HANDLER hh0;
 
 	//____ start the process for a triplet banda band b bandc 
 	void Start(STD_B416 * bandx, int * tsort,int ip);
