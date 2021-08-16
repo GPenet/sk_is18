@@ -605,8 +605,6 @@ struct TGUAS {
 		for (uint32_t i = 0; i < 36; i++)
 			tgua_b1[i].Debug(nodet);
 	}
-	void ApplyG2();
-	int ApplyG3();
 
 }tguas;
 
@@ -880,6 +878,6 @@ struct GCHK {
 	void FinalCheckB3(uint32_t bfb3);
 	void Out17(uint32_t bfb3);
 	void NewUaB3();
-
+	void NewUaB12();
 };
 

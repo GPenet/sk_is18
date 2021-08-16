@@ -1372,7 +1372,7 @@ void TGUAS::ApplyLoopB2() {
 		for (uint32_t j = 0; j < n; j++) {
 			BF128 w = tw[j];
 			AddVG2(w.bf.u64[0], w.bf.u32[2]);
-			if (nvg2 >= 768) break;
+			if (nvg2 >= 128) break;
 		}
 		if (nvg2 >= 128) break;
 	}
@@ -1383,7 +1383,7 @@ void TGUAS::ApplyLoopB2() {
 		for (uint32_t j = 0; j < n; j++) {
 			BF128 w = tw[j];
 			AddVG3(w.bf.u64[0], w.bf.u32[2]);
-			if (nvg3 >= 512) break;
+			if (nvg3 >= 128) break;
 		}
 		if (nvg3 >= 128) break;
 	}
@@ -2653,54 +2653,62 @@ void GCHK::Out17(uint32_t bfb3) {
 	aigstop = 1; 
 
 }
+void GCHK::NewUaB12() {
+	uint64_t cc64 = _popcnt64(myua&BIT_SET_2X);
+	if (cc64 < 12) {// this should never be  => bug
+		aigstop = 1;
+		cerr << "ua < 12 to add clean" << endl;
+		cout << endl << endl << Char2Xout(myua) << " ua < 12 to add   clean" << endl;
+		return;
+	}
+	if (cc64 < 18) {
+		if (cc64 < 14)moreuas_12_13.Add(myua);
+		else if (cc64 == 14)moreuas_14.Add(myua);
+		else if (cc64 == 15)moreuas_15.Add(myua);
+		else moreuas_AB_small.Add(myua);
+		register uint64_t ua_add = myua | (cc64 << 59);
+		genuasb12.AddUACheck(ua_add);
+		tusb1[ntusb1++] = myua;
+		p_cpt2g[31]++;
+	}
+	else if (cc64 < 21)			moreuas_AB.Add(myua);
+	else moreuas_AB_big.Add(myua);
+}
+
+
 void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
-	register uint32_t ua = zh_g2.cells_assigned.bf.u32[2],
+	BF128 ua128 = zh_g2.cells_assigned;
+	register uint64_t ua12 = ua128.bf.u64[0];
+	register uint32_t ua = ua128.bf.u32[2],
 		cc = _popcnt32(ua),
-		cc0 = (uint32_t)_popcnt64(zh_g2.cells_assigned.bf.u64[0]);
-	register uint64_t ua12 = zh_g2.cells_assigned.bf.u64[0];
-
-	if (cc > 4) return; // see later if something of interest here
-	if (cc0 > 16)return;
-	p_cpt2g[19]++;// 2;3 or 4 cells in band 3
-
-	if (cc == 4) {// pattern  add ua to existing patterns or open a new one
-		//if (cc0 > 14)return;		// add ua everywhere 
-		//if (g4t_start.ntua4 > 500) {
-			//if (cc0 > 12)return;
-			//if (g4t_start.ntua4 >600)if (cc0 > 10)return;
-		//}
-
+		cc0 = (uint32_t)_popcnt64(ua12);
+	if (!cc) {// bands 1+2 not valid
+		myua = ua12;		NewUaB12();		aigstopxy = 1;
+		return;
+	}
+	if (cc > 4 || cc0 > 15) return;
+	if (cc == 4) {
 		g4t_start.Add(zh_g2.cells_assigned);
 		g4t_b1.Add(zh_g2.cells_assigned);
 		g4t_b2.Add(zh_g2.cells_assigned);
+		g4t_clean.Add(zh_g2.cells_assigned);
 		return;
 	}
+
+
 	uint32_t imini;	bitscanforward(imini, ua);	imini /= 3;
 	if (cc == 2) {// one of the 27 GUA2s add to the table
-		uint32_t biti27 = (7 << (3 * imini)) ^ ua,
-			i27;// this is the index 0-26
-		bitscanforward(i27, biti27);
-		int lastind =gvs_start.v21[i27].getLast128();// -1 if empty
-		lastind++;
-		if (lastind >= 127)return;//already more than one 128 bits vector
-		if (lastind > 110 && cc0 > 14) return;
-		p_cpt2g[40]++;
-		gvs_start.v21[i27].Set(lastind);// active everywhere 
-		gvs_b1.v21[i27].Set(lastind);
-		gvs_b2.v21[i27].Set(lastind);
-		AddUaToVector(ua12,gvcells.v21[i27], lastind);// setup vector for the new ua 
+		uint32_t i27 = myband3.GetI27(ua);
+		tguas.tgua_start[i27].Add(ua12);
+		tguas.tgua_b1[i27].Add(ua12);
+		if(tguas.nvg2<128)		tguas.AddVG2(ua12, i27);
 		return;
 	}
 	if (cc == 3) {// one of the 3 GUA3s add to the table
-		int lastind = gvs_start.v31[imini].getLast128();// -1 if empty
-		lastind++;
-		if (lastind >= 127)return;//already more than one 128 bits vector
-		if (lastind > 110 && cc0 > 14) return;
-		p_cpt2g[41]++;
-		gvs_start.v31[imini].setBit(lastind);// active everywhere 
-		gvs_b1.v31[imini].setBit(lastind);
-		gvs_b2.v31[imini].setBit(lastind);
-		AddUaToVector(ua12, gvcells.v31[imini], lastind);// setup vector for the new ua 
+		uint32_t i9 = myband3.GetI9(ua),i36=i9+27;
+		tguas.tgua_start[i36].Add(ua12);
+		tguas.tgua_b1[i36].Add(ua12);
+		if (tguas.nvg3 < 128)		tguas.AddVG3(ua12, i9);
 		return;
 	}
 
