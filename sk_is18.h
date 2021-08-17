@@ -570,7 +570,7 @@ struct TVG64 {// gua vector for 64 bits
 			v &= cells[tc[i]];
 	}
 
-} tvg64g2[2], tvg64g3[2];// designed for  128 guas
+} tvg64g2[4], tvg64g3[2];// designed for  256/128 guas
 struct TGUAS {
 	GUA tgua_start[36],//27 + 9 all there
 		tgua_b1[36];// after 2 common cells in b1

@@ -11,7 +11,7 @@ const char * libs_c17_00_cpt2g[70] = {
 	"7  pass filters",
 	"8  call bf 12",
 	"9  addua",
-	"10 call 3b",//10
+	"10 not critical 0",//10
 	"11 not critical 1",//11
 	"12 not critical 2",//12
 	"13 not critical >2",//13
@@ -45,7 +45,8 @@ const char * libs_c17_00_cpt2g[70] = {
 	"53 call 128 chunk",	
 	"54 count matrix",
 	"55 count entry clean",
-	"56 count clean1",	"57",	"58",	"59",
+	"56 count clean1",	
+	"57 count clean2 actif",	"58",	"59",
 	"60",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
 };
 
