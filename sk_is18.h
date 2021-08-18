@@ -570,14 +570,20 @@ struct TVG64 {// gua vector for 64 bits
 			v &= cells[tc[i]];
 	}
 
-} tvg64g2[4], tvg64g3[2];// designed for  256/128 guas
+} tvg64g2[8], tvg64g3[2];// designed for 512/128 guas
+
+
+
 struct TGUAS {
 	GUA tgua_start[36],//27 + 9 all there
 		tgua_b1[36];// after 2 common cells in b1
 	uint32_t nvg2, nvg3, nguasb2, nb64_1, nb64_2;
 	void InitStart() {
-		for (uint32_t i = 0; i < 36; i++)
+		for (uint32_t i = 0; i < 36; i++) {
 			tgua_start[i].Init1(i);
+			tgua_b1[i].Init1(i);
+
+		}
 	}
 	inline void AddStart(GUA & g) {
 		tgua_start[g.i36] = g;
@@ -587,9 +593,9 @@ struct TGUAS {
 		tvg64g2[ibloc].SetVect54(ua, ir, i27);
 		nvg2++;
 	}
-	inline void AddVG3(uint64_t ua, uint32_t i9) {
+	inline void AddVG3(uint64_t ua, uint32_t i36) {
 		uint32_t ibloc = nvg3 >> 6, ir = nvg3 - 64 * ibloc;
-		tvg64g3[ibloc].SetVect54(ua, ir, i9);
+		tvg64g3[ibloc].SetVect54(ua, ir, i36);
 		nvg3++;
 	}
 
@@ -710,8 +716,7 @@ struct GCHK {
 
 	//_______________ GUAs 
 	MINCOUNT smin,sminr;
-	uint32_t guapats2[27], guapats3[9],
-		nclues_b3,wactive0,
+	uint32_t guapats2[27], guapats3[9],	wactive0,
 		tpatx[2000],npatx,
 		andmiss1, noutmiss1;
 	void GuapatsInit() {

@@ -9,8 +9,8 @@ const char * libs_c17_00_cpt2g[70] = {
 	"5  steps ",
 	"6  entry n_to_clean",
 	"7  pass filters",
-	"8  call bf 12",
-	"9  addua",
+	"8  addua 4 b3",
+	"9  addua b12",
 	"10 not critical 0",//10
 	"11 not critical 1",//11
 	"12 not critical 2",//12
