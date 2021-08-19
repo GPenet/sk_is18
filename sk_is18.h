@@ -181,9 +181,10 @@ struct INDEXB{
 	}titem[5];
 	void Debug() {
 		cout << "\tnand=" << _popcnt64(and_g);
-		cout << "\tnor=" << _popcnt64(or_g);
+		cout << "\tnor=" << _popcnt64(or_g) << endl;;
 		for (int i = 0; i < 5; i++)
-			cout << "\t" << titem[i].ntvb << ";" << titem[i].sum_vb;
+			cout << i + 3 << "\t" << titem[i].ntvb << ";"
+			<< titem[i].sum_vb << endl;;
 	}
 
 }indb1,indb2 ;
