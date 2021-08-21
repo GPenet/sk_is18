@@ -423,6 +423,8 @@ void GEN_BANDES_12::SecondSockets3Setup() {
 			guaw.Init(iret81+27,nua2);
 			tguas.AddStart(guaw);
 		}
+		else tguas.tgua_start[29].nua = 0;
+
 	}
 
 }

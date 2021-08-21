@@ -375,47 +375,20 @@ int  Is18(char * ze, char * zp) {
 			}
 	}
 
-	// collect uas for the process 
-	//zh_g5.Init(ze);
-	//gchk.uacollector.Collect1();
-	//genb12.InitialSockets2Setup();
-	//genb12.InitialSockets3Setup();
 	{// now start all perms in bands a b c mode 
 		for (int ip = 0; ip < 3; ip++) {// 3 bands perms
 			gchk.Start(bax, tsort, ip);
 			//break;
 		}
 	}
-
+#ifdef TEST_ON
 	cout << "print final stats" << endl;
 	for (int i = 0; i < 70; i++) {
 		if (!p_cpt2g[i])continue;
 		cout << p_cpt2g[i] << "\t\t" << libs_c17_00_cpt2g[i] << endl;
 	}
+#endif
 	return gchk.a_18_seen;
 }
 
-//=== buffers to store valid bands and vectors
-// max found in test all bands 243 steps 17063 valid bands
 
-/* processing abc increasing order tperm6
-une fois
-666
-trois fois
-667 558/9 44A/B 33C/D 577 477 388
-6 fois 
-567/8 459/A 468/9 478 34B/C 35A/B 369/A 378/9
-*/
-
-
-/* UAs collector phase 1 tous en mode 3 
-36 x 2 digits
-84 x 3 digits
-126 x 4 digits  
-
-deux bandes vides, on les a tous
-une bande vide on peut utiliser zhb1b2 
-pas de bande vide ?? on peut démarrer sur ce mode
-
-une mini row on force inversé sur général 
-*/

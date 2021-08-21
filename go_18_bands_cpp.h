@@ -135,10 +135,10 @@ void STD_B3::EndInitBand3() {
 	memset(&guas, 0, sizeof guas);
 	// setup minirows bit fields
 	for (int i = 0; i < 9; i++) {
-		minirows_bf[i] = 0;
+		minirows_digs[i] = 0;
 		int * p = &band0[3 * i];
 		for (int j = 0; j < 3; j++)
-			minirows_bf[i] |= 1 << p[j];
+			minirows_digs[i] |= 1 << p[j];
 	}
 	//cout << band << " " << oct << minirows_bf[0]
 	//	<< " " << minirows_bf[1] << dec << endl;
@@ -261,14 +261,13 @@ int STD_B3::IsGua3(int i81) {
 	for (int irow = 0; irow < 3; irow++) {
 		int imini = stack + 3 * irow, 
 			*pmini = &band0[9 * irow + 3 * stack];
-		if (mrpat != minirows_bf[imini])continue;
+		if (mrpat != minirows_digs[imini])continue;
 		// possible triplet, must be right digit in right place
 		if (d1 != pmini[0] || d2 != pmini[1])continue;
 		guas.triplet[imini] = i81;// valid triplet
 		guas.triplet_imini[i81] = imini;// valid triplet
 		guas.isguasocket3.Set_c(i81);
 		guas.ua_triplet[i81] = 7 << (3 * imini);
-		minirows_bf[imini] = 7 << (3 * imini);
 		guas.ua3_imini[i81] = imini;
 		guas.ua3bit[i81] =1<< imini;
 		return imini;

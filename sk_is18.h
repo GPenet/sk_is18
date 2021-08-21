@@ -122,7 +122,7 @@ struct STD_B3 :STD_B416 {// data specific to bands 3
 			 ua2bit[81], ua3bit[81];
 	}guas;
 	BF128 isguasocketc246;//all linked to a socket 2
-	int ua27_bf[27], ua2pair27[27], minirows_bf[9];
+	int ua27_bf[27], ua2pair27[27], minirows_digs[9];
 	int triplet_perms[9][2][3];
 	//_______________________
 	void InitStack(int i16, int  * z0, BANDMINLEX::PERM & p, int iband);
@@ -144,11 +144,7 @@ struct STD_B3 :STD_B416 {// data specific to bands 3
 			if (ua27_bf[i] == bf) return i;
 		return 0;// should never be
 	}
-	int GetI9(int bf) {
-		for (int i = 0; i < 9; i++)
-			if (minirows_bf[i] == bf) return i;
-		return 0;// should never be
-	}
+
 }myband3;
 
 struct ZS128 {// main loop 128 bits 
@@ -607,6 +603,11 @@ struct TGUAS {
 		for (uint32_t i = 0; i < 36; i++)
 			tgua_start[i].Debug(nodet);
 	}
+	void DebugG3Start() {
+		cout << "gua3 tables " << endl;
+		for (uint32_t i = 27; i < 36; i++)
+			tgua_start[i].Debug(0);
+	}
 	void DebugB1(int nodet = 1) {
 		cout << "gua tables after b1" << endl;
 		for (uint32_t i = 0; i < 36; i++)
@@ -728,26 +729,12 @@ struct GCHK {
 			guapats2[i] = mask ^ bit;
 			
 		}
-		/*
-		for (int i = 0; i < 27; i++) {
-			cout << Char27out(guapats2[i]) << " ";
-			cout << Char27out(gua2bit[i]) << " i=" << endl;
-
-		}
-		for (int i = 0; i < 9; i++)
-			cout << Char27out(guapats3[i]) << endl;
-
-		*/
 	}
-
-
-	/*
-	//_____ sockets 2x2
-	BF128 socks2x2;// sockets 2x2  4 cells  2 digits in band3
-	int ts2x2[81], nts2x2; // storing active sockets 2x2
-	uint64_t tuas2x2[81]; // first ua (usually one) for an active socket 2x2
-	int ts2x2_clean[81], nts2x2_clean; // same status for a given XY
-	*/
+	int GetI9(int bf) {
+		for (int i = 0; i < 9; i++)
+			if (guapats3[i] == bf) return i;
+		return 0;// should never be
+	}
 	//___________________ external loop 
 	int loopb1;
 	uint32_t  b2count, breakcount;

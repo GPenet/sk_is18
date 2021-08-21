@@ -7,15 +7,16 @@
 #define SEARCH17SOL
 
 
+//#define TEST_ON 1
+#ifdef TEST_ON
+#endif
+
+
 //#define DEFPHASE -2
 #ifdef DEFPHASE
 #endif
-//#define DEBUGKNOWN
+#define DEBUGKNOWN 0
 #ifdef DEBUGKNOWN
-#endif
-
-//#define DEBUGONE
-#ifdef DEBUGONE
 #endif
 
 //#define DEBUGINIT
@@ -37,14 +38,7 @@
 //#define DEBUCLEANB 160656673
 #ifdef DEBUCLEANB
 #endif
-//#define DEBUGPAT4
-#ifdef DEBUGPAT4
-#endif
 
-//#define NEWPAT4
-#ifdef NEWPAT4
-#endif
-//#define GTEST17_ON 1
 /* control of the UAs generation
 	UALIMSIZE to test the range 18-20
 	TUASIZE table for all uas 
