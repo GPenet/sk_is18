@@ -7,15 +7,17 @@
 #define SEARCH17SOL
 
 
-//#define TEST_ON 1
+#define TEST_ON 1
 #ifdef TEST_ON
 #endif
+//#define TEST_ON_KNOWN
+#ifdef TEST_ON_KNOWN
+#endif
 
-
-//#define DEFPHASE -2
+//#define DEFPHASE -5
 #ifdef DEFPHASE
 #endif
-#define DEBUGKNOWN 0
+//#define DEBUGKNOWN 1
 #ifdef DEBUGKNOWN
 #endif
 

@@ -60,9 +60,9 @@ struct ZH_GLOBAL2 {
 	BF128 locked_nacked_brc_seen[3],// seen nacked in row; column; box (priority box)
 		locked_nacked_brc_done[3];// same cleaning done  nacked in row; column; box (priority box)
 	BF128 digits_cells_pair_bf[9];
-	BF128 triplets, quads;
-	PM3X pm, pmdiag, pmelims;
-	uint64_t cpt[10], cptg[10], npuz;
+	BF128 triplets, quads,fives;
+	BF128 tallsols[20];
+	uint64_t cpt[10], cptg[10], npuz,modeallsols;
 	GINT16 tgiven[81];
 	int ngiven, digitsbf;// digitsbf to check minimum 8 digits
 	int s17_b3_mini;// 17 search mode, 1 if minirows b3 not tested
@@ -91,13 +91,6 @@ struct ZH_GLOBAL2 {
 	int current_digit, active_floor;
 	BF128  or_floor[9], elim_floor[9];
 	// located in go_0xxcpp
-	void Pm_Status(ZHOU * z);
-	void Pm_Status_End();// box and cells
-	void AddSingle(int band, int vband);
-	void AddSingleDiag(int band, int vband);
-	void Build_digits_cells_pair_bf();
-	// located in solver step
-	void DebugNacked();
 
 	void Debug();
 
@@ -105,7 +98,7 @@ struct ZH_GLOBAL2 {
 };
 struct ZH_GLOBAL { // global variables for the core brute force
 
-	int nsol, lim, modevalid,
+	int nsol, nsol12, nsol3, lim, modevalid,
 		icount, ntsol, single_applied,// new_single_in_Update,
 		go_back,
 		rdigit, loop, diag, modeguess , maxindex;
@@ -119,8 +112,6 @@ struct ZH_GLOBAL { // global variables for the core brute force
 		modevalid = mvalid;
 	}
 	int Go_InitSudoku(char * ze);
-	int Go_InitSolve(char * ze);
-	int Go_InitSolve(GINT16 * td, int nc);
 	void ValidPuzzle(ZHOU * z);
 
 };
@@ -162,33 +153,23 @@ struct ZHOU{// size 32 bytes
 
 
 	// other calls and functions in Zh4_calls_variants
-	int GetSol(char *puzzle);
-	int CheckOneStep(char *puzzle, char * zs);
 	inline int StatusValid(GINT16 * t, int n){
 		InitSudoku(t, n); return Isvalid();
 	}
 
-	int StartOneStep(GINT * t, int n);
 
 	int PartialInitSudoku(GINT16 * t, int n);
 	int EndInitSudoku( GINT16 * t, int n);
 	//int EndInitNextUa(ZHOU & o, int bf);// 17 search check know small uas in bloc
 
 	int IsMinimale(GINT16 * t, int n);
-	int IsMinimale(char * ze);
 	//void PatFinal();
-	int GetFreeDigits_c(int cell){ return GetFreeDigits(C_To128[cell]); }
-	int GetFreeDigits(int xcell);
-	//int GetSolvedDigitForCell(int cell);
 
 	// inline small functions
 	inline int IsOffCandidate_c(int dig, int cell){return FD[dig][0].Off_c(cell); }
 	inline int IsOnCandidate_c(int dig, int cell){ return FD[dig][0].On_c(cell); }
 	inline void ClearCandidate_x(int dig, int xcell){ FD[dig][0].clearBit(xcell); }
 	inline void ClearCandidate_c(int dig, int cell){ FD[dig][0].clearBit(C_To128[cell]); }
-	int CleanCellForDigits(int cell, int digits);
-	int CleanCellsForDigits(BF128 &  cells, int digits);
-	int Clean(PM3X &elims);
 	int Isvalid();
 	inline int CountDigs(){
 		int n =0;
@@ -200,81 +181,18 @@ struct ZHOU{// size 32 bytes
 	// debugging code or print code
 	void Debug(int all = 0);
 	void DebugDigit(int digit);
-	void DebugActiveDigits();
 	int GetAllDigits(int cell);
 	void ImageCandidats();
 	void ImageCandidats_b3();
-	int FullUpdateAtStart();
-	int CheckStatus();// located in solver_step 
 
-	//==== special final check 7 search
+	//==== special final check 17 search
 	int CallMultipleB3(ZHOU & o, uint32_t bf, int diag = 0);// 17 search mode
 	int Apply17SingleOrEmptyCells();
 	int Full17Update();
 	void Guess17(int index,int diag);
 	void Compute17Next(int index, int diag) ;
-
-	// special one known solution
-	void GuessOneKnown(int index);
-	void ComputeNextOneKnown(int index);
+	int GetAllMultiple(ZHOU & o, uint32_t bf, int diag = 0);// 17 search mode
 
 
-//#ifdef ISSOLVERSTEP
-	// located in go_0xx.cpp
-	int Rate10_LastInUnit();
-	int Rate12_SingleBox();
-	int Rate15_SingleRow();
-	int Rate15_SingleColumn();
-	int RateSingle(GINT64 * t, int nt);
-	int RateSingleBox(GINT64 * t, int nt);
-	int RateSingleRow(GINT64 * t, int nt);
-	int RateSingleCol(GINT64 * t, int nt);
-	int RateSingleDiag(GINT64 * t, int nt);
-	int CollectHiddenPairsBox(GINT64* tp, int & np,int lim=4);
-	int CollectHiddenPairsRow(GINT64* tp, int & np, int lim = 4);
-	int CollectHiddenPairsCol(GINT64* tp, int & np, int lim = 4);
-	int Rate17_lockedBox_Assign();
-	void FindNakedPairsTriplets_NoSingle();
-	int Rate20_HiddenPair_Assign();
-	int Rate23_SingleInCell_Assign();
-	int CollectHiddenTripletsBox(GINT64* tp, int & np);
-	int CollectHiddenTripletsRow(GINT64* tp, int & np);
-	int CollectHiddenTripletsCol(GINT64* tp, int & np);
-	int Rate25_HiddenTriplet_Assign();
-	int Rate26_lockedBox();
-	int Rate28_lockedRowCol();
-	int CleanNake(int & naked, int unit, int iband,int modebr);
-	int CleanNakeColumn(int & naked, int unit, int iband);
-	int Rate30_NakedPair();
-	int Rate32_XWing();
-
-	int ApplyHidden(GINT64 * t, int nt,int mode);
-	int ApplyHiddenColumn(GINT64 * t, int nt);
-
-	int Rate34_HiddenPair();
-	int Rate36_FindClean_NakedTriplet(int unit_triplet_cells,int unit,int iband,int mode);
-	int Rate36_FindClean_NakedTripletCol(int unit_triplet_cells, int unit, int iband);
-	int Rate36_NakedTriplet();
-	int Rate38_SwordFish();
-	int Rate40_HiddenTriplet();
-	int Rate42_XYWing();
-	int Rate44_XYZWing();
-	int Rate50_NakedQuad();
-	int Rate52_JellyFish();
-	int Rate54_HiddenQuad();
-
-	void AssignSolver(int printrating);
-	void XW_template(int idig);
-	void Naked_Pairs_Seen();
-	void StartFloor(int digit);
-	void StartFloorOld(int digit);
-	//#endif
-
-	/*
-    inline void SetPat(char * pat, char * zsol, char * puzfinal){
-		zh_g.pat = pat; zh_g.zsol = zsol; zh_g.puzfinal = puzfinal;
-	};
-
-   */
  };
  

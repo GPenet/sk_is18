@@ -121,7 +121,7 @@ struct STD_B3 :STD_B416 {// data specific to bands 3
 		int ua2_imini[81], ua3_imini[81],
 			 ua2bit[81], ua3bit[81];
 	}guas;
-	BF128 isguasocketc246;//all linked to a socket 2
+	//BF128 isguasocketc246;//all linked to a socket 2
 	int ua27_bf[27], ua2pair27[27], minirows_digs[9];
 	int triplet_perms[9][2][3];
 	//_______________________
@@ -184,24 +184,6 @@ struct INDEXB{
 	}
 
 }indb1,indb2 ;
-
-struct INDEX_XY {
-	uint64_t bf,and_g,or_g;// 2 cells common to the lot
-	uint64_t ntotvb,ncluesmin;
-	struct ITEM {// one of the tables per lot 
-		VALIDB64 * tvb;
-		uint32_t ntvb,sum_vb;
-	}titem[5];
-	void Debug() {
-		cout << "\tnand=" << _popcnt64(and_g);
-		cout << "\tnor=" << _popcnt64(or_g);
-		for(int i=0;i<5;i++)
-			cout << "\t" << titem[i].ntvb <<";" << titem[i].sum_vb;
-	}
-
-}index_xy_b1,index_xy_b2;
-
-BF128 uas_buffer[20000],uasnn_buffer[30000];
 
 
 struct G17TMORE {// FIFO table of more for bands 1+2
@@ -567,7 +549,7 @@ struct TVG64 {// gua vector for 64 bits
 			v &= cells[tc[i]];
 	}
 
-} tvg64g2[8], tvg64g3[2];// designed for 512/128 guas
+} tvg64g2[8], tvg64g3[4];// designed for 512/256 guas
 
 
 
@@ -703,12 +685,12 @@ struct GCHK {
 	BF128 puzknown,puzknown_perm;
 	uint32_t kpfilt[4]; //initial statu 3 
 	int kn_ir1, kn_ir2;
-
-
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
 		a_18_seen;
 	uint32_t band_order[3];
 
+	uint32_t debugtest;
+	uint64_t debugvalbf;
 	//___________________ studied solution 
 	char * ze;// given solution grid
 	char * zp;// first 18 if any
@@ -768,7 +750,8 @@ struct GCHK {
 		uint32_t bf, uint32_t & activer);
 	//_______________  loops XY 
 	G17TMORE moreuas_12_13, moreuas_14, moreuas_15, 
-		moreuas_AB, moreuas_AB_small, moreuas_AB_big;
+		moreuas_AB, moreuas_AB_small, moreuas_AB_big,
+		moreuasy;
 	//MOREALL mall9, mall10, mall11, mall12, mallxx;// uas seen in 18 check per size
 	uint64_t tusb1[3000], tusb1_128[128], tusb2[2000], tusr[1000];
 	uint32_t ntusb1, ntusb1_128, ntusb2, ntusr;
@@ -811,9 +794,7 @@ struct GCHK {
 	//________ clean and valid
 	uint32_t uasb3_1[10000], uasb3_2[2000], 
 		nuasb3_1, nuasb3_2,  b3_andout;
-
-	int Clean_valid_bands3A();
-	void Clean_valid_bands3B();
+	uint32_t g2ok , g3ok , g2moreok ,nb64_1,nb64_2;
 
 	MORE32 moreuas_b3;
 	//==================== current band 3 to process
@@ -846,10 +827,6 @@ struct GCHK {
 	void Go3(BINDEXN & bin1, BINDEXN & bin2);
 	void Apply_B1_V();// shrink + vect
 	int Apply_B2_V();// shrink + vect
-	void Apply_Band1_Step();
-	void Apply_Band1_Step_GUAs();
-	int Apply_Band2_Step();
-	void Apply_Band2_Step_GUAs();
 	//___________ extract potential valid bands 1+2 (no more uas)
 	
 	void Do128uas();
@@ -863,7 +840,11 @@ struct GCHK {
 	int Clean_1_64(uint64_t bfc);
 	int Clean_1_128(uint64_t bfc, uint32_t nu);
 	int CleanAllFifo();
-	void Clean_2();
+	void Clean_2();// after clean FIFO
+	void Clean_3();// for a given band 1+2
+	void Clean_3G2(); 
+	void Clean_3G3();
+	void Clean_3BuildIfOf();
 
 
 	void ExpandB3();
@@ -872,5 +853,7 @@ struct GCHK {
 	void Out17(uint32_t bfb3);
 	void NewUaB3();
 	void NewUaB12();
+
+	void Debugifof();
 };
 

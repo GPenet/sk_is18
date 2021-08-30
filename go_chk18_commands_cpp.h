@@ -19,18 +19,20 @@ const char * libs_c17_00_cpt2g[70] = {
 	"15 fout1 expand",//15
 	"16 critical + sub critical",//16
 	"17 add 1 from active",//17
-	"18 final checkb3",
-	"19 ua to add upstream",
+	"18 final checkb3 ",
+	"19 final checkb3 expand",
 	"20 entry critical",
-	"21 chehk critical",
-	"22","23",
+	"21 check critical",
+	"22 addua 2 b3",
+	"23 addua 3 b3",
 	"24 bb crit ",//24
 	"25 bb miss12 ",//25
 	"26 bb miss more ",//26
 	"27 ",//27
 	"28 XY brute force",//28
 	"29 call multipleb3",//29
-	"30 ip0 count1 stats ",	"31 ip0 count2",	
+	"30  ",	
+	"31 add to uasb12",	
 	"32 ip1 count1",	"33 ip1 count2",	
 	"34 ip2 count1 stepb2",	"35 ip2 count2",	
 	"36 stepb2 ",	"37 stepb2 ngua",	"38",	"39",
@@ -46,8 +48,10 @@ const char * libs_c17_00_cpt2g[70] = {
 	"54 count matrix",
 	"55 count entry clean",
 	"56 count clean1",	
-	"57 count clean2 actif",	"58",	"59",
-	"60",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
+	"57 count clean2 actif",	
+	"58 clean2 > gua2",	
+	"59 clean2 > gua3",
+	"60 clean2 > get multiple",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
 };
 
 //=========================entry file of solution grids to search
@@ -267,6 +271,7 @@ int  Is18(char * ze, char * zp) {
 	gchk.ze = ze;
 	gchk.zp = zp;
 	gchk.GuapatsInit();
+	gchk.debugtest = 0;
 #ifdef DEBUGKNOWN
 	if (strlen(ze) < 163) return -1;// skip blank lines
 	char * w = &ze[82];
