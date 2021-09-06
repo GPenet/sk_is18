@@ -1620,7 +1620,6 @@ void GCHK::Clean_2() {
 		And &= bf; Or |= bf;
 	}
 	fb12c = And;	acb12c = Or;
-	clean_valid_done = 0;
 	tguas.ApplyLoopB2();// create vectors sockets 2 3
 	g4t_clean.Shrink(g4t_b2, fb12c);
 	{	//_________ setup the brute force start
@@ -1633,6 +1632,10 @@ void GCHK::Clean_2() {
 		}
 		tcluesxy = &tclues[nclues_step];
 	}
+
+	clean_valid_done = 0;
+
+
 
 #ifdef TEST_ON_KNOWN
 	if (debugtest == 4) {
@@ -1708,18 +1711,13 @@ void GCHK::Clean_3() {// clean 2 for a given band 1+2
 	p_cpt2g[59]++;
 	nmiss = ncluesb3 - smin.mincount; 
 
-
-
-	//myua = zh2b[0].ValidXY(tclues, nclues + nclues_step);
-	//if (myua) {
-	//	NewUaB12();		aigstopxy = 1; return;
-	//}
-
-//	if (p_cpt2g[59] < 100) {
-//		cout << "test new bf band 12)" << endl;
-//		cout << Char2Xout(myua) << " ua ret size "
-//			<< _popcnt64(myua) << " p_cpt2g[58] " << p_cpt2g[58] << endl;
-//	}
+	if (!clean_valid_done) {
+		clean_valid_done = 1;
+		myua = zh2b[0].ValidXY(tclues, nclues + nclues_step);
+		if (myua) {
+			NewUaB12();		aigstopxy = 1; return;
+		}
+	}
 
 	Clean_3BuildIfOf();					//_Build  in/out field 
 
@@ -2195,25 +2193,23 @@ next:
 			goto next;
 		}
 	}
-
 	// this is a possible nclues do final check
 
 	p_cpt2g[19]++;
+	/*
+	if (!clean_valid_done) {
+		clean_valid_done = 1;
+		myua = zh2b[0].ValidXY(tclues, nclues + nclues_step);
+		if (myua) {
+			NewUaB12();		aigstopxy = 1; return;
+		}
+	}
+	p_cpt2g[62]++;
+	*/
 	if (zhou[1].CallMultipleB3(zhou[0], sn3->all_previous_cells, 0)) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
-		if (ua) {
-			if (nuasb3_1 < 300)uasb3_1[nuasb3_1++] = ua;
-			if (_popcnt32(ua) < 5)NewUaB3();
-		}
-		else {// this is a ua bands 1+2  exit, no solution here
-#ifdef TEST_ON_KNOWN
-			//uint64_t ua12 = zh_g2.cells_assigned.bf.u64[0];
-			//cout << Char2Xout(ua12) << "new ua from expand" << " " << p_cpt2g[6] << " " << p_cpt2g[59] << endl;
-#endif
-			NewUaB3();
-			return;
-		}
-
+		if (nuasb3_1 < 300)uasb3_1[nuasb3_1++] = ua;
+		NewUaB3();
 		if (ispot < (ncluesb3 - 1)) {// new ua for next spot
 			sn3->possible_cells = ua;
 			s3 = sn3; 
@@ -2641,6 +2637,7 @@ void GCHK::FinalCheckB3(uint32_t bfb3) {
 	if (_popcnt32(bfb3) >ncluesb3) 		return;	
 	if (moreuas_b3.Check(bfb3))return;
 	p_cpt2g[18]++;
+	/*
 	if (!clean_valid_done) {
 		clean_valid_done = 1;
 		myua = zh2b[0].ValidXY(tclues, nclues + nclues_step);
@@ -2649,6 +2646,7 @@ void GCHK::FinalCheckB3(uint32_t bfb3) {
 		}
 	}
 	p_cpt2g[61]++;
+	*/
 	register uint32_t ir = zhou[1].CallMultipleB3(zhou[0], bfb3, 0);
 	if (ir) {
 		register uint32_t ua = zh_g2.cells_assigned.bf.u32[2];
@@ -2728,10 +2726,10 @@ void GCHK::NewUaB3() {// new ua from final check zh_g2.cells_assigned
 	register uint32_t ua = ua128.bf.u32[2],
 		cc = _popcnt32(ua),
 		cc0 = (uint32_t)_popcnt64(ua12);
-	if (!cc) {// bands 1+2 not valid
-		myua = ua12;		NewUaB12();		aigstopxy = 1;
-		return;
-	}
+	//if (!cc) {// bands 1+2 not valid
+		//myua = ua12;		NewUaB12();		aigstopxy = 1;
+		//return;
+	//}
 	moreuas_b3.Add(ua);
 	if (cc >3 ) {
 		if ((cc0+cc) <= 15 || (cc == 4 && cc0 < 16)) {
