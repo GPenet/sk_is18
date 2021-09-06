@@ -797,6 +797,7 @@ struct GCHK {
 	uint32_t g2ok , g3ok , g2moreok ,nb64_1,nb64_2;
 
 	MORE32 moreuas_b3;
+	uint32_t ua_out_seen,clean_valid_done;
 	//==================== current band 3 to process
 	uint32_t  ncluesb3;
 	G17B3HANDLER hh0;
@@ -853,6 +854,7 @@ struct GCHK {
 	void Out17(uint32_t bfb3);
 	void NewUaB3();
 	void NewUaB12();
+	void DebugOut(BF128 w);
 
 	void Debugifof();
 };

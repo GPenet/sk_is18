@@ -326,7 +326,6 @@ void ZH_GLOBAL::ValidPuzzle(ZHOU * z){
 		go_back = 1;
 		return;
 	}
-	if (nsol > lim)go_back = 1;
 }
 
 //============================= zhou code

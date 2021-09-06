@@ -60,9 +60,8 @@ struct ZH_GLOBAL2 {
 	BF128 locked_nacked_brc_seen[3],// seen nacked in row; column; box (priority box)
 		locked_nacked_brc_done[3];// same cleaning done  nacked in row; column; box (priority box)
 	BF128 digits_cells_pair_bf[9];
-	BF128 triplets, quads,fives;
-	BF128 tallsols[20];
-	uint64_t cpt[10], cptg[10], npuz,modeallsols;
+	BF128 triplets, quads,fives,cells_for_guess;
+	uint64_t cpt[10], cptg[10], npuz, isfalse_on;
 	GINT16 tgiven[81];
 	int ngiven, digitsbf;// digitsbf to check minimum 8 digits
 	int s17_b3_mini;// 17 search mode, 1 if minirows b3 not tested
@@ -98,7 +97,7 @@ struct ZH_GLOBAL2 {
 };
 struct ZH_GLOBAL { // global variables for the core brute force
 
-	int nsol, nsol12, nsol3, lim, modevalid,
+	int nsol,   modevalid,
 		icount, ntsol, single_applied,// new_single_in_Update,
 		go_back,
 		rdigit, loop, diag, modeguess , maxindex;
@@ -108,7 +107,6 @@ struct ZH_GLOBAL { // global variables for the core brute force
 	ZH_GLOBAL();
 	inline void Init(int maxsols,int mvalid=0){
 		nsol = go_back=0;
-		lim = maxsols;
 		modevalid = mvalid;
 	}
 	int Go_InitSudoku(char * ze);
@@ -127,7 +125,6 @@ struct ZHOU{// size 32 bytes
 //________________________________________
 	int CheckValidityQuick(char *puzzle);
 	int PartialInitSearch17(uint32_t * t, int n);// 17 search mode
-	void InitBand3PerDigit(int * grid0b3);
 	int FullUpdate();
 	int ApplySingleOrEmptyCells();
 	void Guess();
@@ -191,7 +188,6 @@ struct ZHOU{// size 32 bytes
 	int Full17Update();
 	void Guess17(int index,int diag);
 	void Compute17Next(int index, int diag) ;
-	int GetAllMultiple(ZHOU & o, uint32_t bf, int diag = 0);// 17 search mode
 
 
  };

@@ -59,7 +59,7 @@ struct ZH2B_GLOBAL { // global variables for the game table
 	// ==============bands sols handling
 	// sols collection ZH2B_1D
 	BF64 *tsolw, *tuaw; // belong to the caller 
-	BF64  pairs, mysol, mystart, andsol, myandsol;
+	BF64  cellshigh,mysol, mystart, andsol, myandsol;
 	BF64 sols_buffer[3000], ua_buffer[3000];
 
 	uint32_t nuaold, nua, ndigits;
@@ -114,16 +114,12 @@ struct ZH2B {// size 32 bytes
 
 	uint64_t ValidXY(uint32_t * tclues, int n);// , int diag = 0);
 	uint64_t Valid_XY(uint32_t * tclues, int n);// , int diag = 0);
-	void DebugValidXY(uint32_t * tclues, int n, int test = 0);
+	//void DebugValidXY(uint32_t * tclues, int n, int test = 0);
 	int Update();
 	int FullUpdate();
 	void ComputeNext();
-	void GuessInCell();
-	void GuessFirstCell();
-
-	int GuessHiddenBivalue();
 	void GuessValidB12();
-	void GuessGo(int dig, BF64 & wsol);
+	//void GuessGo(int dig, BF64 & wsol);
 
 	int ApplySingleOrEmptyCells();
 	char * SetKnown(char * zs);

@@ -51,7 +51,8 @@ const char * libs_c17_00_cpt2g[70] = {
 	"57 count clean2 actif",	
 	"58 clean2 > gua2",	
 	"59 clean2 > gua3",
-	"60 clean2 > get multiple",	"61",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
+	"60 clean2 > get multiple",	
+	"61 final check b3",	"62",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
 };
 
 //=========================entry file of solution grids to search

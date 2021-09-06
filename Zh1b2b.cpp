@@ -140,29 +140,40 @@ CompFD[I] = FD[I] = A
 #define ZH2BV2
 //================================ZH2B code
 
-#ifdef ZH2BV2
 int ZH2B::ApplySingleOrEmptyCells() {
 	zh2b_g.single_applied = 0;
 	uint64_t * map = &FD[0].bf.u64;
 	uint64_t unsolved = cells_unsolved.bf.u64;
 	register uint64_t R2 = map[0] & map[1],
 		R1 = (map[0] | map[1]), Map = map[2],
-		R3= R2 & Map;// digits 12
+		R3= R2 & Map,R4;// digits 12
 	R2 |= R1 & Map; R1 |= Map;
-	Map = map[3]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
-	Map = map[4]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
-	Map = map[5]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
-	Map = map[6]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
-	Map = map[7]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
-	Map = map[8]; R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+
+	Map = map[3]; R4 = R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+
+	Map = map[4]; uint64_t R5 = R4 & Map; R4 |= R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+
+	Map = map[5]; uint64_t R6 = R5 & Map; R5 |= R4 & Map; R4 |= R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+	Map = map[6]; R6 |= R5 & Map; R5 |= R4 & Map; R4 |= R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+	Map = map[7];  R6 |= R5 & Map; R5 |= R4 & Map; R4 |= R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
+	Map = map[8];  R6 |= R5 & Map; R5 |= R4 & Map; R4 |= R3 & Map;
+	R3 |= R2 & Map; R2 |= R1 & Map; R1 |= Map;
 
 	if (unsolved & (~R1)) return 1; // locked
 	R1 &= ~R2;
-	R2 &= ~R3;
-	R1 &= unsolved; // these are new singles
-	if (R1) zh2b_g.single_applied = 1;	
-	else {
-		zh2b_g.pairs = R2;
+	R1 &= unsolved; // these are new singles	
+	if (R1) zh2b_g.single_applied = 1;
+	else {		
+		if(R6)zh2b_g.cellshigh=  R6;
+		else if(R5)zh2b_g.cellshigh = R5;
+		else if (R4)zh2b_g.cellshigh = R4;
+		else if (R3)zh2b_g.cellshigh = R3;
+		else zh2b_g.cellshigh = R2;
 		return 0;
 	}
 	while (R1) {// usually a very small number of cells to assign
@@ -186,46 +197,6 @@ int ZH2B::ApplySingleOrEmptyCells() {
 	zh_g.single_applied = 1;
 	return 0;
 }
-#else
-int ZH2B::ApplySingleOrEmptyCells() {// only singles
-	zh2b_g.single_applied = 0;
-	uint64_t * map = &FD[0].bf.u64;
-	uint64_t unsolved = cells_unsolved.bf.u64;
-	register uint64_t R2 = map[0] & map[1],
-		R1 = (map[0] | map[1]), Map;// digits 12
-	Map = map[2]; R2 |= R1 & Map; R1 |= Map;
-	Map = map[3];  R2 |= R1 & Map; R1 |= Map;
-	Map = map[4];  R2 |= R1 & Map; R1 |= Map;
-	Map = map[5];  R2 |= R1 & Map; R1 |= Map;
-	Map = map[6];  R2 |= R1 & Map; R1 |= Map;
-	Map = map[7];  R2 |= R1 & Map; R1 |= Map;
-	Map = map[8];  R2 |= R1 & Map; R1 |= Map;
-	if (unsolved & (~R1)) return 1; // locked
-	R1 &= ~R2;
-	R1 &= unsolved; // forget solved seen as singles
-	if (R1) zh2b_g.single_applied = 1;
-	else return 0;
-	while (R1) {// usually a very small number of cells to assign
-		uint32_t res;
-		if (!bitscanforward64(res, R1)) break;
-		uint64_t bit = (uint64_t)1 << res; // switch to the bit value
-		R1 &= ~bit;  // clear the bit
-		// call Seta(int digit, int xcell) so find digit
-		for (int idig = 0; idig < 9; idig++) {
-			if (map[idig] & bit) {// this is the digit
-				//				if (FD[idig].Off(res))  return 1; // invalid, gane locked
-				//				Seta(idig, res);
-				int cell = From_128_To_81[res];
-				Assign(idig, cell, res);
-				goto nextr1;// finished for that cell
-			}
-		}
-		return 1; //conflict with a previous cell assugn
-	nextr1: {}
-	}
-	return 0;// not locked
-}
-#endif
 
 inline int ZH2B::Seta(int digit, int xcell) { // single in cell
 	int cell = From_128_To_81[xcell],
@@ -487,58 +458,19 @@ uint64_t ZH2B::ValidXY(uint32_t * tclues, int n){//,int diag) {
 	zh2b_g.ua_ret = 0;
 	Init_std_bands();
 	InitTclues(tclues, n);
-	//if (diag) ImageCandidats();
+	//ImageCandidats();
+	zh2b_g.ua_ret=0;	
 	if (FullUpdate()) {
-		//if (diag) ImageCandidats();
+		//ImageCandidats();
 		if (rows_unsolved.isEmpty()) return 0;// solved 
-		if(n>15){ //try to find a UA minirow in band b
-			register uint32_t b2 = rows_unsolved.bf.u32[1];
-			if (!b2)return 0; // if b2 solved, all is solved
-			for (uint32_t i = 0, mask = 7; i < 9; i++, mask <<= 3) {
-				uint32_t mini = b2 & mask;
-				if (_popcnt32(mini) < 2) continue;
-				ZH2B * mynext = (this + 1);
-				*mynext = *this;
-				for (uint32_t j = 0, bit = 1; j < 27; j++, bit <<= 1) {
-					if (bit&mini)continue;
-					if (b2&bit) {
-						int cell = j + 27, digit = zh2b_g.puz0[cell];
-						mynext->SetaC(digit, cell);
-					}
-				}
-				mynext->ComputeNext();
-				if (zh2b_g.ua_ret) 
-					return zh2b_g.ua_ret;// return if  ua found				
-			}
-		}
 		GuessValidB12();//std solve
 	}
-//	if (diag)	cout <<Char2Xout(zh2b_g.ua_ret)<< " end check valid XY " << endl;
 	return zh2b_g.ua_ret;
 }
-void ZH2B::DebugValidXY(uint32_t * tclues, int n, int test) {
-	if (test)cout << "entry validxy" << endl;
-	zh2b_g.ua_ret = 0;
-	Init_std_bands();
-	InitTclues(tclues, n);
-	ImageCandidats();
-	FullUpdate();
-	ImageCandidats();
-	for (int i = 0; i < 9; i++) 		FD[i] = zh2b_g.fd_sols[0][i];
-	cout << "registered solution" << endl;
-	ImageCandidats();
-}
-void ZH2B::GuessGo(int dig, BF64 & wsol) {// done in a new ocurrence
-	*this = *(this - 1);	// apply wsol and make next step
-	FD[dig] = wsol;// update will do the job
-	ComputeNext();
-}
+
 inline void ZH2B::ComputeNext() {
 	int ir = FullUpdate();
-	//if (p_cpt2g[7] > 7944) {
-		//cout << "ir=" << ir << endl;
-		//ImageCandidats();
-	//}
+	//ImageCandidats();
 	if (ir == 1)GuessValidB12();
 	else if (ir == 2) {// solved 
 		zh2b_g.ua_ret = 0;
@@ -549,186 +481,39 @@ inline void ZH2B::ComputeNext() {
 	}
 }
 
-#ifdef ZH2BV2
-void ZH2B::GuessValidB12() {// digit with lowest count of unsolved
+void ZH2B::GuessValidB12() {// 
 	if (zh2b_g.ua_ret) return;// return if  ua found
-	//ImageCandidats();
-	//if (p_cpt2g[7] > 7944)
-	  //cout << Char2Xout(zh2b_g.pairs.bf.u64) << "pairs" << endl;
-	if (zh2b_g.pairs.bf.u64) { GuessInCell();	return; }
-	if (GuessHiddenBivalue()) return;
-	GuessFirstCell();	
-}
-
-#else
-void ZH2B::GuessValidB12() {// digit with lowest count of unsolved
-	int mincount = 100, digmin = 10;
-	for (uint32_t idig = 0; idig < 9; idig++) {
-		int cc = FD[idig].Count();
-		if (cc < 7) continue;// digit solved
-		if (cc < mincount) { mincount = cc;	digmin = idig; }
-	}
-	if (digmin > 8) return;// should never be unsolved status
-	BF64 mysol = zh2b_g.fd_sols[0][digmin];
-	if ((FD[digmin] & mysol) == mysol) { // if all true possible try it
-		(this + 1)->GuessGo(digmin, mysol);
-		if (zh2b_g.ua_ret) return;// return if  ua found
-	}
-	// try false 
-	int r_unsolved = (rows_unsolved.bf.u64 >> zh2b_t_runsolvedshift[digmin]) & 077;
-	BF64 tuaw[500], tsolw[500];
-	int nuaw = zh2b1d_g.Go(mysol, FD[digmin], tsolw, tuaw, r_unsolved);
-	//cout  << " nfalse perms=" << nuaw << endl;
-	for (int i = 0; i < nuaw; i++) {
-		(this + 1)->GuessGo(digmin, tsolw[i]);
-		if (zh2b_g.ua_ret) return;// return if  ua found
-	}
-}
-#endif
-
-
-
-void ZH2B::GuessInCell() {
-	//if (p_cpt2g[7] > 7944)cout << "entry guess in cell" << endl;
-	// select band with more unsolved cells
-	uint32_t nc = (uint32_t)_popcnt64(zh2b_g.pairs.bf.u64),
-		nc1 = _popcnt32(zh2b_g.pairs.bf.u32[0]);
-	if (nc1 < (nc >> 1))zh2b_g.pairs.bf.u32[0] = 0;// forcing band 2
-	//if (p_cpt2g[7] > 7944)cout << Char2Xout(zh2b_g.pairs.bf.u64) << "pairs to process" << endl;
-	uint32_t xcell;
-	bitscanforward64(xcell, zh2b_g.pairs.bf.u64);
-	//if (p_cpt2g[7] > 7944)cout <<"xcell=" << xcell<<endl;
-	uint32_t cell = From_128_To_81[xcell], tdig[2], ndig = 0;
+	uint32_t xcell, cell, digit;
+	uint64_t w12 = zh2b_g.cellshigh.bf.u64;
+	bitscanforward64(xcell, w12);
+	cell = From_128_To_81[xcell];
+	digit = zh2b_g.puz0[cell];
 	uint64_t bit = (uint64_t)1 << xcell;
-	for (int idig = 0; idig < 9; idig++)
-		if (FD[idig].bf.u64 & bit)tdig[ndig++] = idig;
-	//if (p_cpt2g[7] > 7944)cout << "ndig=" << ndig  << endl;
-
-
-	// use first if possible the valid digit
-	if (tdig[1] == zh2b_g.puzc[cell] - '1') {
-		uint32_t temp = tdig[0]; 
-		tdig[0] = tdig[1];
-		tdig[1]= temp;
-	}
-	ZH2B * mynext = this + 1; // start next guess
-	*mynext = *this;
-	mynext->Seta(tdig[0],  xcell);
-	mynext->ComputeNext();
-	if (zh2b_g.ua_ret) return;
-	//if (p_cpt2g[7] > 7944)cout << "try false " << tdig[1]+1<<cellsFixedData[cell].pt << endl;
-	Seta(tdig[1],  xcell);
-	ComputeNext();
-}
-
-int ZH2B::GuessHiddenBivalue() {// look a hidden pair in row or box
-	//if (p_cpt2g[7] > 7944)cout << "entry guess bi value" << endl;
-	uint32_t hidden;
-	int idig;
-	int dcell, dxcell;
-	for (idig = 0; idig < 9; idig++) {
-		BF64 & fd = FD[idig];
-		register uint32_t Rows ;
-		if(idig<5) Rows=(rows_unsolved.bf.u32[0]>>(6*idig)) & 077;
-		else Rows=(rows_unsolved.bf.u32[1]>>(6*(idig-5))) & 077;
-		if (!Rows ) continue;
-		if (Rows & 7) {//try row band1
-			dcell = dxcell = 0;
-			register int  band = fd.bf.u32[0];
-			hidden = band & 0777;			if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0777000;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0777000000;		if (_popcnt32(hidden) == 2)goto exitok;
-		}
-		if (Rows & 070) {// try row band2
-			dcell = 27; dxcell = 32;
-			register int  band = fd.bf.u32[1];
-			hidden = band & 0777;			if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0777000;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0777000000;		if (_popcnt32(hidden) == 2)goto exitok;
-		}
-	}
-	// no bi value row, try bi value box
-	for (idig = 0; idig < 9; idig++) {// priority to high digits last done
-		BF64 & fd = FD[idig];
-		register uint32_t Rows;
-		if (idig < 5) Rows = (rows_unsolved.bf.u32[0] >> (6 * idig)) & 077;
-		else Rows = (rows_unsolved.bf.u32[1] >> (6 * (idig - 5))) & 077;
-		if (Rows) continue;
-		if (Rows & 7) {//try bow band1
-			dcell = dxcell = 0;
-			register int  band = fd.bf.u32[0];
-			hidden = band & 07007007;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 070070070;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0700700700;		if (_popcnt32(hidden) == 2)goto exitok;
-		}
-		if (Rows & 070) {// try box band2
-			dcell = 27; dxcell = 32;
-			register int  band = fd.bf.u32[1];
-			hidden = band & 07007007;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 070070070;		if (_popcnt32(hidden) == 2)goto exitok;
-			hidden = band & 0700700700;		if (_popcnt32(hidden) == 2)goto exitok;
-		}
-	}
-	return 0;
-exitok: // use first the valid if possible 
-	uint32_t res,res2;
-	bitscanforward(res, hidden);
-	bitscanreverse(res2, hidden);
-	uint32_t sdig = zh2b_g.puzc[res2 + dcell] - '1';
-	if (sdig == idig) {
-		uint32_t temp = res;
-		res = res2;
-		res2 = temp;
-	}
-	//if (p_cpt2g[7] > 7944)
-	//cout << "digit " << idig + 1 << " " << res + dcell << " " << res2 + dcell 
-	//	<< " " << res + dxcell << endl;
-	ZH2B * mynext = this + 1; // start next guess
-	*mynext=*this;
-	mynext->Seta(idig,  res + dxcell);
-	//if (p_cpt2g[7] > 7944) mynext->ImageCandidats();
-	mynext->ComputeNext();
-	if (zh_g.go_back) return 1;
-	//if (p_cpt2g[7] > 7944)
-	 // cout << "back digit " << idig + 1  << " " << res2 + dcell << endl;
-
-	Seta(idig, res2 + dxcell);
-	ComputeNext();
-	return 1;
-}
-
-void ZH2B::GuessFirstCell() {// escape lane, no bi value
-	// select band with more unsolved cells
-	uint32_t xcell;
-	bitscanforward64(xcell, cells_unsolved.bf.u64);
-	uint32_t cell = From_128_To_81[xcell], tdig[6], ndig = 0,
-		sdig= zh2b_g.puzc[cell] - '1';
-	uint64_t bit = (uint64_t)1 << xcell;
-	//if (p_cpt2g[7] > 7944)cout << "entry guess first cell "<<cell << endl;
-	for (int idig = 0; idig < 9; idig++)
-		if (FD[idig].bf.u64 & bit)tdig[ndig++] = idig;
-	// use first if possible the valid digit
-	for (uint32_t i = 1; i < ndig; i++) {
-		if (sdig == tdig[i]) {
-			//cout << "use valid first" << endl;
-			uint32_t temp = tdig[0];
-			tdig[0] = tdig[i];
-			tdig[i] = temp;
-			break;
-		}
-	}
-	for (uint32_t i = 0; i < ndig-1; i++) {
+	// true first if possible
+	if (FD[digit].bf.u64 & bit) {
+		//cout << digit+1 << cellsFixedData[cell].pt << " try true" << endl;
 		ZH2B * mynext = this + 1; // start next guess
 		*mynext = *this;
-		//if (p_cpt2g[7] > 7944)cout << "cell " << cell << " dig " << tdig[i] +1<< endl;
-		mynext->Seta(tdig[i], xcell);
+		mynext->Seta(digit, xcell);
 		mynext->ComputeNext();
 		if (zh2b_g.ua_ret) return;
 	}
-	//cout << "cell " << cell << " dig " << tdig[ndig - 1] + 1 << endl;
-	Seta(tdig[ndig - 1], xcell);
-	ComputeNext();
+	// if first step try first false
+	for (int idig = 0; idig < 9; idig++) {
+		if (idig == digit)continue;
+		if (FD[idig].bf.u64 & bit) {
+			//cout << idig + 1 << cellsFixedData[cell].pt << " try false" << endl;
+			ZH2B * mynext = this + 1; // start next guess
+			*mynext = *this;
+			mynext->Seta(idig, xcell);
+			mynext->ComputeNext();
+			if (zh2b_g.ua_ret) return;
+		}
+	}
+
 }
+
+
 
 void ZH2B::Debug(int all) {
 	cout << "DEBUG  nbsol=" << zh2b_g.nsol << " unsolved=" << Unsolved_Count() << endl;
