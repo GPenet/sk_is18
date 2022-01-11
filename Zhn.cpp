@@ -326,6 +326,7 @@ void ZH_GLOBAL::ValidPuzzle(ZHOU * z){
 		go_back = 1;
 		return;
 	}
+	if (nsol > lim)go_back = 1;
 }
 
 //============================= zhou code
@@ -411,7 +412,6 @@ void ZHOU::Guess() {
 		zh_g.ValidPuzzle(this);
 		return;
 	}
-	zh_g2.cpt[1]++;
 	if (zh_g.pairs.isNotEmpty()) {	GuessInCell();	return;	}
 	if (GuessHiddenBivalue()) return;
 	// no pair, no bi valuesolve a full digit 
@@ -561,25 +561,6 @@ void  ZHOU::GuessFullDigit() {
 void ZHOU::Assign(int digit, int cell, int xcell) {
 	FD[digit][0] &= AssignMask_Digit[cell];
 	cells_unsolved.Clear(xcell);
-}
-int ZHOU::PartialInitSearch17(uint32_t * t, int n) {
-	zh_g2.digitsbf = 0;
-	memset(zh_g2.Digit_cell_Assigned, 0, sizeof zh_g2.Digit_cell_Assigned);
-	memcpy(this, zhoustart, sizeof zhoustart);
-	for (int icell = 0; icell < n; icell++) {
-		int cell = t[icell], digit = zh_g2.grid0[cell];
-		int xcell = C_To128[cell]; // the cell value in 3x32 of a 128 bits map
-		//cout << " cell=" << cell << " digit=" << digit + 1 << endl;
-		zh_g2.digitsbf |= 1 << digit;
-		if (FD[digit][0].Off(xcell))  return 1;// check not valid entry
-		Assign(digit, cell, xcell);
-		zh_g2.Digit_cell_Assigned[digit].Set(xcell);
-	}
-	//cout << "ok init" << endl;
-	BF128 w = cells_unsolved;
-	w.bf.u32[3] = ~0;// keep rowunsolved settled
-	for (int i = 0; i < 9; i++)  FD[i][0] &= w | zh_g2.Digit_cell_Assigned[i];
-	return 0;
 }
 
 void ZHOU::Setcell(int cell){ 
@@ -747,5 +728,373 @@ int ZHOU::EndInitSudoku(GINT16 * t, int n){// if morph, done before
 }
 
 
+//====================== code for UA gen2 digits
 
-//====================== waiting for later use
+#define UPD_AND_CL2(W,X)	last_assigned = W+1;cur_assigned = 0;\
+B = ~(A & TblRowMask[S]);\
+cells_unsolved.bf.u32[X] &= B;\
+FD[0][0].bf.u32[X] &= B; FD[1][0].bf.u32[X] &= B; } \
+FD[W][0].bf.u32[X] = FD[W][1].bf.u32[X] = A;
+
+#define UPD_ONE_DIGIT2(W) if (cur_assigned > W+1)goto exit_digits;\
+	if (FD[W][0].bf.u64[0] != FD[W][1].bf.u64[0]\
+|| FD[W][0].bf.u32[2] != FD[W][1].bf.u32[2]){\
+r_free = FD[W][0].bf.u32[3];\
+UPD_012(W, 0, 1, 2)	if ((r_free & 7) != S){\
+r_free &= 0770 | S;	UPD_AND_CL2(W, 0)}\
+UPD_012(W, 1, 0, 2)	if (((r_free >> 3) & 7) != S){\
+r_free &= 0707 | (S << 3);	UPD_AND_CL2(W, 1)}\
+UPD_012(W, 2, 0, 1)	if (((r_free >> 6) & 7) != S){\
+r_free &= 077 | (S << 6);	UPD_AND_CL2(W, 2)}\
+FD[W][0].bf.u32[3] = r_free;}
+
+ZHGXN zhgxn;
+ZHOU2 zhou2[10];
+void ZHGXN::SetupFsol(int * grid0) {
+	g0 = grid0;
+	memset(fsol, 0, sizeof fsol);
+	for (int i = 0; i < 81; i++) 	fsol[grid0[i]].Set_c(i);
+	//for (int i = 0; i < 9; i++) fsol[i].Print3("sol");
+}
+
+int ZHOU2::GoZ2(int  fl) {
+	zhgxn.nua = 0;
+	if (__popcnt(fl) != 2) {
+		cout << "bug fl not 2 digits" << endl;
+		return 1;// not valid fl
+	}
+	//memset(zh_g2.Digit_cell_Assigned, 0, sizeof zh_g2.Digit_cell_Assigned);
+	//memcpy(FD, zhoustart, sizeof FD);
+	int n = 0;
+	BF128 isfl;	isfl.SetAll_0();
+	for (int i = 0, bit = 1; i < 9; i++, bit <<= 1) {
+		if (fl&bit) {
+			isfl |= zhgxn.fsol[i];
+			zhgxn.fsolw[n++] = zhgxn.fsol[i];
+		}
+	}
+	cells_unsolved = isfl;
+	FD[0][1] = isfl; FD[1][1] = isfl;
+	isfl.bf.u32[3] = 0777777;
+	FD[0][0] = isfl; FD[1][0] = isfl;
+	//ImageCandidats();
+
+	// start with guess on first cell
+	uint32_t  cell = 10;
+	{
+		register uint32_t row1 = cells_unsolved.bf.u32[0], bit = 1, i = 0;
+		for (; i < 9; i++, bit <<= 1)
+			if (row1&bit) { cell = i; break; }
+	}
+	if (cell > 8)return 1; //this would be bug
+	int xcell = C_To128[cell];
+	zhou2[1] = *this;
+	zhou2[1].Assign(0, cell, xcell);
+	zhou2[1].ComputeNext();
+	zhou2[1] = *this;
+	zhou2[1].Assign(1, cell, xcell);
+	zhou2[1].ComputeNext();
+	return 0;
+}
+void ZHOU2::Assign(int digit, int cell, int xcell) {
+	FD[digit][0] &= AssignMask_Digit[cell];
+	cells_unsolved.Clear(xcell);
+	if (digit)  FD[0][0].Clear(xcell);
+	else FD[1][0].Clear(xcell);
+}
+
+int ZHOU2::ApplySingleOrEmptyCells() {
+	zh_g.single_applied = 0;
+	// here  singles and empty cells till 4 cells searched
+	BF128 R1, R2;
+	R1 = FD[0][0] | FD[1][0];
+	R2 = FD[0][0] & FD[1][0];
+	R1 -= R2;
+	R1 &= cells_unsolved;
+	if (R1.isEmpty()) {// no single store pairs
+		zhgxn.cell_to_guess = R2.getFirstCell();
+		return 0;
+	}
+	zh_g.single_applied = 1;
+	int cell, xcell;
+	while ((cell = R1.getFirstCell()) >= 0) {
+		R1.Clear_c(cell);
+		xcell = C_To128[cell];
+		if (FD[0][0].On_c(cell))		Assign(0, cell, xcell);
+		else if (FD[1][0].On_c(cell))	Assign(1, cell, xcell);
+		else return 1;// conflict with previous assign
+	}
+	return 0;
+}
+
+int ZHOU2::Update() {
+	register uint32_t Shrink = 1, r_free, B, A, S, last_assigned = 0, cur_assigned;
+loop_upd:
+	cur_assigned = last_assigned; last_assigned = 0;
+	if (FD[1][0].bf.u32[3]) { UPD_ONE_DIGIT2(1) }
+	if (FD[0][0].bf.u32[3]) { UPD_ONE_DIGIT2(0) }
+exit_digits:
+	if (last_assigned) goto loop_upd;// nothing to do in the next cycle
+	return 1;
+}
+int ZHOU2::FullUpdate() {
+	while (1) {
+		if (!Update()) return 0; // game locked in update
+		if (!Unsolved_Count()) return 2;
+		if (ApplySingleOrEmptyCells())	return 0; // locked empty cell or conflict singles in cells
+		if (!zh_g.single_applied)	break;
+	}
+	return 1;
+}
+void ZHOU2::ComputeNext() {
+	int ir = FullUpdate();
+	if (!ir) return;// locked
+	if (ir == 2) {//solved
+		FD[0][0].bf.u32[3] = 0;
+		if (FD[0][0] != zhgxn.fsolw[0]) {
+			BF128 w0 = FD[0][0] - zhgxn.fsolw[0],
+				w1 = FD[1][0] - zhgxn.fsolw[1];// this is the uaw0.Print3("ua");			
+			zhgxn.tua[zhgxn.nua++] = w0 | w1;
+			//(w0 | w1).Print3("added");
+		}
+		return;
+	}
+	Guess();// continue the process
+}
+void ZHOU2::Guess() {
+	int cell = zhgxn.cell_to_guess,
+		xcell = C_To128[cell];
+	if (FD[0][0].On(xcell)) {
+		ZHOU2 * mynext = (this + 1);
+		*mynext = *this;
+		mynext->Assign(0, cell, xcell);
+		mynext->ComputeNext();
+	}
+	if (FD[1][0].On(xcell)) {
+		ZHOU2 * mynext = (this + 1);
+		*mynext = *this;
+		mynext->Assign(1, cell, xcell);
+		mynext->ComputeNext();
+	}
+}
+void ZHOU2::ImageCandidats() {
+	BF128  R2 = FD[0][0] & FD[1][0], R1 = FD[0][0] | FD[1][0];
+	for (int i = 0; i < 9; i++) { // rows
+		if ((i == 3) || (i == 6)) {
+			for (int ix = 0; ix < 30; ix++)       cout << (char)'-';
+			cout << endl;
+		}
+		for (int j = 0; j < 9; j++) {
+			if ((j == 3) || (j == 6))cout << "|";
+			int cell = 9 * i + j, xcell = C_To128[cell];
+			if (R1.Off(xcell)) cout << "-  ";
+			else if (R2.On(xcell)) cout << "12 ";
+			else if (FD[0][0].On(xcell))cout << "1  ";
+			else cout << "2  ";
+		} // end for j
+		cout << endl;
+	}
+	cout << endl;
+
+}
+
+//====================== code for UA gen3 digits
+
+#define UPD_AND_CL3(W,X)	last_assigned = W+1;cur_assigned = 0;\
+B = ~(A & TblRowMask[S]);\
+cells_unsolved.bf.u32[X] &= B;\
+FD[0][0].bf.u32[X] &= B; FD[1][0].bf.u32[X] &= B; FD[2][0].bf.u32[X] &= B;  }\
+FD[W][0].bf.u32[X] = FD[W][1].bf.u32[X] = A;
+
+
+#define UPD_ONE_DIGIT3(W) if (cur_assigned > W+1)goto exit_digits;\
+	if (FD[W][0].bf.u64[0] != FD[W][1].bf.u64[0]\
+|| FD[W][0].bf.u32[2] != FD[W][1].bf.u32[2]){\
+r_free = FD[W][0].bf.u32[3];\
+UPD_012(W, 0, 1, 2)	if ((r_free & 7) != S){\
+r_free &= 0770 | S;	UPD_AND_CL3(W, 0)}\
+UPD_012(W, 1, 0, 2)	if (((r_free >> 3) & 7) != S){\
+r_free &= 0707 | (S << 3);	UPD_AND_CL3(W, 1)}\
+UPD_012(W, 2, 0, 1)	if (((r_free >> 6) & 7) != S){\
+r_free &= 077 | (S << 6);	UPD_AND_CL3(W, 2)}\
+FD[W][0].bf.u32[3] = r_free;}
+
+ZHOU3 zhou3[10];
+
+int ZHOU3::GoZ3(int  fl) {
+	if (__popcnt(fl) != 3) return 1;// not valid fl
+	//memset(zh_g2.Digit_cell_Assigned, 0, sizeof zh_g2.Digit_cell_Assigned);
+	//memcpy(FD, zhoustart, sizeof FD);
+	int n = 0;
+	BF128 isfl;	isfl.SetAll_0();
+	for (int i = 0, bit = 1; i < 9; i++, bit <<= 1) {
+		if (fl&bit) {
+			isfl |= zhgxn.fsol[i];
+			zhgxn.digit_map[i] = n;
+			zhgxn.fsolw[n++] = zhgxn.fsol[i];
+		}
+	}
+	cells_unsolved = isfl;
+	FD[0][1] = isfl; FD[1][1] = isfl; FD[2][1] = isfl;
+	isfl.bf.u32[3] = 0777777;
+	FD[0][0] = isfl; FD[1][0] = isfl; FD[2][0] = isfl;
+	return 0;
+	ImageCandidats();
+	// start with guess on one cell box1  one cell box 4
+	int  cell1, cell2;
+	BF128 w = cells_unsolved;	w &= units3xBM[18];// box1
+
+	cell1 = w.getFirstCell();
+	w = cells_unsolved; w &= units3xBM[22];/// box4
+	cell2 = w.getFirstCell();
+	if (cell1 < 0 || cell2 < 0) return 1; // should be bug
+
+	int xcell1 = C_To128[cell1], xcell2 = C_To128[cell2];
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++) {
+			zhou3[1] = *this;
+			zhou3[1].Assign(i, cell1, xcell1);
+			zhou3[1].Assign(j, cell2, xcell2);
+			//zhou3[1].ImageCandidats();
+			zhou3[1].ComputeNext();
+		}
+	return 0;
+}
+
+int ZHOU3::DoZ3(int * t, int nt) {// called in zhou3[1]
+	zhgxn.nua = 0;
+	*this = zhou3[0];
+	for (int i = 0; i < nt; i++) {
+		int cell = t[i], xcell = C_To128[cell],
+			digit = zhgxn.g0[cell], dmap = zhgxn.digit_map[digit];
+		Assign(dmap, cell, xcell);
+	}
+	//ImageCandidats();
+	ComputeNext();
+	return 0;
+}
+
+void ZHOU3::Assign(int digit, int cell, int xcell) {
+	FD[digit][0] &= AssignMask_Digit[cell];
+	cells_unsolved.Clear(xcell);
+	if (!digit) { FD[1][0].Clear(xcell); FD[2][0].Clear(xcell); }
+	else if (digit == 1) { FD[0][0].Clear(xcell); FD[2][0].Clear(xcell); }
+	else { FD[0][0].Clear(xcell); FD[1][0].Clear(xcell); }
+}
+
+int ZHOU3::ApplySingleOrEmptyCells() {
+	zh_g.single_applied = 0;
+	// here  singles and empty cells till 4 cells searched
+	BF128 R1, R2, R3;
+	R1 = FD[0][0] | FD[1][0];
+	R2 = FD[0][0] & FD[1][0];
+	R3 = R2 & FD[2][0];	R2 |= (R1&FD[2][0]);	R1 |= FD[2][0];
+	R1 -= R2;
+	R2 -= R3;
+	R1 &= cells_unsolved;
+	if (R1.isEmpty()) {// no single store pairs
+		if (R2.isNotEmpty())		zhgxn.cell_to_guess = R2.getFirstCell();
+		else zhgxn.cell_to_guess = R3.getFirstCell();
+		return 0;
+	}
+	zh_g.single_applied = 1;
+	int cell, xcell;
+	while ((cell = R1.getFirstCell()) >= 0) {
+		R1.Clear_c(cell);
+		xcell = C_To128[cell];
+		if (FD[0][0].On_c(cell))		Assign(0, cell, xcell);
+		else if (FD[1][0].On_c(cell))	Assign(1, cell, xcell);
+		else if (FD[2][0].On_c(cell))	Assign(2, cell, xcell);
+		else return 1;// conflict with previous assign
+	}
+	return 0;
+}
+
+int ZHOU3::Update() {
+	register uint32_t Shrink = 1, r_free, B, A, S, last_assigned = 0, cur_assigned;
+loop_upd:
+	cur_assigned = last_assigned; last_assigned = 0;
+	if (FD[2][0].bf.u32[3]) { UPD_ONE_DIGIT3(2) }
+	if (FD[1][0].bf.u32[3]) { UPD_ONE_DIGIT3(1) }
+	if (FD[0][0].bf.u32[3]) { UPD_ONE_DIGIT3(0) }
+exit_digits:
+	if (last_assigned) goto loop_upd;// nothing to do in the next cycle
+	return 1;
+}
+int ZHOU3::FullUpdate() {
+	while (1) {
+		if (!Update()) return 0; // game locked in update
+		if (!Unsolved_Count()) return 2;
+		if (ApplySingleOrEmptyCells())	return 0; // locked empty cell or conflict singles in cells
+		if (!zh_g.single_applied)	break;
+	}
+	return 1;
+}
+void ZHOU3::ComputeNext() {
+	int ir = FullUpdate();
+	//cout << "back full ir=" << ir << endl;
+	//ImageCandidats();
+	if (!ir) return;// locked
+	if (ir == 2) {//solved
+		BF128 w0 = FD[0][0] - zhgxn.fsolw[0],
+			w1 = FD[1][0] - zhgxn.fsolw[1],
+			w2 = FD[2][0] - zhgxn.fsolw[2];// this is the ua;	
+		//(w0 | w1 | w2).Print3("ua");
+		if (w0.isEmpty() || w1.isEmpty() || w2.isEmpty())return;// already seen
+		zhgxn.tua[zhgxn.nua++] = w0 | w1 | w2;
+		return;
+	}
+	Guess();// continue the process
+}
+void ZHOU3::Guess() {
+	int cell = zhgxn.cell_to_guess,
+		xcell = C_To128[cell];
+	if (FD[0][0].On(xcell)) {
+		ZHOU3 * mynext = (this + 1);
+		*mynext = *this;
+		mynext->Assign(0, cell, xcell);
+		mynext->ComputeNext();
+	}
+	if (FD[1][0].On(xcell)) {
+		ZHOU3 * mynext = (this + 1);
+		*mynext = *this;
+		mynext->Assign(1, cell, xcell);
+		mynext->ComputeNext();
+	}
+	if (FD[2][0].On(xcell)) {
+		ZHOU3 * mynext = (this + 1);
+		*mynext = *this;
+		mynext->Assign(2, cell, xcell);
+		mynext->ComputeNext();
+	}
+}
+void ZHOU3::ImageCandidats() {
+	BF128  R2 = FD[0][0] & FD[1][0], R1 = FD[0][0] | FD[1][0];
+	BF128 R3 = R2 & FD[2][0];
+	R2 |= R1 & FD[2][0];
+	R1 |= FD[2][0];
+	for (int i = 0; i < 9; i++) { // rows
+		if ((i == 3) || (i == 6)) {
+			for (int ix = 0; ix < 38; ix++)       cout << (char)'-';
+			cout << endl;
+		}
+		for (int j = 0; j < 9; j++) {
+			if ((j == 3) || (j == 6))cout << "|";
+			int cell = 9 * i + j, xcell = C_To128[cell];
+			if (R1.Off(xcell)) cout << "-   ";
+			else if (R3.On(xcell)) cout << "123 ";
+			else if (R2.On(xcell)) {
+				if (FD[0][0].Off(xcell))cout << "23  ";
+				else if (FD[1][0].Off(xcell))cout << "13  ";
+				else cout << "12  ";
+			}
+			else {
+				if (FD[0][0].On(xcell))cout << "1   ";
+				else if (FD[1][0].On(xcell))cout << "2   ";
+				else cout << "3   ";
+			}
+		} // end for j
+		cout << endl;
+	}
+	cout << endl;
+}

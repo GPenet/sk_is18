@@ -46,7 +46,7 @@ second 4x6bits for digits 5-8
 */
 struct ZH2B_GLOBAL { // global variables for the game table
 	uint64_t * digsols; // pointer to solution grid per digit
-	uint64_t ua_ret;
+	uint64_t ua_ret, tb1245[100], ntb1245;
 	BF64 val_init1_81;// , pairs, triplets;
 	BF64 Digit_cell_Assigned_init[9];
 	BF64 Digit_cell_Assigned_step[9];
@@ -62,7 +62,7 @@ struct ZH2B_GLOBAL { // global variables for the game table
 	BF64  cellshigh,mysol, mystart, andsol, myandsol;
 	BF64 sols_buffer[3000], ua_buffer[3000];
 
-	uint32_t nuaold, nua, ndigits;
+	uint32_t nuaold, nua, ndigits,guess_xcell;
 	int tsd[7], ntsd, tsd2[7], ntsd2,
 		socket_digits, isd1,diag;// socket more
 	int nsol, lim, icount, ntsol, single_applied, new_single_in_Update,
@@ -94,6 +94,21 @@ struct ZH2B_GLOBAL { // global variables for the game table
 // class encapsulating the brute force 
 struct ZH2B {// size 32 bytes 
 	BF64 FD[9], CompFD[9], cells_unsolved, rows_unsolved;
+	void InitBands12(int * g0);
+
+	//_________ 4 box process 
+
+	void InitB1245(int * g0);
+	void InitB1346(int * g0);
+	void InitB2356(int * g0);
+	int Do4bGo();
+	int FullUpdate4box();
+	inline void ComputeNext4box();
+	void Guess4box();
+	int ApplySingleOrEmptyCells4box();
+	int GetNetUaCell4box();
+
+
 
 	void Init_std_bands(); // after getbands in zh2b_g
 	void Init_gang(); // after getbands in zh2b_g
@@ -108,16 +123,12 @@ struct ZH2B {// size 32 bytes
 	inline int Unsolved_Count() { return rows_unsolved.Count(); }
 	
 	void InitTclues(uint32_t * tclues, int n);
-	void Init_2digits_banda(BF64  cellsbf);
-	//void EndInit_2digits_bandb(int fl, int ibandb);
-	void ValidXY_Step(uint32_t * tclues, int n); 
+	//void Init_2digits_banda(BF64  cellsbf);
+	uint64_t IsValid(uint32_t * tclues, int n,int onlyone=0); 
 
-	uint64_t ValidXY(uint32_t * tclues, int n);// , int diag = 0);
-	uint64_t Valid_XY(uint32_t * tclues, int n);// , int diag = 0);
-	//void DebugValidXY(uint32_t * tclues, int n, int test = 0);
 	int Update();
 	int FullUpdate();
-	void ComputeNext();
+	inline void ComputeNext();
 	void GuessValidB12();
 	//void GuessGo(int dig, BF64 & wsol);
 
@@ -130,6 +141,90 @@ struct ZH2B {// size 32 bytes
 	void Debug(int all=0);
 	void ImageCandidats();
 };
+
+
+struct ZH2GXN {
+	uint64_t fsol[9];
+	BF64 fsolw[5];
+	uint64_t tua[200], unsolved_field,	uamin,uaw;
+
+	// expand using known uas
+	uint64_t  rx,r2,r3,r4,r5;// from applysingleoremptycells
+	uint64_t * knownuas;
+	uint32_t * nknownuas;
+
+	uint32_t floors, nua, cell_to_guess,onlyone,
+		digit_map[9], maptodigit[5], gangsters[9];
+	int * g0;
+	void SetupFsol(int * grid0);
+	inline void InitKnown(uint64_t * kn , uint32_t *nkn) {
+		knownuas = kn; nknownuas = nkn;
+	}
+};
+
+struct ZH2_3 {
+	BF64 FD[3], CompFD[3], cells_unsolved,
+		rows_unsolved;
+	void GoZ3A(int fl);
+	int GoZ3(int fl);
+	int GoZ3G2(int fl,int c1,int d1,int c2,int d2);
+	int DoZ3Go();
+
+	//________________________________________
+	int FullUpdate();
+	int ApplySingleOrEmptyCells();
+	int GetNetUaCell();
+	void Guess();
+	inline void Assign(int digit, int cell, int xcell);
+	int Seta(int digit, int xcell);
+	int Update();
+	inline int Unsolved_Count() { return cells_unsolved.Count(); }
+	void ComputeNext();
+	void ImageCandidats();
+
+};
+
+struct ZH2_4 {
+	BF64 FD[4], CompFD[4], cells_unsolved, rows_unsolved;
+	void GoZ4A(int fl);
+	int GoZ4(int fl);
+	int GoZ4G2(int fl, int c1, int d1, int c2, int d2);
+	int DoZ4Go();
+	//________________________________________
+	int FullUpdate();
+	int ApplySingleOrEmptyCells();
+	int GetNetUaCell();
+	void Guess();
+	inline void Assign(int digit, int cell, int xcell);
+	int Seta(int digit, int xcell);
+	int Update();
+	inline int Unsolved_Count() { return cells_unsolved.Count(); }
+	void ComputeNext();
+	void ImageCandidats();
+
+};
+struct ZH2_5 {
+	BF64 FD[5], CompFD[5], cells_unsolved, rows_unsolved;
+
+	void GoZ5A(int fl);
+	int GoZ5(int fl);
+	int GoZ5G2(int fl, int c1, int d1, int c2, int d2);
+	int DoZ5Go();
+	//________________________________________
+	int FullUpdate();
+	int ApplySingleOrEmptyCells();
+	int GetNetUaCell();
+	void Guess();
+	inline void Assign(int digit, int cell, int xcell);
+	int Seta(int digit, int xcell);
+	int Update();
+	inline int Unsolved_Count() { return cells_unsolved.Count(); }
+	void ComputeNext();
+	void ImageCandidats();
+
+};
+
+
 
 /* ZH2B5 same as ZH2B, limited to 5 digits
 dedicated to UAs generati
@@ -213,10 +308,13 @@ struct ZHONE_GLOBAL { // global variables for the game table
 		rdigit, nctlg, go_back;
 	int pairs, triplets;
 	char * zsol, out27[28];// band1 in output mode 
+	uint32_t fds[9], pms[9];//start solution/pm
+	uint32_t *tua, nua;//   maximum 81  all uas 
+	int * band0; // 
+	int *gangster;
+
 
 	// band UA collection active band pointers and UA table to build
-	uint32_t *tua, nua;//   maximum 81  
-	int * band0,*gangster;
 	int floors_mini_row, digmap[9],digmap2[9];// to adjust pm
 	uint32_t fd_sols[2][9];//start puzzle/ solution
 	//uint32_t gua_gang_6_7[9]; // band initial pm for guas 6_7
@@ -226,18 +324,7 @@ struct ZHONE_GLOBAL { // global variables for the game table
 		upstream_unsolved_cells[6];
 
 	ZHONE_GLOBAL();
-	void GetBand(int * b, uint32_t * t);
-	void GetBand(uint32_t fd_solsb[2][9], int * b, uint32_t * t);
-	inline void SetPat(char * pat, char * zsol, char * puzfinal) {
-		pat = pat; zsol = zsol; puzfinal = puzfinal;
-	};
-	inline void InitIsvalid() { // usually after init 2 steps
-		nsol = go_back = type = 0; lim = 1;
-	}
-	void ValidPuzzle(uint32_t * sol);
-	void AddUA(uint32_t ua);
-	void PrintTua();
-	void FindMissingUAs();
+	void SetUp(int * b, uint32_t * t, uint32_t nt);// source
 };
 
 
@@ -252,20 +339,13 @@ struct ZHONE_GLOBAL { // global variables for the game table
 	 }
 	 inline int Unsolved_Count() { return _popcnt32(cells_unsolved); }
 	 int ApplySingleOrEmptyCells();
-	 void InitOne_std_band(); // after getband in zh1b_g
-	 void CheckSolPerDigit();     
-	 int InitSudokux(GINT * t, int n);
-	 void AddMissingUAs(int * tcells,int ncells);
+	 void Init(); // after getband in zh1b_g
 	 int Update();
-	 int Update4();
-	 int Update6();
-	 int Update7();
 	 int FullUpdate();
 	 void Guess();
 	 inline void ComputeNext() { if (FullUpdate())	Guess(); }
 	 char * SetKnown(char * zs);
 	 void Seta(int digit, int xcell);
-	 int Isvalid();
 	 int GetAllDigits(int cell);
 	 void Debug(int all = 0);
 	 void DebugDigit(int digit);
@@ -273,13 +353,9 @@ struct ZHONE_GLOBAL { // global variables for the game table
 	 //==================================================
 	 // uacollector 
 	 void Checkstart();
-	 int  Start_nFloors(int floors);
-	 void Start_Uas_Mini(int floors, int floors_mini_row);
-	 void ApplyGangsterChanges(int * g0, int * g1);
 	 void InitGuess();
 	 int UpdateDigit(int digit);
-	 void Guess2();	void Guess3();	void Guess4();
-	 void Guess5(); void Guess6();  void Guess7();
+	 void Guess6();  void Guess7();
 	 void Set2(int cell);
  };
 

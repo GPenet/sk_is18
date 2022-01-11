@@ -55,13 +55,9 @@ data used in other brute force uses are in ZH_GLOBAL2
 struct ZH_GLOBAL2 {
 	BF128 Digit_cell_Assigned[9];// init sequence
 	BF128 digit_sol[9]; // final solution per digit original sort sequence
-	BF128  cells_unsolved_e, cells_unsolved_diag,// pm status direct and diagonal
-		cells_assigned;// to avoid redundancy in new assignments 
-	BF128 locked_nacked_brc_seen[3],// seen nacked in row; column; box (priority box)
-		locked_nacked_brc_done[3];// same cleaning done  nacked in row; column; box (priority box)
-	BF128 digits_cells_pair_bf[9];
-	BF128 triplets, quads,fives,cells_for_guess;
-	uint64_t cpt[10], cptg[10], npuz, isfalse_on;
+	BF128  cells_assigned;// to avoid redundancy in new assignments 
+	uint64_t  npuz;
+	int	xcell_to_guess;// , isfalse_on;
 	GINT16 tgiven[81];
 	int ngiven, digitsbf;// digitsbf to check minimum 8 digits
 	int s17_b3_mini;// 17 search mode, 1 if minirows b3 not tested
@@ -71,33 +67,13 @@ struct ZH_GLOBAL2 {
 		zerobased_sol[81];
 	char  *puzfinal, *pat;
 	char puz[82]; // the solved puzzle (after morph)
-	// switching to solver mode
-	// in locked.. column "[2]" is in diagonal mode 
-	int  dig_rows[9][9], dig_cols[9][9];//rows cols in 9 bits mode
-	int  dig_boxes[9][9];// box in 9 bits mode
-	int dig_cells[81], cells_count[81];//cells digits  in 9 bits mode
-	int unsolved_r_count[9], unsolved_c_count[9]; // pm status unsolved rows columns per digit
-	int row_col_x2[9][2], dig_unsolved_col[9], oldcount;
-	ZHOU * zhou_current;
-
-	// specific to the attempt to optimize the X+Y+27 process
-	char *entry_base0, zdebug[82];
-	// specific to symmetry of given generation
-	USHORT * ptcor;
-	int tsingles[40], nsingles;
-	inline void Init_Assign() { nsingles = 0; cells_assigned.SetAll_0(); }
-	//=================== floor analysis (one digit)
-	int current_digit, active_floor;
-	BF128  or_floor[9], elim_floor[9];
-	// located in go_0xxcpp
-
 	void Debug();
 
 
 };
 struct ZH_GLOBAL { // global variables for the core brute force
 
-	int nsol,   modevalid,
+	int nsol, lim, modevalid,
 		icount, ntsol, single_applied,// new_single_in_Update,
 		go_back,
 		rdigit, loop, diag, modeguess , maxindex;
@@ -107,6 +83,7 @@ struct ZH_GLOBAL { // global variables for the core brute force
 	ZH_GLOBAL();
 	inline void Init(int maxsols,int mvalid=0){
 		nsol = go_back=0;
+		lim = maxsols;
 		modevalid = mvalid;
 	}
 	int Go_InitSudoku(char * ze);
@@ -119,12 +96,13 @@ struct ZH_GLOBAL { // global variables for the core brute force
 	Last 32 bits in FD[1]] contain  digit mapped
 */
 // class encapsulating the brute force 
+
+#define ISFALSEON misc.bf.u32[0]
 struct ZHOU{// size 32 bytes 
 	BF128 FD[9][2];
-	BF128 cells_unsolved;
+	BF128 cells_unsolved,misc;// misc used to check false
 //________________________________________
 	int CheckValidityQuick(char *puzzle);
-	int PartialInitSearch17(uint32_t * t, int n);// 17 search mode
 	int FullUpdate();
 	int ApplySingleOrEmptyCells();
 	void Guess();
@@ -161,6 +139,7 @@ struct ZHOU{// size 32 bytes
 
 	int IsMinimale(GINT16 * t, int n);
 	//void PatFinal();
+	//int GetSolvedDigitForCell(int cell);
 
 	// inline small functions
 	inline int IsOffCandidate_c(int dig, int cell){return FD[dig][0].Off_c(cell); }
@@ -182,13 +161,60 @@ struct ZHOU{// size 32 bytes
 	void ImageCandidats();
 	void ImageCandidats_b3();
 
-	//==== special final check 17 search
-	int CallMultipleB3(ZHOU & o, uint32_t bf, int diag = 0);// 17 search mode
-	int Apply17SingleOrEmptyCells();
+	//==== special final check 7 search
+
+	int PartialInitSearch17(uint32_t * t, int n);// 17 search mode
+	int CallCheckB3(uint32_t * t, int n, uint32_t bf,int nogo=0);// 17 search mode
+	int CallMultipleB3x(ZHOU & o, uint32_t bf, int diag = 0);// 17 search mode
+	int Apply17SingleOrEmptyCellsB3();
+	int Apply17SingleOrEmptyCellsB12();
 	int Full17Update();
-	void Guess17(int index,int diag);
-	void Compute17Next(int index, int diag) ;
+	void Guess17(int index);
+	void Compute17Next(int index) ;
 
 
  };
  
+struct ZHGXN {
+	BF128 fsol[9], fsolw[5];
+	BF128 tua[1000];
+	uint32_t floors, nua, cell_to_guess, digit_map[9];
+	int * g0;
+
+	void SetupFsol(int * grid0);
+};
+// class encapsulating the brute force for ua generation 2 digits
+struct ZHOU2 {
+	BF128 FD[2][2];
+	BF128 cells_unsolved;
+
+	int GoZ2(int fl);
+	//________________________________________
+	int FullUpdate();
+	int ApplySingleOrEmptyCells();
+	void Guess();
+	void Assign(int digit, int cell, int xcell);
+	int Update();
+	inline int Unsolved_Count() { return cells_unsolved.Count(); }
+	void ComputeNext();
+	void ImageCandidats();
+
+};
+// class encapsulating the brute force for ua generation 2 digits
+struct ZHOU3 {
+	BF128 FD[3][2];
+	BF128 cells_unsolved;
+
+	int GoZ3(int fl);
+	int DoZ3(int * t, int nt);
+	//________________________________________
+	int FullUpdate();
+	int ApplySingleOrEmptyCells();
+	void Guess();
+	void Assign(int digit, int cell, int xcell);
+	int Update();
+	inline int Unsolved_Count() { return cells_unsolved.Count(); }
+	void ComputeNext();
+	void ImageCandidats();
+
+};

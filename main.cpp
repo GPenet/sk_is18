@@ -58,6 +58,7 @@ SGO sgo;
 ofstream  fout1;
 FINPUT finput;
 extern int  Is18(char * ze, char * zp);
+extern int  Is18Blue(char * ze, char * zp);
 
 int main(int narg, char *argv[]) {
 	cerr << "mainstart" << endl;
@@ -112,7 +113,6 @@ int main(int narg, char *argv[]) {
 	sgo.foutput_name = foutput_name;
 	sgo.s_strings = s_strings;
 	sgo.vx = vx;
-	
 	// ====================reading input file calling sk_is18()
 	if (!sgo.finput_name) {
 		cerr << "missing input file name" << sgo.finput_name << endl; return 0;
@@ -132,7 +132,7 @@ int main(int narg, char *argv[]) {
 	}
 	char * ze = finput.ze;
 	char zp[200];
-	uint64_t npuz = 0;
+	uint64_t npuz = 0,nok=0;
 	while (finput.GetLigne()) {
 
 		if (strlen(ze) < 81) continue;// skip blank lines
@@ -141,14 +141,20 @@ int main(int narg, char *argv[]) {
 		long tdebp = GetTimeMillis();
 
 		cout <<ze<< " Is18()   npuz="<<npuz << endl;
-		int ir = Is18(ze, zp);
-		if (ir < 0)	cout << "puz " << npuz << "  band 29 (2 clues)" << endl;
-		long tendp = GetTimeMillis();
+		if (sgo.vx[6]) {
+			Is18Blue(ze, zp);
+		}
+		else {
+			int ir = Is18(ze, zp);
+			if (ir < 0)	cout << "puz " << npuz << "  band 29 (2 clues)" << endl;
+			long tendp = GetTimeMillis();
+			if (ir > 0)nok++;
+			fout1 << ze << " " << tendp - tdebp << " ";
+			if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
+			else if (ir == 0) 			fout1 << " no 18" << endl;
+			else fout1 << endl;
 
-		fout1 << ze << " " << tendp - tdebp<<" ";
-		if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
-		else if (ir == 0) 			fout1 << " no 18" << endl;
-		else fout1 << endl;
+		}
 
 		if (npuz >= vx[3])break;
 
@@ -156,7 +162,7 @@ int main(int narg, char *argv[]) {
 
 
 	cerr << " print cout time "  << endl;
-
+	cout << "nok=" << nok << endl;
 	long tfin=GetTimeMillis();
     PrintTimeCout(sgo.tdeb,tfin);
 	PrintTime(sgo.tdeb, tfin);
