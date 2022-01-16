@@ -295,8 +295,10 @@ struct CHUNKS_HANDLER{
 	void Init() {
 		ic2=  icmore= iband3= imisc=0;
 		c2[0].Init();  cmore[0].Init();
-		band3[0].Init(); misc[0].Init();
+		band3[0].Init(); band3[1].Init();
+		misc[0].Init();
 	}
+	inline int GetC2Count() { return 64 * ic2 +(int) c2[ic2].nt; }
 	void Add128(BF128 w);// switch to index 0-26
 	void Addc2(uint64_t ua12, uint32_t ua) {
 		uint64_t ua54 = (ua12 & BIT_SET_27) |
@@ -562,7 +564,6 @@ struct G17B3HANDLER {
 		known_b3 |= bit;
 		return 1;
 	}
-	uint32_t IsMultiple(int bf);
 	//int ShrinkUas1();
 	//=============== process critical
 	void CriticalAssignCell(int Ru);
@@ -689,7 +690,7 @@ struct GCHK {
 	void BuildVectorsForExpand4B12();//64 uas
 	void Expand4B12();
 	void Do_phase2(T4_TO_EXPAND w);
-	void Do_phase2Expand(uint64_t bf);
+	void Do_phase2Expand(uint64_t bf, uint64_t ac);
 
 	//_____________ validb12
 	uint64_t myb12, myac, myb12add;
@@ -699,7 +700,8 @@ struct GCHK {
 	{	BF128 tmore[384], t2[128],tof128[50];
 		uint64_t ort2, orof;
 		uint32_t ntmore, nt2;
-		uint32_t tg2ok[27], ntg2ok;
+		uint32_t tg2ok[27], ntg2ok,
+			tmore27[128],ntmore27;
 		uint32_t tclues[15], nclues, bfbf2; //assign compulsory bf2
 		uint32_t tof[50], ntof; // outfield
 
@@ -732,6 +734,8 @@ struct GCHK {
 			}
 			return uamin;
 		}
+		void CleanTmore();
+
 		inline void GetOld(VB12 & vbo, uint64_t bf54);
 
 		void Dumpt2() {
@@ -786,17 +790,12 @@ struct GCHK {
 
 	void GoB3(  int ncl, VB12 & vbx);
 	void BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0, VB12 & vbx);
-	void ExpandB3Vect(int limspot, uint32_t cl0bf=0,
+	void ExpandB3Vect( uint32_t cl0bf=0,
 		uint32_t active0=BIT_SET_27);
 
 
-
-
-
-
-
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
-	int nclues_step, nclues,nmiss;
+	int nclues_step, nclues,nclf,nmiss;
 	uint64_t n_to_clean, n_to_clean2,nwc;
 	int  ncluesb3,mincluesb3;
 
@@ -880,22 +879,9 @@ struct GCHK {
 
 
 	//_______ processing potential valid bands 1+2
-	int Clean_Valid();// test first valid
-	void CleanAll();
-	void Clean_2();// after clean FIFO
-	void Clean_3();// for a given band 1+2
-	void Clean_3G2(); 
-	void Clean_3G3();
-	void Clean_3BuildIfOf();
 
 
-	void ExpandB3();
-	int Is_B12_Not_Unique();
-	void FinalCheckB3(uint32_t bfb3);
 	void Out17(uint32_t bfb3);
-	void NewUaB3();
-	void NewUaB12();
-	void DebugOut(BF128 w);
 
 	void Debugifof();
 };

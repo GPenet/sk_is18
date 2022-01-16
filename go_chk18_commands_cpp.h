@@ -205,6 +205,7 @@ int  Is18(char * ze, char * zp) {
 	{// sort entry increasing order of min clues
 		for (int i = 0; i < 3; i++)
 			tsort[i] = i + (t416n6[bax[i].i416] << 8);
+			//tsort[i] = i + (t16_min_clues[bax[i].i416] << 8);
 		for (int i = 0; i < 2; i++) for (int j = i + 1; j < 3; j++)
 			if (tsort[i] > tsort[j]) {
 				int temp = tsort[i];
@@ -221,6 +222,7 @@ int  Is18(char * ze, char * zp) {
 	gchk.band_order[0] = tsort[0] & 7;
 	gchk.band_order[1] = tsort[1] & 7;
 	gchk.band_order[2] = tsort[2] & 7;
+	gchk.mincluesb3 = 6;//t16_min_clues[bax[2].i416];
 
 	// put knownn in the right order
 
