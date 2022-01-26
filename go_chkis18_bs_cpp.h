@@ -1,5 +1,6 @@
 
-//#define DEBUGA 157641
+//#define DEBUGA 4842934
+//#define DEBUG3 80
 //#define DEBUGB 107551
 //#define DEBUGC 111462
 //_______________ start  a band3 perm and UAs GUAs search 
@@ -25,24 +26,22 @@ void STD_B416::InitBand2_3(char * ze, BANDMINLEX::PERM & p
 
 //_______________ process band ordered
 int  GCHK::StartIs18() {
-	gchk.UaCollector();
-	p_cpt2g[1] = tuasb12.nua;
-	p_cpt2g[2] = chunkh.C2Count();
-	gchk.BuildVectorsForExpand4B12();
-	gchk.Expand4B12();
-	morev2c.Status(" b 19-20  ");
-	morev2d.Status(" d 21-22  ");
-	cout << "count phase2expand=" << p_cpt2g[41]
-		<< " " << p_cpt2g[4] 
-		<< "\nto check=" << p_cpt2g[19] << "\nvalid=" << p_cpt2g[6]
-		<< "\nb3 expand=" << p_cpt2g[14] << endl;
-	return a_18_seen;
-
-}
-
-
-//________________ uas generation and store in chunkh
-void GCHK::UaCollector() {
+#ifdef HAVEKNOWN
+	// put knownn in the right order
+	if (strlen(ze) < 163) return -1;// skip blank lines
+	char * w = &ze[82],* ww=&zes[82];
+	memcpy(w, &ww[27 * band_order[0]], 27);
+	memcpy(&w[27], &ww[27 * band_order[1]], 27);
+	memcpy(&w[54], &ww[27 * band_order[2]], 27);
+	puzknown.SetAll_0();
+	for (int i = 0; i < 81; i++) {
+		char c = w[i];
+		if (c<'1' || c>'9') continue;
+		puzknown.Set_c(i);// store the pattern in 3X mode
+		// this can be a pattern, no check of the digit with the solution
+	}
+	if ((int)__popcnt(puzknown.bf.u32[2] ) < mincluesb3) return  0;
+#endif		
 	int * zs0 = grid0, *zs0_diag = grid0_diag;
 	BANDMINLEX::PERM perm_ret;
 	memcpy(zs0, bax[0].band0, sizeof  bax[0].band0);
@@ -58,7 +57,8 @@ void GCHK::UaCollector() {
 	}
 	if (1) {
 		for (int i = 0; i < 81; i++) cout << zs0[i] + 1;
-		cout << " reshaped" << endl;
+		cout << " reshaped  "<< band_order[0]<< band_order[1]
+		<< band_order[2] << endl;
 
 
 		for (int ibs = 0; ibs < 3; ibs++) {
@@ -70,7 +70,23 @@ void GCHK::UaCollector() {
 	if (1)
 		for (int i = 0; i < 81; i++) cout << ze[i + 82];
 	cout << " known reshaped" << endl;
+	//return 0;
 #endif
+	//__________________________ start uas search
+
+	UaCollector();
+	p_cpt2g[1] = tuasb12.nua;
+	p_cpt2g[2] = chunkh.C2Count();
+	BuildVectorsForExpand4B12();
+	Expand4B12();
+	return a_18_seen;
+
+}
+
+
+//________________ uas generation and store in chunkh
+void GCHK::UaCollector() {
+
 	Sg2Setup();
 	//for (int i = 0; i < 27; i++)tg2[i].Dump();
 
@@ -170,7 +186,7 @@ void GCHK::FirstUasCollect() {
 
 }
 void GCHK::SecondUasCollect() {
-	cout << "final all 2 digits n=" << tuasb12.nua << endl;
+	//cout << "final all 2 digits n=" << tuasb12.nua << endl;
 	//__________ start collect 345 digits in bands 1+2
 	zh2gxn.InitKnown(tuasb12.t2, &tuasb12.nt2);
 	zh2gxn.SetupFsol(grid0);
@@ -183,7 +199,7 @@ void GCHK::SecondUasCollect() {
 		zh2_3[0].DoZ3Go();
 		if (zh2gxn.nua) Adduab12();
 	}
-	cout << "final all 3 digits n=" << tuasb12.nua << endl;
+	//cout << "final all 3 digits n=" << tuasb12.nua << endl;
 	for (int i = 0; i < 126; i++) {
 		int ir = zh2_4[0].GoZ4(floors_4d[i]);
 		if (ir < 8) continue;// minimum for a fresh ua 4 digits
@@ -193,7 +209,7 @@ void GCHK::SecondUasCollect() {
 		zh2_4[0].DoZ4Go();
 		if (zh2gxn.nua) Adduab12();
 	}
-	cout << "final  all 4 digits n=" << tuasb12.nua << endl;
+	//cout << "final  all 4 digits n=" << tuasb12.nua << endl;
 
 	for (int i = 0; i < 126; i++) {
 		int ir = zh2_5[0].GoZ5(0777 ^ floors_4d[i]);
@@ -212,7 +228,7 @@ void GCHK::SecondUasCollect() {
 		zh2_5[0].DoZ5Go();
 		if (zh2gxn.nua) Adduab12();
 	}
-	cout << "final  all 5 digits n=" << tuasb12.nua << endl;
+	//cout << "final  all 5 digits n=" << tuasb12.nua << endl;
 
 }
 void GCHK::UasCollect4box() {
@@ -419,7 +435,7 @@ void  GCHK::PutUasStartInVector() {
 }
 
 //__ start expand 3/4 + no more uas
-#define nphase1 3
+#define nphase1 4
 
 GCHK::CPT_4::CPT_4() {
 	t[0] = units3xBM[18].u64[0];	t[1] = units3xBM[19].u64[0];
@@ -449,12 +465,9 @@ void  GCHK::Expand4B12() {
 
 	zh2b[0].InitBands12(grid0);
 	uint64_t *twu = tuasb12.tua,
-		limspot = 2;// expand 4 clues
+		limspot = nphase1-1;// expand 3/4 clues
 	nt4_to_expand = 0;
-	//cout << "entry Expand4B12()" << endl;
-	//for (int i = 0; i < 5; i++)
-	//	cout << Char2Xout(twu[i]) << " i=" << endl;
-	// _______________ expand to have all  4 cells to expand more
+	// _______________ expand to have all  3/4 cells to expand more
 	struct SPB {// spots to find starts to extract uas 3 digits
 		uint64_t  possible_cells, all_previous_cells, active_cells,
 			v;
@@ -516,161 +529,33 @@ back:
 			}
 		}
 	}
+#ifdef HAVEKNOWN
+	nt4ok = -1;
+	{
+		register uint64_t K = puzknown.bf.u64[0], Kn = ~K;
+		for (uint64_t i = 0; i < nt4_to_expand; i++) {
+			T4_TO_EXPAND w=t4_to_expand[i];
+			register uint64_t B = w.bf, A = w.active;
+			if (B & Kn)continue;// not partial known
+			if (K & (~(B | A))) continue;
+			if (nt4ok < 0) nt4ok = (int)i;
+			cout << Char2Xout(B) << " bf" << endl;
+			cout <<Char2Xout(A) << " ac" <<endl;
+		}
+	}
+	cout << "expected i=" << nt4ok << endl;
+	if(nt4ok<0) 	return;
+	else nt4_to_expand = nt4ok+1;
+#endif
+	cout << "nt4_to_expand=" << nt4_to_expand << endl;
 	for (uint64_t i = 0; i < nt4_to_expand; i++) {
-		//cout << i << "\t";
-		//t4_to_expand[i].dump();
+#ifdef HAVEKNOWN
+		okcheck = (i == nt4ok);
+#endif
 		Do_phase2(t4_to_expand[i]);
 	}
 
 }
-void GCHK::Do_phase2(T4_TO_EXPAND w) {
-	p_cpt2g[3]++;
-	//____ load the first clues
-	{
-		register uint64_t R = w.bf;
-		nclues_step = 0;
-		//nclues_step = (int)_popcnt64(w.bf);
-		uint32_t xcell;
-		while (bitscanforward64(xcell, R)) {
-			uint32_t cell = From_128_To_81[xcell];
-			R ^= (uint64_t)1 << xcell; //clear bit
-			tclues[nclues_step++] = cell;
-		}
-		tcluesxy = &tclues[nclues_step];
-	}
-	ntua4 = 0;
-	{// build still valid uas
-		register uint64_t F = w.bf, A = w.active;
-		for (uint32_t i = 0; i < 128; i++) {
-			register uint64_t R = tuasb12.tua[i];
-			if (R&F) continue;
-			R &= A;
-			if (!R)return; //dead
-			register uint64_t cc = _popcnt64(R);
-			AddUA64(tua4, ntua4, R | (cc << 59));
-		}
-
-		for (uint32_t i = 128; i < tuasb12.nua; i++) {
-			register uint64_t R = tuasb12.tua[i];
-			if (R&F) continue;
-			R &= A;
-			if (!R)return; //dead
-			tua4[ntua4++] = R;
-		}
-
-	}
-	//______________________________________________end collect
-#ifdef DEBUGA
-	if (p_cpt2g[4]>= DEBUGA)return;
-#endif
-	cout << Char2Xout(w.bf) << " ntua4=" << ntua4
-		<< " ntuas=" << tuasb12.nua 
-		<< " nc2="<<chunkh.GetC2Count() 
-		<< " p_cpt2g[4] " << p_cpt2g[4] << endl;
-	//return;
-	int wnua = ntua4;
-	memset(v12_v0, 0, sizeof v12_v0);
-	for (int i = 0; i < 64; i++) {
-		if (wnua > 64) {
-			v12_v0[i] = ~0; wnua -= 64;
-		}
-		else {
-			v12_v0[i] = maskLSB[wnua].u64[0];
-			break;
-		}
-	}
-	for (int i = 0; i < 54; i++)memcpy(v12_c[i], v12_v0, sizeof v12_c[0]);
-	for (uint32_t i = 0; i < ntua4; i++) {
-		register uint64_t R = tua4[i] & BIT_SET_2X;
-		uint32_t xcell, bloc = i >> 6, ir = i - 64 * bloc;
-		while (bitscanforward64(xcell, R)) {
-			uint32_t cell = From_128_To_81[xcell];
-			uint64_t bit = (uint64_t)1 << ir;
-			R ^= (uint64_t)1 << xcell; //clear bit
-			v12_c[cell][bloc] ^= bit;
-		}
-	}
-	uint32_t n = 0;
-	for (uint32_t i = 0; i < 64; i++) {
-		register uint64_t A = v12_v0[i];
-		if (!A)break;
-		V12_64 &w = tv12_64[0][i];
-		w.ind = i;
-		w.u_start = i << 6;// 64*i
-		w.v = A;
-		n++;
-	}
-	nv12_64_spot[0] = n;// nb chunks at start
-	Do_phase2Expand(w.bf,w.active);
-}
-void  GCHK::Do_phase2Expand(uint64_t bf, uint64_t ace) {
-	int limspot = 17 - nphase1 - mincluesb3;
-	// _______________ expand to have all  minimal < n clues
-	struct SPB {// spots to find starts to extract uas 3 digits
-		uint64_t  possible_cells, all_previous_cells, active_cells;
-	}spb[20], *s, *sn;
-	s = spb;
-	memset(s, 0, sizeof spb[0]);
-	s->all_previous_cells = bf;
-	s->active_cells = ace;
-	s->possible_cells = tua4[0] & BIT_SET_2X;
-	//____________ here start the search nclues
-	next:
-		uint64_t ispot = s - spb;
-		// catch and apply cell in bitfields
-		register int xcell;
-		uint64_t p = s->possible_cells;
-		if (!p)goto back;
-		bitscanforward64(xcell, p);
-		register uint64_t bit = (uint64_t)1 << xcell;
-		s->possible_cells ^= bit;
-		int cell = From_128_To_81[xcell];
-		tcluesxy[ispot] = cell;
-		s->active_cells ^= bit;
-		uint64_t ac = s->active_cells;
-		sn = s + 1; *sn = *s; // (copy the stack count)
-		sn->all_previous_cells = s->all_previous_cells | bit;
-		// find next ua
-		V12_64 *tv1 = tv12_64[ispot], *tv2 = tv12_64[ispot + 1];
-		uint32_t nd = 0;
-		uint64_t *vc = v12_c[cell];
-		for (uint32_t i = 0; i < nv12_64_spot[ispot]; i++) {
-			V12_64 w = tv1[i];
-			w.v &= vc[w.ind];
-			if (w.v) tv2[nd++] = w;
-		}
-		if (nd) {// still at least one ua not hit
-			nv12_64_spot[ispot + 1] = nd;
-			V12_64 w = tv2[0];// here is next ua
-			uint32_t ir;
-			bitscanforward64(ir, w.v);//relative index
-			uint64_t Ru = tua4[ir + w.u_start] & ac;
-			if (!Ru)goto next;// what does it mean??
-			if (ispot >= limspot) {
-				p_cpt2g[41]++;
-				p_cpt2g[43] += nd;
-				goto next;
-			}
-			sn->possible_cells = Ru;
-			s++; // switch to next spot
-			goto next;
-
-		}
-		// no more uas below count
-		//cout << Char2Xout(sn->all_previous_cells) << " " << p_cpt2g[42]<<endl;
-		AfterExpandB12(sn->all_previous_cells, s->active_cells,
-			(uint32_t)ispot + 1 + nclues_step);
-
-		goto next;
-		// going back, for a non empty index, count it back
-	back:
-		if (--s >= spb)goto next;
-
-		//morev2a.Status(" a 12-16");
-		//morev2b.Status(" b 17-18  ");
-
-}
-
 //______  process a "no more uas bands 1+2
 inline void GCHK::VB12::GetOld(VB12 & vbo, uint64_t bf54) {
 	// t2 and tmore reduced by fresh cells in bf54
@@ -696,57 +581,326 @@ inline void GCHK::VB12::GetOld(VB12 & vbo, uint64_t bf54) {
 	}
 }
 
-void GCHK::AfterExpandB12(uint64_t bf, uint64_t ac, int ncl) {// no more ua
+
+void GCHK::Do_phase2(T4_TO_EXPAND w) {
+	p_cpt2g[3]++;
+	{	register uint64_t bf54 = (w.bf & BIT_SET_27) | ((w.bf & BIT_SET_B2) >> 5),
+		ac54 = (w.active & BIT_SET_27) | ((w.active & BIT_SET_B2) >> 5);
+
+	{	//____ load the first clues
+		register uint64_t R = bf54;
+		nclues_step = 0;
+		register uint32_t cell;
+		while (bitscanforward64(cell, R)) {
+			R ^= (uint64_t)1 << cell; //clear bit
+			tclues[nclues_step++] = cell;
+		}
+		tcluesxy = &tclues[nclues_step];
+	}
+	{// build still valid uas sorted by size 
+		uint64_t tt[30][500], ntt[30];
+		memset(ntt, 0, sizeof ntt);
+		{
+			register uint64_t F = w.bf, A = w.active;
+
+			for (uint32_t i = 0; i < tuasb12.nua; i++) {
+				register uint64_t R = tuasb12.tua[i];
+				if (R&F) continue;
+				R &= A;
+				if (!R)return; //dead
+				R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);// now r54
+				register uint64_t cc = _popcnt64(R);
+				tt[cc][ntt[cc]++] = R;
+			}
+		}
+		{
+			ntua4 = 0;
+			for (int i = 0; i < 30; i++)if (ntt[i]) {
+				for (uint64_t j = 0; j < ntt[i]; j++) {
+					register uint64_t R = tt[i][j], Rn = ~R;
+					for (uint32_t k = 0; k < ntua4; k++)
+						if (!(tua4[k] & Rn)) goto nextj;
+					tua4[ntua4++] = R;
+				nextj:;
+				}
+			}
+		}
+	}
+	if (0) {
+		cout << Char2Xout(w.bf) << " p_cpt2g[3] " << p_cpt2g[3] << " ntua4=" << ntua4
+			<< " ntuas=" << tuasb12.nua
+			<< " nc2=" << chunkh.GetC2Count()
+			<< " p_cpt2g[4] " << p_cpt2g[4] << endl;
+	}
+	//______________________________________________end pick up
+#ifdef DEBUGA
+	if (p_cpt2g[3] > DEBUG3)return;
+	if (p_cpt2g[3] > DEBUG3) {
+		cout << Char2Xout(w.bf)
+			<< " p_cpt2g[3] " << p_cpt2g[3]
+			<< " ntua4=" << ntua4
+			<< " ntuas=" << tuasb12.nua
+			<< " nc2=" << chunkh.GetC2Count()
+			<< " p_cpt2g[4] " << p_cpt2g[4] << endl;
+	}
+#endif
+	//return;
+	{
+		register int wnua = ntua4;
+		memset(v12_v0, 0, sizeof v12_v0);
+		for (int i = 0; i < 64; i++) {
+			if (wnua >= 64) {
+				v12_v0[i] = ~0; wnua -= 64;
+			}
+			else {//0 63 last
+				v12_v0[i] = ((uint64_t)1 << wnua) - 1;// 0 if wnua=0
+				break;
+			}
+		}
+
+	}
+	for (int i = 0; i < 54; i++)memcpy(v12_c[i], v12_v0, sizeof v12_c[0]);
+	for (uint32_t i = 0; i < ntua4; i++) {
+		register uint64_t R54 = tua4[i];
+		register uint32_t cell, bloc = i >> 6, ir = i - 64 * bloc;
+		while (bitscanforward64(cell, R54)) {
+			uint64_t bit = (uint64_t)1 << ir;
+			R54 ^= (uint64_t)1 << cell; //clear bit
+			v12_c[cell][bloc] ^= bit;
+		}
+	}
+	uint32_t n = 0;
+	for (uint32_t i = 0; i < 64; i++) {
+		register uint64_t A = v12_v0[i];
+		if (!A)break;
+		V12_64 &w = tv12_64[0][i];
+		w.ind = i;
+		w.u_start = i << 6;// 64*i
+		w.v = A;
+		n++;
+	}
+	nv12_64_spot[0] = n;// nb chunks at start
+	tv12_64f[0] = &tv12_64[0][n];
+	Do_phase2Expand(bf54, ac54);
+	}
+}
+void  GCHK::Do_phase2Expand(uint64_t bf, uint64_t ace) {// mode 54 not 2x
+	pendbufvalid = &bufvalid[BUFVALIDS];
+	pbufvalid = bufvalid;
+	uint64_t limspot = 17 - nphase1 - mincluesb3;
+	uint64_t andvalid = ~0,orvalid=0;
+	// _______________ expand to have all  minimal < n clues
+	struct SPB {// spots to find starts to extract uas 3 digits
+		uint64_t  possible_cells, all_previous_cells, active_cells;
+	}spb[13];
+	register SPB  *s, *sn;
+	register uint64_t ispot;
+	register int cell;
+	s = spb;
+	memset(s, 0, sizeof spb[0]);
+	s->all_previous_cells = bf;
+	s->active_cells = ace;
+	s->possible_cells = tua4[0];
+	//____________ here start the search nclues
+next:
+	ispot = s - spb;
+	{// catch and apply cell in bitfields
+		register uint64_t p = s->possible_cells;
+		
+		if (!p)goto back;
+		bitscanforward64(cell, p);
+		register uint64_t bit = (uint64_t)1 << cell;
+		s->possible_cells ^= bit;
+		s->active_cells ^= bit;
+		sn = s + 1; *sn = *s;
+		sn->all_previous_cells = s->all_previous_cells | bit;
+
+	}
+	{// find next ua
+		register V12_64 *tv1 = tv12_64[ispot], *tv2 = tv12_64[ispot+1],
+			*tv1f = tv12_64f[ispot], *tv2w = tv2;
+		register uint64_t *vc = v12_c[cell];
+		while (tv1 < tv1f) {// 64 bits uas vectors active
+			register uint64_t V = tv1->v & vc[tv1->ind];
+			if (V) { tv2w->v = V; tv2w++->ind = tv1->ind; }
+			tv1++;
+		}
+		if (tv2 != tv2w) {// still at least one ua not hit
+			tv12_64f[ispot + 1] = tv2w;// new last active ua vector
+			register uint32_t ir;
+			bitscanforward64(ir, tv2->v);//relative index first active
+			register uint64_t Ru = tua4[ir + tv2->u_start] & s->active_cells;
+			if (!Ru)goto next;
+			if (ispot >= limspot)goto next;
+			if (ispot == 1) {// clean 2+3/4 clues
+				if (pbufvalid > bufvalid) {
+					CleanBufferAndGo(andvalid,orvalid);
+					andvalid = ~0; orvalid = 0;
+				}
+			}
+			sn->possible_cells = Ru;
+			s++; // switch to next spot
+			//if (ispot < 2)cout << ispot << endl;
+			goto next;
+		}
+	}
+	{// possible valid band 1+2 to store
+		if (pbufvalid >= pendbufvalid) {// if limite do
+			CleanBufferAndGo(andvalid,orvalid);
+			andvalid = ~ 0; orvalid = 0;
+		}
+		andvalid &= sn->all_previous_cells;
+		orvalid |= sn->all_previous_cells;
+		*pbufvalid++ = sn->all_previous_cells;
+		if (ispot != limspot)*pbufvalid++ = s->active_cells;
+	}
+	goto next;
+back:
+	if (--s >= spb)goto next;
+	if (pbufvalid > bufvalid) // if limite do
+		CleanBufferAndGo(andvalid,orvalid);
+}
+void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
+	p_cpt2g[8]++;
+	uint64_t *myend = pbufvalid, *pw = bufvalid;
+	limb12 = 18 - mincluesb3;
+	pbufvalid = bufvalid;
+	uint64_t nn8 = (myend - bufvalid),
+		mincb2=_popcnt64(andvalid>>27);
+
+	//____ load the common clues
+	{
+		register uint64_t R = andvalid;
+		nclues_step = 0;
+		//nclues_step = (int)_popcnt64(w.bf);
+		uint32_t cell;
+		while (bitscanforward64(cell, R)) {
+			R ^= (uint64_t)1 << cell; //clear bit
+			tclues[nclues_step++] = cell;
+		}
+		tcluesxy = &tclues[nclues_step];
+	}
+	{// catch more still valid after andvalid
+		moreand.ntm = 0;
+		morev2a.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
+		morev2b.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
+		morev2c.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
+		morev2d.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
+	}
+#ifdef DEBUGA
+	if (p_cpt2g[3] > DEBUG3) {
+		cout << "CleanBufferAndGo p_cpt2g[8]= " << p_cpt2g[8] << " nn8=" << nn8 << endl;
+		cout << Char54out(andvalid) << " andvalid" << endl;
+		cout << Char54out(orvalid) << " orvalid" << endl;
+		cout << "extract ntm=" << moreand.ntm << " ncstep=" << nclues_step << endl;
+		moreand.Dump();
+		//return;
+	}
+#endif
+	while (pw < myend) {
+		p_cpt2g[4]++;
+		myb12 = *pw++;
+		int ncl = (int)_popcnt64(myb12);
+		if (ncl < limb12)myac = *pw++;
+		else myac = 0;
+		if ((mincluesb3 + _popcnt64(myb12 >> 32)) > 12) continue;
+#ifdef HAVEKNOWN
+		//if (okcheck)cout << Char2Xout(bf) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
+		if (okcheck&& p_cpt2g[4] == 4842934) {
+			cout << Char2Xout(puzknown.bf.u64[0]) << " known" << endl;
+			cout << Char2Xout(bf) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
+			cout << Char2Xout(ac) << " ac=" << endl;
+	}
+#endif
+
+		p_cpt2g[16]++;
+		if (moreand.Check(myb12))continue;// check remaining "add" 
+		{//____ load the remaining  clues
+			register uint64_t R = myb12 ^ andvalid;
+			nclues = nclues_step;
+			uint32_t cell;
+			while (bitscanforward64(cell, R)) {
+				R ^= (uint64_t)1 << cell; //clear bit
+				tclues[nclues++] = cell;
+			}
+		}
+#ifdef COLOIN
+		if (IsValidB12()) continue;
+		{
+			if (a_18_seen++ > 5) continue;;
+			char zs[82]; zs[81] = 0;		memcpy(zs, ze, 81);
+			for (uint64_t i = 0, bit = 1; i < 54; i++, bit <<= 1)
+				if (!(myb12&bit))zs[i] = '.';
+			cout << zs << endl;			
+			continue;
+		}
+#endif
+		clean_valid_done = 0;
+		morevalidc2.Init(); morevalidothers.Init();
+		if (nclues == limb12) {// 	InitGoB3(bf54, ac54, nclues);
+			continue;		}
+		CheckValidBelow();
+		/*	12 936 966		4  entry clean	*/
+	}
+}
+void GCHK::CheckValidBelow() {
+	register uint64_t uar = IsValidB12();// loop on add if not valid
+	clean_valid_done = 1;
+	if (uar) {// add one cell hitting all uas
+		int ncluemore = nclues++;
+		uar &= myac;// no redundancy
+		uint32_t cell;
+		while (bitscanforward64(cell, uar)) {
+			clean_valid_done = 0;
+			uar ^= (uint64_t)1 << cell; //clear bit
+			tclues[ncluemore++] = cell;
+			if (nclues == limb12) {	// InitGoB3(bf54, ac54, nclues);
+				continue;
+			}
+			CheckValidBelow();// check more missing uas
+		}
+	}
+	// continue in add mode 
+}
+uint64_t GCHK::IsValidB12() {
+	p_cpt2g[5]++;
+	if (zh2b[1].IsValid(tclues, nclues)) {
+		register uint64_t uaand = ~0; 
+			for (uint32_t i = 0; i < zh2gxn.nua; i++) {
+			register uint64_t ua = zh2gxn.tua[i],
+				cc = _popcnt64(ua),
+				ua54= (ua & BIT_SET_27) | ((ua & BIT_SET_B2) >> 5);
+			uaand &= ua54;
+			moreand.tm[moreand.ntm++] = ua54;
+			if (cc < 19) {
+				morev2a.Add54(ua54);  //12-20
+				//cout << Char54out(ua54) << " add ";
+				//cout << Char54out(myb12) << " nclues=" << nclues << endl;
+			}
+			else if (cc < 21)morev2c.Add54(ua54); // 19 20
+			else if (cc < 23) morev2d.Add54(ua54);// 21-22
+		}
+		return uaand;
+	}
+	return 0;
+}
+void GCHK::AfterExpandB12(uint64_t bf54, uint64_t ac54) {// no more ua
 	//return;
 	//if (p_cpt2g[42] > 500) return;
-	p_cpt2g[4]++;
-#ifdef DEBUGA
-	if (p_cpt2g[4] == DEBUGC) {
-		cout << Char2Xout(bf) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
-	}
-#endif	
-	
-	if (morev2a.ApplyXY(tclues, ncl)) return;
-	if (morev2b.ApplyXY(tclues, ncl)) return;
-	if (morev2c.ApplyXY(tclues, ncl)) return;
-	if (morev2d.ApplyXY(tclues, ncl)) return;
+
 	p_cpt2g[5]++;
-	nclues = ncl;
-	//for (uint32_t i = 0; i < ncl; i++) cout << tclues[i] << " ";
-	if (zh2b[1].IsValid(tclues, ncl)) {
-		//cout << Char2Xout(bf) << " " << ncl << " " << p_cpt2g[42] << " ";
-		//cout << "not valid 2 bands " << zh2gxn.nua << " uas to use "<< p_cpt2g[42] << endl;
-		for (uint32_t i = 0; i < zh2gxn.nua; i++) {
-			register uint64_t ua = zh2gxn.tua[i],
-				cc = _popcnt64(ua);
-			if (cc < 19)morev2a.Add(ua);  //12-20
-
-			//if(cc<17)morev2a.Add(ua);  //12-16
-			//else if (cc < 19)morev2b.Add(ua); // 17-18
-			else if (cc < 21)morev2c.Add(ua); // 19 20
-			else if (cc < 23) morev2d.Add(ua);// 21-22
-			// if >22 use it only to solve locally
-		}
-		// process fresh uas  in a special loop till valid
-		return;
-	}
-	morevalidc2.Init(); morevalidothers.Init();
-	p_cpt2g[6]++;
-
-	uint64_t bf54 = (bf & BIT_SET_27) | ((bf & BIT_SET_B2) >> 5),
-		ac54 = (ac & BIT_SET_27) | ((ac & BIT_SET_B2) >> 5);
-	InitGoB3(bf54, ac54, ncl );// valid puzzle  band3 bands1+2 locked
-	if (ncl >= 18 - mincluesb3) return;// 2 is min clues in b3
+	InitGoB3(bf54, ac54, nclues);// valid puzzle  band3 bands1+2 locked
+	if (nclues >= 18 - mincluesb3) return;// 2 is min clues in b3
 	p_cpt2g[7]++;
-	
+
 	//_______________ room for add ib bands 1+2 
 	if (p_cpt2g[22] < svb12.nt2)p_cpt2g[22] = svb12.nt2;
 	if (p_cpt2g[23] < svb12.ntmore)p_cpt2g[23] = svb12.ntmore;
 	myb12 = bf54;
 	myac = ac54;
-	mynclues = ncl;
+	mynclues = nclues;
 	//______________  build tadd from ac54
-	{ 
+	{
 		ntadd = 0;
 		memset(vaddh.mapcell, 255, sizeof vaddh.mapcell);
 		int cell;
@@ -757,11 +911,12 @@ void GCHK::AfterExpandB12(uint64_t bf, uint64_t ac, int ncl) {// no more ua
 			tadd[ntadd++] = cell;
 		}
 	}
-	vaddh.SetUpAdd0(svb12,ac54);
+	vaddh.SetUpAdd0(svb12, ac54);
 	ExpandAddB1B2();
 
 
 }
+
 
 void GCHK::VADD_HANDLER::SetUpAdd0(VB12& vbo, uint64_t ac) {
 	memset(vaddcell, 255, sizeof vaddcell);
@@ -1028,7 +1183,7 @@ inline void GCHK::VB12::BuildOrOf(uint64_t ac) {
 
 void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54, int ncl) {// bands1+2 locked
 #ifdef DEBUGA
-	if (p_cpt2g[4] == DEBUGC) {
+	if (p_cpt2g[4] == DEBUGA) {
 		cout << Char54out(bf54) << " bf54 ncl=" << ncl << endl;
 		cout << Char54out(ac54) << " ac54 "	 << endl;
 	}
@@ -1045,7 +1200,7 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54, int ncl) {// bands1+2 locked
 
 void GCHK::GoB3(  int ncl,  VB12 & vbx) {
 #ifdef DEBUGA
-	if (p_cpt2g[4] == DEBUGC) {
+	if (p_cpt2g[4] == DEBUGA) {
 		cout << "entry gob3 nmiss=" << nmiss << " ncl=" << ncl << endl;
 		cout << vbx.nt2 << " " << vbx.ntmore << endl;
 	}
@@ -1057,7 +1212,6 @@ void GCHK::GoB3(  int ncl,  VB12 & vbx) {
 	// _direct process unless compulsory outfield clues
 	if (nmiss > 2)isdirect = 1;
 	else {
-		return;
 		vbx.ApplyBf2();// assign critical 2 pairs
 		vbx.BuildOf();// outfield after 2 pairs
 		if (!nmiss) {
@@ -1080,6 +1234,15 @@ void GCHK::GoB3(  int ncl,  VB12 & vbx) {
 			}
 		}
 		else {// now nmiss=2
+#ifdef DEBUGA
+			if (p_cpt2g[4] == DEBUGA) {
+				cout << " nmiss2 vbx.ntof=" << vbx.ntof << endl;
+				vbx.smin.Status(" ");
+				vbx.Dumpt2();
+				vbx.Dumptmore();
+				vbx.Dumptof128();
+			}
+#endif
 			if (vbx.ntof < 2 || vbx.GetAnd()) isdirect = 1;
 			uint32_t ua1 = vbx.GetMinOf();// start with smallest
 			uint32_t  c;// use ua as first clue and go std
@@ -1138,7 +1301,7 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0, VB12 & vbx) {//
 void  GCHK::ExpandB3Vect( uint32_t cl0bf ,uint32_t active0 ) {
 	p_cpt2g[14]++;
 #ifdef DEBUGA
-	if (p_cpt2g[4] == DEBUGC) {
+	if (p_cpt2g[4] == DEBUGA) {
 		cout << "call expandb3 p_cpt2g[14]" << p_cpt2g[14]
 			<< " cl0bf=" << cl0bf << " active0=" << active0
 			<< "\tb3direct.nt=" << b3direct.nt << " nclf=" << nclf<< endl;
@@ -1228,6 +1391,11 @@ next:
 	}
 	//___________  possible nclues do final check
 	p_cpt2g[19]++;
+#ifdef DEBUGA
+	if (p_cpt2g[4] == DEBUGA) {
+		cout << Char27out(sn->all_previous_cells) << " call check"   << endl;
+	}
+#endif	
 	if (zhou[0].CallCheckB3(tclues, nclf, sn->all_previous_cells)) {
 		for (uint32_t iadd = 0; iadd < zhgxn.nua; iadd++) {
 			BF128 w = zhgxn.tua[iadd];
@@ -1247,7 +1415,17 @@ next:
 				else morevalidothers.Add(w);
 			}
 		}
-		uint32_t ua = zhgxn.tua[0].bf.u32[0];
+		uint32_t ua = zhgxn.tua[0].bf.u32[2];
+#ifdef DEBUGA
+		if (p_cpt2g[4] == DEBUGA) {
+			cout << Char27out(ua) << " new ua ispot/limspot "<<ispot <<" "<<limspot << endl;
+			if (!ua) {
+				cout << "bug expandb3 ua null p_cpt2g[4]=" << p_cpt2g[4] << endl;
+				zhou[0].CallCheckB3(tclues, nclf, sn->all_previous_cells, 2);
+				zhgxn.tua[0].Print3(" back ua");
+			}
+		}
+#endif	
 		if (ispot < limspot) {// new ua for next spot
 			sn->possible_cells = ua;
 			s = sn;
@@ -1277,9 +1455,122 @@ back:
 
 
 }
+void  GCHK::ExpandB3VectV2(uint32_t cl0bf, uint32_t active0) {
+	p_cpt2g[14]++;
+	int limspot = 17 - nclf - _popcnt32(cl0bf);
+	uint32_t tadd[500], ntadd = 0;
+	// uas basis in b3direct and chunkh.band3[2]
+	struct SPB {
+		uint64_t vects[3];
+		uint32_t  possible_cells, all_previous_cells, active_cells, x;
+	}spb[12];
+	register SPB *s, *sn;
+	register uint64_t ispot;
+	s = spb;
+	memset(s, 0, sizeof spb[0]);
+	s->all_previous_cells = cl0bf;// if former assign
+	s->active_cells = active0;// default bitsets27
+	s->vects[0] = b3direct.v0;// initial vectsno ua hit here
+	s->vects[1] = chunkh.band3[0].v0;// initial vects
+	s->vects[2] = chunkh.band3[1].v0;// initial vects
+	if (cl0bf) {// apply cl0bf to band3
+		register uint32_t w = cl0bf, c;
+		while (bitscanforward(c, w)) {
+			w ^= 1 << c;
+			s->vects[1] &= chunkh.band3[0].vc[c];
+			s->vects[2] &= chunkh.band3[1].vc[c];
+		}
+	}
+	s->possible_cells = b3direct.tua[0];
+	//____________ here start the search nclues
+next:
+	ispot = s - spb;
+	{// catch and apply cell in bitfields
+		register int cell;
+		register uint32_t p = s->possible_cells;
+		if (!p)goto back;
+		bitscanforward(cell, p);
+		register uint32_t bit = 1 << cell;
+		s->possible_cells ^= bit;
+		s->active_cells ^= bit;
+		sn = s + 1; *sn = *s;
+		sn->all_previous_cells = s->all_previous_cells | bit;
+		//__________________check for next uaor no more ua
+		sn->vects[0] &= b3direct.vc[cell];
+		sn->vects[1] &= chunkh.band3[0].vc[cell];
+		sn->vects[2] &= chunkh.band3[1].vc[cell];
+	}
+	{ // find next ua
+		register int ir = -1;
+		{
+			register uint32_t U;
+			if (sn->vects[0]) {// most often
+				bitscanforward64(ir, sn->vects[0]);//ir ua to load
+				U = b3direct.tua[ir];	}
+			else if (ntadd) {// 
+				for (uint32_t ia = 0; ia < ntadd; ia++) {
+					if (!(tadd[ia] & sn->all_previous_cells)) {
+						ir = 1; U = tadd[ia]; break;		}
+				}
+			}
+			if (ir < 0) {
+				if (sn->vects[1]) {// allways if less than 64 uas for the band
+					bitscanforward64(ir, sn->vects[1]);//ir ua to load
+					U = chunkh.band3[0].tua[ir];		}
+				else if (sn->vects[2]) {
+					bitscanforward64(ir, sn->vects[2]);//ir ua to load
+					U = chunkh.band3[1].tua[ir];	}
+			}
+			if (ir >= 0) {// still at least one ua
+				if (ispot >= limspot) goto next;// to many clues
+				U &= s->active_cells;
+				if (!U)goto next;//dead branch  
+				sn->possible_cells = U;
+				s++; // switch to next spot
+				goto next;
+			}
+		}
+	}
+	//___________  possible nclues do final check
+	p_cpt2g[19]++;
+	if (zhou[0].CallCheckB3(tclues, nclf, sn->all_previous_cells)) {
+		for (uint32_t iadd = 0; iadd < zhgxn.nua; iadd++) {
+			BF128 w = zhgxn.tua[iadd];
+			int cc = _popcnt32(w.bf.u32[2]);
+			uint64_t cc0 = _popcnt64(w.bf.u64[0]);
+			//if (ntadd < 100)
+				tadd[ntadd++] = w.bf.u32[2];
+			if (cc <= 8 && cc0 < 20) {
+				chunkh.Add128(w);
+				register uint64_t ua12 = w.bf.u64[0];
+				uint64_t ua54 = (ua12 & BIT_SET_27) |
+					((ua12 & BIT_SET_B2) >> 5);
+				w.bf.u64[0] = ua54;// store in 54 cells mode
+				if (cc < 3) {
+					w.bf.u32[2] = GetI27(w.bf.u32[2]);
+					morevalidc2.Add(w);
+				}
+				else morevalidothers.Add(w);
+			}
+		}
+		uint32_t ua = zhgxn.tua[0].bf.u32[2];
+		if (ispot < limspot) {// new ua for next spot
+			sn->possible_cells = ua;
+			s = sn;
+		}
+		else s->possible_cells &= ua;// same spot hitting  new ua			
+		goto next;
+	}
+	//_________________________   valid 18 
+	Out17(sn->all_previous_cells);
+	/*		return; // stop at first	*/
+	goto next;
+	// going back, for a non empty index, count it back
+back:
+	if (--s >= spb)goto next;
+}
 
 /*
-
 uint32_t t2clues_band1[9] = {
 0400000001,
 0200000004,
@@ -1291,23 +1582,11 @@ uint32_t t2clues_band1[9] = {
   04000040,
   01000010,
 };
-
-on passe en état final plus de changement en bandes 1+2
-
-			orw = 0;
-			for (uint32_t i = 0; i < svb12.ntmore; i++) {
-				register uint32_t R3 = svb12.tmore[i].bf.u32[2];
-				if (!(R3&infield)){
-					cout << Char54out(svb12.tmore[i].bf.u64[0]) << " ";
-					cout << Char27out(svb12.tmore[i].bf.u32[2]) << endl;
-					orw |= svb12.tmore[i].bf.u64[0];
-				}
-			}
-			if(orw)		cout << Char54out(orw) << " or" << endl;
 */
 
 //=========brute force specific to this
 int ZHOU::CallCheckB3(uint32_t * t, int n, uint32_t bf, int nogo) {// 17 search mode
+	zh_g.diag = nogo;
 	memcpy(this, zhoustart, sizeof zhoustart);
 	misc.SetAll_0();
 	BF128 dca[9];
@@ -1342,7 +1621,7 @@ int ZHOU::CallCheckB3(uint32_t * t, int n, uint32_t bf, int nogo) {// 17 search 
 	//zh_g2.isfalse_on = -1;
 	//ImageCandidats();
 	int ir = FullUpdate();
-	if (nogo) { ImageCandidats(); return 0; }// test
+	if (nogo==1) { ImageCandidats(); return 0; }// test
 	if (ir == 2) return 0;// solved can not be multiple
 	Guess17(0);
 	return zhgxn.nua;
@@ -1365,37 +1644,6 @@ int ZHOU::PartialInitSearch17(uint32_t * t, int n) {
 	w.bf.u32[3] = ~0;// keep rowunsolved settled
 	for (int i = 0; i < 9; i++)  FD[i][0] &= w | zh_g2.Digit_cell_Assigned[i];
 	return 0;
-}
-int ZHOU::CallMultipleB3x(ZHOU & o, uint32_t bf, int diagx) {
-	*this = o;
-	BF128 dca[9];
-	int digitsbf = zh_g2.digitsbf;
-	memcpy(dca, zh_g2.Digit_cell_Assigned, sizeof dca);
-	{
-		uint32_t cc;
-		register int x = bf;
-		while (bitscanforward(cc, x)) {
-			x ^= 1 << cc; //clear bit
-			int cell = cc + 54, digit = gchk.grid0[cell];
-			digitsbf |= 1 << digit;
-			int xcell = cc + 64; // the cell value in 3x32 of a 128 bits map
-			if (FD[digit][0].Off(xcell))  return 0;// check not valid entry
-			Assign(digit, cell, xcell);
-			dca[digit].Set(xcell);
-		}
-	}
-	zhgxn.nua = 0;
-	zh_g2.s17_b3_mini = 1;
-	BF128 w = cells_unsolved;
-	w.bf.u32[3] = ~0;// keep rowunsolved settled
-	for (int i = 0; i < 9; i++)  FD[i][0] &= w | dca[i];
-	//__________end assign last lot start solver
-	zh_g.go_back = 0;	// modevalid is set to  1
-	//zh_g2.isfalse_on = -1;
-	int ir = Full17Update();
-	if (ir == 2) return 0;// solved can not be multiple
-	Guess17(0);
-	return zhgxn.nua;
 }
 
 int ZHOU::Apply17SingleOrEmptyCellsB12() {
@@ -1511,8 +1759,10 @@ int ZHOU::Full17Update() {
 }
 void ZHOU::Compute17Next(int index) {
 	int ir = Full17Update();
-	//cout << "index=" << index << endl;
-	//ImageCandidats();
+	if (zh_g.diag) {
+		cout << "index=" << index << endl;
+		ImageCandidats();
+	}
 	if (!ir) return;// locked 
 	if (ir == 2) {//solved
 		if (index) {// store false as ua
@@ -1524,8 +1774,10 @@ void ZHOU::Compute17Next(int index) {
 				if (FD[d][0].Off_c(i))	wua.Set_c(i);
 			}
 			if (wua.isNotEmpty()) {
-				//cout << "zhgxn.nua=" << zhgxn.nua << endl;
-				//wua.Print3(" ");
+				if (zh_g.diag) {
+					cout << "zhgxn.nua=" << zhgxn.nua << endl;
+					wua.Print3(" ");
+				}
 				int cc = _popcnt32(wua.bf.u32[2]);
 				if ((!zhgxn.nua) || cc < 3)
 					zhgxn.tua[zhgxn.nua++] = wua;
@@ -1565,11 +1817,6 @@ void ZHOU::Guess17(int index) {
 
 
 
-
-
-//= old code to kill
-
-
 void GCHK::Out17(uint32_t bfb3) {
 	// mapping of the output on band_order[ib] 
 	uint32_t map[81];
@@ -1578,7 +1825,7 @@ void GCHK::Out17(uint32_t bfb3) {
 	char ws[82];
 
 	uint32_t tcf[40], ntcf = 0;
-	for (int i = 0; i < nclues ; i++) {
+	for (int i = 0; i < nclf ; i++) {
 		tcf[ntcf++] = map[tclues[i]];
 	}
 	for (int i = 0, bit = 1; i < 27; i++, bit <<= 1)if (bfb3 & bit)
@@ -1597,15 +1844,3 @@ void GCHK::Out17(uint32_t bfb3) {
 
 }
 
-
-
-void GCHK::Debugifof() {
-#ifdef TEST_ON
-	cout << "in field out field status) "<< nuasb3_1<<" "<< nuasb3_2 << endl;
-	for (uint32_t i = 0; i < 15; i++)
-		cout << Char27out(uasb3_1[i] )<< " if " << i << endl;
-	for (uint32_t i = 0; i < nuasb3_2; i++)
-		cout << Char27out(uasb3_2[i]) << " of " << i << endl;
-#endif
-
-}

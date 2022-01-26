@@ -5,10 +5,10 @@ const char * libs_c17_00_cpt2g[70] = {
 	"2  uas g2 start",//2
 	"3  steps first 3/4 ",//3
 	"4  entry clean",
-	"5  pass filter ",
-	"6  valid b 12 ",
+	"5  after b12 ",
+	"6  ",
 	"7  look for more clues b1+2 ",
-	"8  ",
+	"8 entry clean buffer ",
 	"9  all band 3 calls",
 	"10 not critical 0",//10
 	"11 not critical 1",//11
@@ -17,8 +17,8 @@ const char * libs_c17_00_cpt2g[70] = {
 
 	"14 b3 expand",//14
 	"15 ",//15
-	"16 ",//16
-	"17 ",//17
+	"16 clean not 6 b2 forbidden",//16
+	"17 seen",//17
 	"18  ",
 	"19  final checkb3",
 	"20  count add",
@@ -37,12 +37,12 @@ const char * libs_c17_00_cpt2g[70] = {
 	"32 add to uasb12 +1",	"33 add to uasb12 +2",	
 	"34 add to uasb12 ++",	
 	
-	"35 ",	"36  ",	"37 ",	"38",	"39",
+	"35  test ph2exp",	"36  ",	"37 ",	"38",	"39",
 
 	"40 ",	
 	"41 limspot",	
 	"42 ", 
-	"43 limspot nd",	
+	"43 d",	
 	"44","45","46","47","48",	
 	"49","50 ","51 ","52 ",	"53 ",	"54 ",	"55 ",
 	"56 count clean1",	
@@ -163,6 +163,7 @@ int  Is18(char * ze, char * zp) {
 	gchk.zp = zp;
 	gchk.diagbugchk = 0;
 	char ze_diag[164]; ze_diag[163] = 0;
+	memcpy(gchk.zes, ze, 164);
 	gchk.a_18_seen = 0;
 	memset(p_cpt2g, 0, sizeof p_cpt2g);
 	zh_g.modevalid = 1;
@@ -183,23 +184,6 @@ int  Is18(char * ze, char * zp) {
 		bandminlex.Getmin(&zs0_diag[27 * ibs], &perm_ret);
 		bax[ibs + 3].InitBand2_3(&ze_diag[27 * ibs], perm_ret, ibs);
 	}
-	/*
-	if (0) {
-		cout << ze << "contrôle acquisition" << endl;
-		int imin = 7, min = 1000000;
-		for (int ibs = 0; ibs < 6; ibs++) {
-			STD_B416 & b = bax[ibs];
-			cout << ibs << "\t" << b.band << "\t" << b.i416 << " " << t416n6[b.i416]
-				<< " index " << t416_to_n6[b.i416] << endl;
-			if (t416_to_n6[b.i416] < min) {
-				min = t416_to_n6[b.i416]; imin = ibs;
-			}
-		}
-		cout << "min expected i=" << imin << endl;
-		if (imin > 2)cout << "should use digonal symmetry" << endl;
-	}
-	*/
-
 
 	int tsort[3];
 	{// sort entry increasing order of min clues
@@ -213,38 +197,31 @@ int  Is18(char * ze, char * zp) {
 				tsort[j] = temp;
 			}
 	}
-	// put bands in the right order
-	bax[3] = bax[tsort[0] & 7];
-	bax[4] = bax[tsort[1] & 7];
-	bax[5] = bax[tsort[2] & 7];
-	bax[0] = bax[3]; bax[1] = bax[4]; bax[2] = bax[5];
-
+	// put bands in the right order  012
+	baxs[0] = bax[tsort[0] & 7];
+	baxs[1] = bax[tsort[1] & 7];
+	baxs[2] = bax[tsort[2] & 7];
+	bax[0] = baxs[0]; bax[1] = baxs[1]; bax[2] = baxs[2];
+	int irs=0;
 	gchk.band_order[0] = tsort[0] & 7;
 	gchk.band_order[1] = tsort[1] & 7;
 	gchk.band_order[2] = tsort[2] & 7;
-	gchk.mincluesb3 = 6;//t16_min_clues[bax[2].i416];
+	gchk.mincluesb3 = 6;
+	irs= gchk.StartIs18();
+#ifndef COLOIN
 
-	// put knownn in the right order
-
-#ifdef HAVEKNOWN
-	if (strlen(ze) < 163) return -1;// skip blank lines
-	char * w = &ze[82],ww[82];
-	memcpy(ww, w, 81);
-	memcpy(w, &ww[27 * (tsort[0] & 7)], 27);
-	memcpy(&w[27], &ww[27 * (tsort[1] & 7)], 27);
-	memcpy(&w[54], &ww[27 * (tsort[2] & 7)], 27);
-	gchk.puzknown.SetAll_0();
-	gchk.puzknown_perm = gchk.puzknown;
-	for (int i = 0; i < 81; i++) {
-		char c = w[i];
-		if (c<'1' || c>'9') continue;
-		gchk.puzknown.Set_c(i);// store the pattern in 3X mode
-		// this can be a pattern, no check of the digit with the solution
-	}
+	// second perm  exchange bands 2/3  021
+	gchk.mincluesb3 = 7;
+	gchk.band_order[1] = tsort[2] & 7; // old band 3
+	gchk.band_order[2] = tsort[1] & 7;
+	bax[0] = baxs[0]; bax[1] = baxs[2]; bax[2] = baxs[1];
+	irs += gchk.StartIs18();
+	// third perm    120
+	gchk.band_order[0] = tsort[1] & 7;// old band 2
+	gchk.band_order[2] = tsort[0] & 7; // old band 1
+	bax[0] = baxs[1]; baxs[1] = baxs[2]; bax[2] = baxs[0];
+	irs += gchk.StartIs18();
 #endif
-	// reshape known
-
-	int irs= gchk.StartIs18();
 #ifdef TEST_ON
 	cout << "print final stats" << endl;
 	for (int i = 0; i < 70; i++) {

@@ -133,6 +133,8 @@ int main(int narg, char *argv[]) {
 	char * ze = finput.ze;
 	char zp[200];
 	uint64_t npuz = 0,nok=0;
+
+	cout << "go for puzzles" << " " << vx[2] << " " << vx[3] << endl;
 	while (finput.GetLigne()) {
 
 		if (strlen(ze) < 81) continue;// skip blank lines
@@ -155,7 +157,7 @@ int main(int narg, char *argv[]) {
 			else fout1 << endl;
 
 		}
-
+		cout << "back npuz=" << npuz << " vx[3]=" << vx[3] << endl;
 		if (npuz >= vx[3])break;
 
 	}

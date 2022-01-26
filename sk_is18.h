@@ -442,30 +442,20 @@ struct MORE64VECT {// FIFO table of more for bands 1+2
 
 	}
 
-	inline void Add(uint64_t v) {//add a new more if <128 
+	inline void Add54(uint64_t v) {//add a new more if <128 
 		if (nt < 128) {
-			uint32_t cc64;// build cells vectors 
+			uint32_t cc54;// build cells vectors 
 			vect.Set(nt);
 			register uint64_t Rw = v;
-			while (bitscanforward64(cc64, Rw)) {
-				Rw ^= (uint64_t)1 << cc64;// clear bit
-				if (cc64 > 26)cc64 -= 5;
-				vc[cc64].clearBit(nt);
+			while (bitscanforward64(cc54, Rw)) {
+				Rw ^= (uint64_t)1 << cc54;// clear bit
+				vc[cc54].clearBit(nt);
 			}
 			t[nt++] = v;
 		}
 	}
-	inline void Add2(uint64_t v, uint64_t ac) {
-		uint32_t cc64;// build cells vectors 
-		vect.Set(nt);
-		register uint64_t Rw = v & ac;
-		while (bitscanforward64(cc64, Rw)) {
-			Rw ^= (uint64_t)1 << cc64;// clear bit
-			if (cc64 > 26)cc64 -= 5;
-			vc[cc64].clearBit(nt);
-		}
-		t[nt++] = v;
-	}
+
+
 	inline int ApplyXY(uint32_t *tcells, uint32_t ntcells) {
 		if (!nt) return 0;
 		BF128 w = vect;
@@ -473,18 +463,35 @@ struct MORE64VECT {// FIFO table of more for bands 1+2
 			w &= vc[tcells[i]];
 		return (w.isNotEmpty());
 	}
-	void Add_to(uint64_t * td, uint32_t & ntd) {
-		for (uint32_t i = 0; i < nt; i++)
-			td[ntd++] = t[i];
+	inline void Extract(uint32_t *tc, uint32_t ntc,
+		uint64_t *td, uint64_t & ntd) {
+		if (!nt) return;
+		BF128 w = vect;
+		uint32_t ir;
+		for (uint32_t i = 0; i < ntc; i++)	w &= vc[tc[i]];
+		{
+			register uint64_t R = w.bf.u64[0];
+			while (bitscanforward64(ir, R)) {
+				R ^= (uint64_t)1 << ir;
+				td[ntd++] = t[ir];
+			}
+		}
+		{
+			register uint64_t R = w.bf.u64[1];
+			while (bitscanforward64(ir, R)) {
+				R ^= (uint64_t)1 << ir;
+				td[ntd++] = t[ir+64];
+			}
+		}
 	}
-
 
 };
 struct MOREV2 {// 2 more64vect paired
 	MORE64VECT mv1, mv2;
 	uint32_t sw12;
 	inline void Init() { mv1.Init(); mv2.Init(); sw12 = 0; }
-	inline void Add(uint64_t v) {//add a new more if <128 
+
+	inline void Add54(uint64_t v) {//add a new more if <128 
 		if (sw12 && (mv2.nt == 128)) {
 			mv1.Init();
 			sw12 = 0;// mv1 active
@@ -493,22 +500,24 @@ struct MOREV2 {// 2 more64vect paired
 			mv2.Init();
 			sw12 = 1;// mv2 active
 		}
-		if (sw12)mv2.Add(v);
-		else mv1.Add(v);
-	}
+		if (sw12)mv2.Add54(v);
+		else mv1.Add54(v);
+	}	
 	inline int ApplyXY(uint32_t *tcells, uint32_t ntcells) {
 		if (mv1.ApplyXY(tcells, ntcells)) return 1;
 		return mv2.ApplyXY(tcells, ntcells);
+	}
+	inline void Extract(uint32_t *tc, uint32_t ntc,
+		uint64_t *td, uint64_t & ntd) {
+		mv1.Extract(tc, ntc, td, ntd);
+		mv2.Extract(tc, ntc, td, ntd);
 	}
 
 	void Status(const char * lib) {
 		cout << "status for more uas " << lib << endl;
 		cout << mv1.nt << " " << mv2.nt << " " << mv1.nt + mv2.nt << endl;
 	}
-	void Add_to(uint64_t * td, uint32_t & ntd) {
-		mv1.Add_to(td, ntd);
-		mv2.Add_to(td, ntd);
-	}
+
 
 }morev2a, morev2b, morev2c, morev2d;
 
@@ -582,10 +591,10 @@ struct G17B3HANDLER {
 
 };
 
-
+#define BUFVALIDS 8000
 struct GCHK {
 	//=========== kwon puzzle filters
-	BF128 puzknown,puzknown_perm;
+	BF128 puzknown;
 	uint32_t kpfilt[4]; //initial statu 3 
 	int kn_ir1, kn_ir2;
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
@@ -596,7 +605,7 @@ struct GCHK {
 	uint64_t debugvalbf;
 	//___________________ studied solution 
 	char * ze;// given solution grid
-	char ze_diag[164];
+	char zes[164],ze_diag[164];
 	char * zp;// first 18 if any
 	char zsol[82];// solution grid morphed
 	int grid0[81];// same 0 based
@@ -658,8 +667,10 @@ struct GCHK {
 		uint32_t ind,// vector ind
 		 u_start;//64*ind first ua of the vector
 	};
-	uint32_t nv12_64_spot[16]; // maxi 64 spots in expand
+	V12_64 *tv12_64f[16];
 	V12_64 tv12_64[16][64]; // max 16 spot and 4096 uas
+
+	uint32_t nv12_64_spot[16]; // maxi 64 spots in expand
 
 	//___________  first 3/4 then expand
 	struct CPT_4 {
@@ -686,15 +697,21 @@ struct GCHK {
 	}t4_to_expand[5000];
 	uint64_t tua4[2048];
 	uint32_t ntua4;
+	uint64_t bufvalid[BUFVALIDS+1], *pbufvalid,*pendbufvalid;
+	int nt4ok,okcheck;// for known
+
 
 	void BuildVectorsForExpand4B12();//64 uas
 	void Expand4B12();
 	void Do_phase2(T4_TO_EXPAND w);
 	void Do_phase2Expand(uint64_t bf, uint64_t ac);
-
+	uint64_t IsValidB12();
+	void CheckValidBelow();
+	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
 	//_____________ validb12
 	uint64_t myb12, myac, myb12add;
 	uint32_t  mynclues;//valid status
+	int 	limb12;
 	uint32_t tadd[50], ntadd;
 	struct VB12
 	{	BF128 tmore[384], t2[128],tof128[50];
@@ -781,22 +798,38 @@ struct GCHK {
 
 	}vaddh;
 
+	struct MOREAND {
+		uint64_t tm[500], ntm;
+		inline int Check(uint64_t bf) {
+			register uint64_t F = bf, i;
+			for (i = 0; i < ntm; i++)
+				if (!(F&tm[i]) )return 1;
+			return 0;
+		}
+		void Dump() {
+			for (uint64_t i = 0; i < ntm; i++)
+				cout << Char54out(tm[i]) << " " << i << " "
+				<< _popcnt64(tm[i] )<< endl;
+		}
 
-	void AfterExpandB12(uint64_t bf, uint64_t ac, int ncl);
-	
+	}moreand;
+	void AfterExpandB12(uint64_t bf54, uint64_t ac54);
+
 	void ExpandAddB1B2();
 	void ExpandAddB1B2Go(int step);
-	void InitGoB3(uint64_t bf, uint64_t ac, int ncl);
+	void InitGoB3(uint64_t bf, uint64_t ac54, int ncl);
 
 	void GoB3(  int ncl, VB12 & vbx);
 	void BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0, VB12 & vbx);
 	void ExpandB3Vect( uint32_t cl0bf=0,
 		uint32_t active0=BIT_SET_27);
+	void ExpandB3VectV2(uint32_t cl0bf = 0,
+		uint32_t active0 = BIT_SET_27);
 
 
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
 	int nclues_step, nclues,nclf,nmiss;
-	uint64_t n_to_clean, n_to_clean2,nwc;
+	//uint64_t n_to_clean, n_to_clean2,nwc;
 	int  ncluesb3,mincluesb3;
 
 
@@ -808,7 +841,6 @@ struct GCHK {
 
 	uint32_t	ua_of_seen;
 
-
 	//________ clean and valid
 	uint32_t uasb3_1[10000], uasb3_2[2000], 
 		nuasb3_1, nuasb3_2,  b3_andout;
@@ -818,71 +850,10 @@ struct GCHK {
 	uint32_t ua_out_seen,clean_valid_done;
 	//==================== current band 3 to process
 	uint32_t tcluesb3[10],ntcl3,ntcl3_bf2,*tclues3;
-
-
-	G17B3HANDLER hh0;
-
-	//____ start the process for a triplet banda band b bandc 
-	void Start(STD_B416 * bandx, int * tsort,int ip);
-
-	//============ vectors 64 128 bits 
-	struct UB2 {// for 2560 uas over 128 in step b1b2
-		BF128 vx[20], vcx[20][54];
-		void Init() {
-			memset(vx, 0, sizeof vx);
-			memset(vcx, 255, sizeof vcx);
-		}
-		inline void Add(uint64_t & ua, uint32_t i) {
-			uint32_t ibloc = i >> 7, ir = i & 127;
-			vx[ibloc].Set(ir);
-			uint32_t cc64;// build cells vectors 
-			register uint64_t Rw = ua;
-			BF128 * vc = vcx[ibloc];
-			while (bitscanforward64(cc64, Rw)) {
-				Rw ^= (uint64_t)1 << cc64;// clear bit
-				if (cc64 > 26)cc64 -= 5;
-				vc[cc64].clearBit(ir);
-			}
-		}
-		void ApplyStep(uint64_t & bf, uint32_t nuas) {
-			// put bf in table
-			uint32_t tcells[54], ntcells = 0, cc64;
-			register uint64_t Rw = bf;
-			while (bitscanforward64(cc64, Rw)) {
-				Rw ^= (uint64_t)1 << cc64;// clear bit
-				if (cc64 > 26)cc64 -= 5;
-				tcells[ntcells++] = cc64;
-			}
-			uint32_t ibloc = 0;
-			while (1) {
-				BF128 w = vx[ibloc], *vc = vcx[ibloc];
-				for (uint32_t i = 0; i < ntcells; i++)
-					w &= vc[tcells[i]];
-				vx[ibloc] = w;
-				if (nuas > 128) { nuas -= 128; ibloc++; }
-				else break;
-			}
-		}
-		inline int ApplyXY(uint32_t *tcells, uint32_t ntcells, uint32_t nuas) {
-			uint32_t ibloc = 0;
-			while (1) {
-				BF128 w = vx[ibloc], *vc = vcx[ibloc];
-				for (uint32_t i = 0; i < ntcells; i++)
-					w &= vc[tcells[i]];
-				if (w.isNotEmpty()) return 1;
-				if (nuas > 128) { nuas -= 128; ibloc++; }
-				else break;
-			}
-			return 0;
-		}
-	}ub2;
-
-
 	//_______ processing potential valid bands 1+2
 
 
 	void Out17(uint32_t bfb3);
 
-	void Debugifof();
 };
 
