@@ -4,20 +4,14 @@
 //#define HAVEKNOWN 1
 #ifdef HAVEKNOWN
 #endif
-#define PHASE 1
-#ifdef PHASE
-#endif
-#define DOV2
-#ifdef DOV2
-#endif
 
-#define COLOIN
+//#define COLOIN
 #ifdef COLOIN
 #endif
 #ifndef COLOIN
 #endif
 
-//#define TEST_ON 1
+#define TEST_ON 1
 
 //#define TEST_ON_KNOWN
 #ifdef TEST_ON_KNOWN

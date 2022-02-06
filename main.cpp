@@ -151,13 +151,20 @@ int main(int narg, char *argv[]) {
 			if (ir < 0)	cout << "puz " << npuz << "  band 29 (2 clues)" << endl;
 			long tendp = GetTimeMillis();
 			if (ir > 0)nok++;
-			fout1 << ze << " " << tendp - tdebp << " ";
-			if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
-			else if (ir == 0) 			fout1 << " no 18" << endl;
-			else fout1 << endl;
+//#define COLOIN
+#ifdef COLOIN
+		if (ir < 300) {
+#endif
+				fout1 << ze << "n18=" << ir << "  " << tendp - tdebp << " ";
+				if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
+				else if (ir == 0) 			fout1 << " no 18" << endl;
+				else fout1 << endl;
+#ifdef COLOIN
+		}
+#endif
 
 		}
-		cout << "back npuz=" << npuz << " vx[3]=" << vx[3] << endl;
+		//cout << "back npuz=" << npuz << " vx[3]=" << vx[3] << endl;
 		if (npuz >= vx[3])break;
 
 	}

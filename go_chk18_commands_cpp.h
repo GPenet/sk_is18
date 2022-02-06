@@ -5,10 +5,10 @@ const char * libs_c17_00_cpt2g[70] = {
 	"2  uas g2 start",//2
 	"3  steps first 3/4 ",//3
 	"4  entry clean",
-	"5  after b12 ",
-	"6  ",
-	"7  look for more clues b1+2 ",
-	"8 entry clean buffer ",
+	"5  try b12 ",
+	"6  InitGoB3",
+	"7  entry below ",
+	"8  gob3 ",
 	"9  all band 3 calls",
 	"10 not critical 0",//10
 	"11 not critical 1",//11
@@ -16,12 +16,12 @@ const char * libs_c17_00_cpt2g[70] = {
 	"13 b3 direct",//13
 
 	"14 b3 expand",//14
-	"15 ",//15
+	"15 isvalid b12",//15
 	"16 clean not 6 b2 forbidden",//16
-	"17 seen",//17
+	"17 add after valid",//17
 	"18  ",
 	"19  final checkb3",
-	"20  count add",
+	"20  call checkb3",
 	"21 ",
 	"22  max c2",
 	"23  max cmore",
@@ -33,11 +33,13 @@ const char * libs_c17_00_cpt2g[70] = {
 	"29 ",//29
 
 	"30  new ua b12",	
-	"31 add to uasb12",	
-	"32 add to uasb12 +1",	"33 add to uasb12 +2",	
-	"34 add to uasb12 ++",	
+	"31 add to <19",	
+	"32 ",	"33 add to uasb12 +2",	
+	"34  ",	
 	
-	"35  test ph2exp",	"36  ",	"37 ",	"38",	"39",
+	"35 add c2 ",	
+	"36 ad other ",	
+	"37 filter one of 3 perms",	"38",	"39",
 
 	"40 ",	
 	"41 limspot",	
@@ -161,7 +163,7 @@ int  Is18Blue(char * ze, char * zp) {
 int  Is18(char * ze, char * zp) {
 	gchk.ze = ze;
 	gchk.zp = zp;
-	gchk.diagbugchk = 0;
+	gchk.diagbugchk = gchk.aigstop = 0;
 	char ze_diag[164]; ze_diag[163] = 0;
 	memcpy(gchk.zes, ze, 164);
 	gchk.a_18_seen = 0;
