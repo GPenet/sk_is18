@@ -676,19 +676,21 @@ struct GCHK {
 		BF128 tmore[1024 + 64], t2[1024 + 64];
 		//+64 margin against overflow
 		uint32_t ntmore, nt2;
-		void Shrink(CHUNKVB12 & o, uint64_t bf) {// apply band 1+2 to old
-			ntmore = nt2 = 0;
-			register uint64_t F = bf;
-			for (uint64_t i = 0; i < o.nt2; i++) {
-				BF128 w = o.t2[i];
-				if (!(w.bf.u64[0] & F))
-					t2[nt2++] = w;
+		void SortTmore() {// sort by size
+			BF128 tt[5][400];
+			uint32_t ntt[5];
+			memset(ntt, 0, sizeof ntt);
+			for (uint64_t i = 0; i < ntmore; i++) {
+				BF128 w = tmore[i];
+				uint32_t cc = _popcnt32(w.bf.u32[2]) - 3;
+				if (cc > 4)cc = 4;
+				tt[cc][ntt[cc]++] = w;
 			}
-			for (uint64_t i = 0; i < o.ntmore; i++) {
-				BF128 w = o.tmore[i];
-				if (!(w.bf.u64[0] & F))
-					tmore[ntmore++] = w;
-			}
+			ntmore  = 0;
+			for (int i = 0; i < 5; i++) //3,4;5;6; more
+				for (uint32_t j = 0; j < ntt[i]; j++)
+					 tmore[ntmore++] = tt[i][j];
+
 		}
 		void Dumpt2(int ix=-1) {
 			cout << "dumpt2 nt2=" << nt2 << endl;
@@ -705,10 +707,58 @@ struct GCHK {
 				cout << Char27out(tmore[i].bf.u32[2]) << endl;
 			}
 		}
-	}chvb12, chvb12b, chvb12add;
-
+	}chvb12;
+	struct CHUNKVB12ADD
+	{
+		BF128 t[128],t2a[64],tma[128];
+		uint32_t nt, nt2,nt2a,ntma;
+		void Shrink(CHUNKVB12 & o, uint64_t bf, uint64_t ac) {// apply band 1+2 to old
+			nt= 0;
+			register uint64_t F = bf;
+			for (uint64_t i = 0; i < o.nt2; i++) {
+				BF128 w = o.t2[i];
+				if (!(w.bf.u64[0] & F)) {
+					w.bf.u64[0] &= ac;
+					t[nt++] = w;
+				}
+			}
+			nt2 = nt;
+			// keep the best first 64 (smallest band3)
+			BF128 tt[5][100];
+			uint32_t ntt[5];
+			memset(ntt, 0, sizeof ntt);
+			for (uint64_t i = 0; i < o.ntmore; i++) {
+				BF128 w = o.tmore[i];
+				if (!(w.bf.u64[0] & F)) {
+					w.bf.u64[0] &= ac;
+					uint32_t cc = _popcnt32(w.bf.u32[2 ])-3;
+					if (cc > 4) cc = 4;
+					tt[cc][ntt[cc]++] = w;	//tmore[ntmore++] = w;
+				}
+			}
+			for (int i = 0; i < 5; i++) //3,4;5;6
+				for (uint32_t j = 0; j < ntt[i]; j++)
+					if (nt < 128) t[nt++] = tt[i][j];
+		}
+		void Dumpt2(int ix = -1) {
+			cout << "dumpt2 nt2=" << nt2 << endl;
+			for (uint32_t i = 0; i < nt2; i++) {
+				if (ix >= 0 && (t[i].bf.u32[2] != ix)) continue;
+				cout << Char54out(t[i].bf.u64[0])
+					<< " " << t[i].bf.u32[2] << endl;
+			}
+		}
+		void Dumptmore() {
+			cout << "dumptmore ntmore=" << nt-nt2 << endl;
+			for (uint32_t i = nt2; i < nt ; i++) {
+				cout << Char54out(t[i].bf.u64[0]) << " ";
+				cout << Char27out(t[i].bf.u32[2]) << endl;
+			}
+		}
+	}  chvb12b;
 	struct VB12
-	{	BF128 tof128[50];
+	{	BF128 tof128[50],	*myt2,*mytmore;
+	uint32_t mynt2, myntmore;
 	//+64 margin against overflow
 	uint64_t ort2, orof;
 		uint32_t tg2ok[27], ntg2ok,
@@ -717,10 +767,10 @@ struct GCHK {
 		uint32_t tof[50], ntof; // outfield
 
 		MINCOUNT smin;
-		int GetsminF(CHUNKVB12& o);
-		void CleanTmore(CHUNKVB12& o);
+		int GetsminF(BF128 * t2,uint32_t nt2);
+		void CleanTmore(BF128 * tmore, uint32_t ntmore);
 		inline void ApplyBf2();// forcing common cell 2 pairs
-		inline void BuildOf(CHUNKVB12& o);
+		inline void BuildOf();
 		inline void BuildOrOf(CHUNKVB12& o,uint64_t ac);
 		inline uint32_t GetAnd() {// called with ntof>0
 			register uint32_t andw = tof[0];
@@ -801,22 +851,14 @@ struct GCHK {
 
 
 	// bands 1+2 valid epansion
-	struct VADD {//max 64 c2; 384 cmore
-		uint64_t vc2, vcmore[2];
-		inline void Apply(VADD vo, VADD vc) {
-			vc2 = vo.vc2 & vc.vc2;
-			vcmore[0] = vo.vcmore[0] & vc.vcmore[0];
-			vcmore[1] = vo.vcmore[1] & vc.vcmore[1];
-		}
-	};
 	struct VADD_HANDLER {
-		VADD vadd0, vaddsteps[10], vaddcell[50];
+		BF128 v0, v2, vm, vsteps[10], vcells[50];
 		uint32_t mapcell[54];
-		void SetUpAdd0(CHUNKVB12& vb12,  uint64_t ac);
+		void SetUpAdd0(CHUNKVB12ADD& vb12,  uint64_t ac);
 		inline void Apply(uint64_t stepold, uint64_t icur) {
-			vaddsteps[stepold + 1].Apply(vaddsteps[stepold],
-				vaddcell[icur]);
+			vsteps[stepold + 1]= vsteps[stepold ]& vcells[icur];
 		}
+		void Dump();
 
 	}vaddh;
 
@@ -835,15 +877,14 @@ struct GCHK {
 		}
 
 	}moreand;
-	void AfterExpandB12(uint64_t bf54, uint64_t ac54);
 
 	void ExpandAddB1B2(uint64_t bf);
 	void ExpandAddB1B2Go(int step);
 	void InitGoB3(uint64_t bf, uint64_t ac54);
 
-	void GoB3(  int ncl, CHUNKVB12& chvbx, VB12 & vbx);
+	void GoB3(  int ncl,  VB12 & vbx);
 	void BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
-		CHUNKVB12& chvbx, VB12 & vbx);
+		 VB12 & vbx);
 	void ExpandB3Vect( uint32_t cl0bf=0,
 		uint32_t active0=BIT_SET_27);
 	inline void NewGua(BF128 w);

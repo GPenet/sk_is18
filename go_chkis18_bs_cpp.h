@@ -671,6 +671,7 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 	}
 	chunkh.Get2Clean(chvb12.t2, chvb12.nt2, tclues, nclues_step);
 	chunkh.GetMoreClean(chvb12.tmore, chvb12.ntmore, tclues, nclues_step);
+	//chvb12.SortTmore();
 	gaddb3.Init();
 #ifdef DEBUGBELOW
 	if (p_cpt2g[4] == DEBUGBELOW) {
@@ -752,16 +753,18 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	p_cpt2g[6]++;
 	clean_valid_done = 0;
 	myb12f = myb12;
-	int nmin = svb12.GetsminF(chvb12);
+	int nmin = svb12.GetsminF(chvb12.t2, chvb12.nt2);
 	ncluesb3 = 18 - limb12;
 	nmiss = ncluesb3 - nmin;
-	if (nmiss >= 0) 		GoB3(limb12, chvb12, svb12);
+	if (nmiss >= 0) {
+		svb12.CleanTmore(chvb12.tmore, chvb12.ntmore);
+		GoB3(limb12,  svb12);
+	}
 }
 
 
 void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	p_cpt2g[7]++;
-	//if (1) return;
 #ifdef DEBUGBELOW
 	uint64_t cc = _popcnt64(bf);
 	//if(p_cpt2g[7]<10 || cc< (limb12-2))
@@ -788,6 +791,7 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 		return;
 	}
 	p_cpt2g[17]++;
+	//if (1) return;
 	{//______________  build tadd from active cells
 		ntadd = 0;
 		memset(vaddh.mapcell, 255, sizeof vaddh.mapcell);
@@ -799,80 +803,80 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 			tadd[ntadd++] = cell;
 		}
 	}
-	chvb12b.Shrink(chvb12b, bf);
+	chvb12b.Shrink(chvb12, bf,ac);
 	vaddh.SetUpAdd0(chvb12b, ac);
-	if (p_cpt2g[17] < 10)
-		ExpandAddB1B2(bf);
-}
+	if (p_cpt2g[17] < 200) {
+		if (chvb12b.nt >100) {
+			cout << Char54out(ac) << " ac p_cpt2g[17]="<< p_cpt2g[17] << endl;
+			chvb12b.Dumpt2();
+			chvb12b.Dumptmore();
+			vaddh.Dump();
+		}
+		//ExpandAddB1B2(bf);
 
-void GCHK::VADD_HANDLER::SetUpAdd0(CHUNKVB12& vbo, uint64_t ac) {// build vector for still valid in vbo
-	memset(vaddcell, 255, sizeof vaddcell);
-	uint64_t nt2 = vbo.nt2; if (nt2 > 64) nt2 = 64;// enough here
-	vadd0.vc2 = maskLSB[nt2].u64[0];
-	for (uint64_t i = 0, bit = 1; i < nt2; i++, bit <<= 1) {
-		uint64_t w = vbo.t2[i].bf.u64[0] & ac;
-		uint32_t cell, mcell;
+	}
+}
+void GCHK::VADD_HANDLER::Dump() {
+	cout << Char64out((v0&v2).bf.u64[0]) << " c2" << endl;
+	BF128 w=v0&vm;
+	cout << Char64out(w.bf.u64[0]) << " cmore1" << endl;
+	cout << Char64out(w.bf.u64[1]) << " cmore2" << endl;
+
+}
+void GCHK::VADD_HANDLER::SetUpAdd0(CHUNKVB12ADD& vbo, uint64_t ac) {// build vector for still valid in vbo
+	memset(vcells, 255, sizeof vcells);
+	uint64_t nt = vbo.nt;
+	v0 = maskLSB[nt];
+	for (uint32_t i = 0; i < nt; i++) {
+		uint64_t w = vbo.t[i].bf.u64[0] & ac;
+		uint32_t cell;
 		while (bitscanforward64(cell, w)) {
 			w ^= (uint64_t)1 << cell;
-			mcell = mapcell[cell];
-			vaddcell[mcell].vc2 ^= bit;
+			vcells[mapcell[cell]].Clear (i);
 		}
 	}
-	uint32_t ntmore = vbo.ntmore; if (ntmore > 128) ntmore = 128;
-	uint32_t imore = ntmore >> 6;
-	if (imore) {
-		vadd0.vcmore[0] = ~0;
-		vadd0.vcmore[1] = maskLSB[ntmore - 64].u64[0];
-	}
-	else {
-		vadd0.vcmore[1] = 0;
-		vadd0.vcmore[0] = maskLSB[ntmore].u64[0];
-	}
-	for (uint32_t i = 0; i < ntmore; i++) {
-		uint64_t w = vbo.tmore[i].bf.u64[0] & ac;
-		uint32_t cell, mcell,
-			bloc = i >> 6, ir = i - 64 * bloc;
-		uint64_t bit = (uint64_t)1 << ir;
-		while (bitscanforward64(cell, w)) {
-			w ^= (uint64_t)1 << cell;
-			mcell = mapcell[cell];
-			vaddcell[mcell].vcmore[bloc] ^= bit;
-		}
-	}
+	v2= maskLSB[vbo.nt2];
+	vm = v0 - v2;
 }
 
 // en attente de révision
 
 void GCHK::ExpandAddB1B2Go(int step) {
 	p_cpt2g[26]++;
-	VADD& va = vaddh.vaddsteps[step];// call the process for this
+	myb12f = myb12add;
+	BF128 va = vaddh.vsteps[step];// call the process for this
 	ncluesb3 = 18 - mynclues - step;
-	chvb12add.nt2 = chvb12add.ntmore = 0;
+	chvb12b.nt2a = chvb12b.ntma = 0;
 	uint32_t i64;
 	{ // get active c2
-		register uint64_t V = va.vc2;// still valid c2
+		register uint64_t V = (va&vaddh.v2).bf.u64[0];// still valid c2
 		while (bitscanforward64(i64, V)) {
 			V ^= (uint64_t)1 << i64;
-			chvb12add.t2[chvb12add.nt2++] = chvb12b.t2[i64];
+			chvb12b.t2a[chvb12b.nt2a++] = chvb12b.t[i64];
 		}
 	}
-	int nmin = svb12add.GetsminF(chvb12add); 
+	int nmin = svb12add.GetsminF(chvb12b.t2a, chvb12b.nt2a);
 	nmiss = ncluesb3 - nmin;
 	if (nmin > ncluesb3) return;
 	p_cpt2g[27]++;
 #ifdef DEBUGBELOW
 	cout << Char54out(myb12add) << " step= " << step << " " << _popcnt64(myb12add)  
-		<< "  [27]=" << p_cpt2g[27]	<< " min=" << nmin << "  nclb3=" << ncluesb3 << endl;
+		<< "  [27]=" << p_cpt2g[27]	<< " min=" << nmin << "  nclb3=" << ncluesb3 
+		<< " nc2="<<(va&vaddh.v2).Count()  << " nc4_6=" << (va&vaddh.vm).Count() << endl;
 #endif
-	for (uint32_t i = 0; i < 2; i++) {
-		register uint64_t V = va.vcmore[i], i0 = 64 * i;
-		while (bitscanforward64(i64, V)) {
-			V ^= (uint64_t)1 << i64;
-			chvb12add.tmore[chvb12add.ntmore++] = chvb12b.tmore[i64 + i0];
-		}
+	BF128 wm = va & vaddh.vm;
+	register uint64_t V = wm.bf.u64[0];
+	while (bitscanforward64(i64, V)) {
+		V ^= (uint64_t)1 << i64;
+		chvb12b.tma[chvb12b.ntma++] = chvb12b.t[i64 ];
 	}
-	myb12f = myb12add;
-	GoB3(mynclues + step, chvb12add, svb12add);
+	V = wm.bf.u64[1];
+	while (bitscanforward64(i64, V)) {
+		V ^= (uint64_t)1 << i64;
+		chvb12b.tma[chvb12b.ntma++] = chvb12b.t[i64+64];
+	}
+	svb12add.CleanTmore(chvb12b.tma, chvb12b.ntma);
+	GoB3(mynclues + step, svb12add);
 
 
 
@@ -880,7 +884,7 @@ void GCHK::ExpandAddB1B2Go(int step) {
 void GCHK::ExpandAddB1B2(uint64_t bf) {// add up to n cells
 	mynclues = (uint32_t)_popcnt64(bf);
 	uint32_t *tgo=&tclues[mynclues],	lim=17- mincluesb3- mynclues;
-	vaddh.vaddsteps[0] = vaddh.vadd0;
+	vaddh.vsteps[0] = vaddh.v0;
 	struct SPB {// spots to find starts to extract uas 3 digits
 		uint64_t  all_previous_cells, icur;
 	}spb[20], * s, * sn;
@@ -916,14 +920,16 @@ back:
 
 //============ clues in band 3 (no more clue in bands 1+2)
 
-int GCHK::VB12::GetsminF(CHUNKVB12& o) {// apply filter myb12
+int GCHK::VB12::GetsminF(	BF128 * t2,	uint32_t nt2) {// apply filter myb12
+	myt2 = t2;
+	mynt2 = nt2;
 	register uint64_t F = gchk.myb12f;
 	memset(&smin, 0, sizeof smin);
 	ntg2ok = 0;
 	int v27 = 0;
-	for (uint32_t i = 0; i < o.nt2; i++) {
-		if (F & o.t2[i].bf.u64[0]) continue;
-		register int i27 = o.t2[i].bf.u32[2],
+	for (uint32_t i = 0; i < nt2; i++) {
+		if (F & t2[i].bf.u64[0]) continue;
+		register int i27 = t2[i].bf.u32[2],
 			bit = 1 << i27;
 		if (!(v27&bit)) {
 			tg2ok[ntg2ok++] = i27;
@@ -958,7 +964,9 @@ int GCHK::VB12::GetsminF(CHUNKVB12& o) {// apply filter myb12
 	return smin.mincount;
 
 }
-void GCHK::VB12::CleanTmore(CHUNKVB12& o) {// clean subsets redundancy and sort
+void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets redundancy and sort
+	mytmore = tmore;
+	myntmore = ntmore;
 	uint32_t tw[400], ntw = 0,
 		tt[6][100],ntt[20];
 	memset(ntt, 0, sizeof ntt);
@@ -975,9 +983,9 @@ void GCHK::VB12::CleanTmore(CHUNKVB12& o) {// clean subsets redundancy and sort
 	}
 
 // same with guasmore added in the chunk
-	for (uint32_t i = 0; i < o.ntmore; i++) {
-		if (F & o.tmore[i].bf.u64[0]) continue;
-		register uint32_t R = o.tmore[i].bf.u32[2],
+	for (uint32_t i = 0; i < ntmore; i++) {
+		if (F & tmore[i].bf.u64[0]) continue;
+		register uint32_t R = tmore[i].bf.u32[2],
 			cc = _popcnt32(R) - 3;// 3 is the minimum in tmore
 		if (cc > 5)continue;// should not be more then 8 clues in b3
 		tt[cc][ntt[cc]++] = R;
@@ -1012,11 +1020,11 @@ inline void GCHK::VB12::ApplyBf2() {
 			tclues[nclues++] = cell;
 		}
 }
-inline void GCHK::VB12::BuildOf(CHUNKVB12& o) {
+inline void GCHK::VB12::BuildOf() {
 	ntof = 0;
 	register uint32_t F = smin.critbf | bfbf2; // assigned or critbf
-	for (uint32_t i = 0; i < o.ntmore; i++) {
-		register uint32_t U = o.tmore[i].bf.u32[2];
+	for (uint32_t i = 0; i < myntmore; i++) {
+		register uint32_t U = mytmore[i].bf.u32[2];
 		if (!(U&F))tof[ntof++] = U;
 		if (ntof > 20) return;//enough to check higher min
 	}
@@ -1052,11 +1060,10 @@ inline void GCHK::VB12::BuildOrOf(CHUNKVB12& o, uint64_t ac) {
 
 
 
-void GCHK::GoB3(  int ncl,  CHUNKVB12& chvbx ,VB12 & vbx) {
+void GCHK::GoB3(  int ncl, VB12 & vbx) {
 	p_cpt2g[8]++;
 	int isdirect = 0;
 	ntaddgob3 = 0;
-	vbx.CleanTmore(chvbx);//apply myb12f to get "to use" here
 	nclf = ncl;
 
 
@@ -1068,11 +1075,11 @@ void GCHK::GoB3(  int ncl,  CHUNKVB12& chvbx ,VB12 & vbx) {
 	if (nmiss > 2)isdirect = 1;
 	else {
 		vbx.ApplyBf2();// assign critical 2 pairs
-		vbx.BuildOf(chvbx);// outfield after 2 pairs
+		vbx.BuildOf();// outfield after 2 pairs
 		if (!nmiss) {
 			p_cpt2g[10]++;
 			if (vbx.ntof) return;
-			BuildExpandB3Vect(vbx.bfbf2, vbx.smin.critbf, chvbx,vbx);
+			BuildExpandB3Vect(vbx.bfbf2, vbx.smin.critbf, vbx);
 		}
 		else if (nmiss == 1) {
 			if (! vbx.ntof) isdirect = 1;
@@ -1084,7 +1091,7 @@ void GCHK::GoB3(  int ncl,  CHUNKVB12& chvbx ,VB12 & vbx) {
 				while (bitscanforward(c, ua)) {
 					uint32_t bit = 1 << c, bfbf2 = vbx.bfbf2 | bit;
 					ua ^= bit;
-					BuildExpandB3Vect(bfbf2, vbx.smin.critbf, chvbx,vbx);
+					BuildExpandB3Vect(bfbf2, vbx.smin.critbf,vbx);
 				}
 			}
 		}
@@ -1099,7 +1106,7 @@ void GCHK::GoB3(  int ncl,  CHUNKVB12& chvbx ,VB12 & vbx) {
 				while (bitscanforward(c, ua2)) {
 					uint32_t bit2 = 1 << c, bfbf2_2 = bfbf2 | bit2;
 					ua2 ^= bit2;
-					BuildExpandB3Vect(bfbf2_2, vbx.smin.critbf, chvbx,vbx);
+					BuildExpandB3Vect(bfbf2_2, vbx.smin.critbf, vbx);
 				}
 			}
 		}
@@ -1115,7 +1122,7 @@ void GCHK::GoB3(  int ncl,  CHUNKVB12& chvbx ,VB12 & vbx) {
 	}
 }
 void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
-	CHUNKVB12& chvbx, VB12 & vbx) {// when assigned before
+	 VB12 & vbx) {// when assigned before
 	int cc= _popcnt32(cl0bf);
 	if (cc > ncluesb3)return;
 	if (cc == ncluesb3) {// nothing to expand
@@ -1144,8 +1151,8 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 		register uint32_t U = tg2[vbx.tg2ok[i]].pat;
 		if(!(U&cl0bf))	b3direct.Add(U);
 	}
-	for (uint32_t i = 0; i < chvbx.ntmore; i++) {
-		register uint32_t U = chvbx.tmore[i].bf.u32[2];
+	for (uint32_t i = 0; i <vbx.myntmore; i++) {
+		register uint32_t U = vbx.mytmore[i].bf.u32[2];
 		if (!(U&cl0bf))	b3direct.Add(U&active0);
 	}
 	for (uint32_t i = 0; i < ntaddgob3; i++) {
