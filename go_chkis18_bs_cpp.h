@@ -1,4 +1,3 @@
-#define DEBUGBELOW 11494
 
 //_______________ start  a band3 perm and UAs GUAs search 
 
@@ -24,9 +23,6 @@ void STD_B416::InitBand2_3(char * ze, BANDMINLEX::PERM & p
 //_______________ process band ordered
 int  GCHK::StartIs18() {
 	if (aigstop) return 0;
-#ifdef DEBUGBELOW
-	//if (p_cpt2g[37]++>1) return 0;
-#endif
 #ifdef HAVEKNOWN
 	// put knownn in the right order
 	if (strlen(ze) < 163) return -1;// skip blank lines
@@ -572,8 +568,10 @@ void  GCHK::Do_phase2Expand(uint64_t bf, uint64_t ace) {// mode 54 not 2x
 	pbufvalid = bufvalid;
 	uint64_t limspot = 17 - nphase1 - mincluesb3,
 		limclean=1;// set to more if low {min b1+b2}
-	if(minb1<5 && minb2<5)limclean = 2;
-	if (minb1 < 4 && minb2 < 4)limclean = 3;
+	//if(minb1<5 && minb2<5)limclean = 2;
+	if (minb1b2 < 9)limclean = 2;
+	//if (minb1 < 4 && minb2 < 4)limclean = 3;
+	if (minb1b2 <7)limclean = 3;
 	uint64_t andvalid = ~0,orvalid=0;
 	// _______________ expand to have all  minimal < n clues
 	struct SPB {// spots to find starts to extract uas 3 digits
@@ -673,13 +671,6 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 	chunkh.GetMoreClean(chvb12.tmore, chvb12.ntmore, tclues, nclues_step);
 	//chvb12.SortTmore();
 	gaddb3.Init();
-#ifdef DEBUGBELOW
-	if (p_cpt2g[4] == DEBUGBELOW) {
-		cout << "CleanBufferAndGo p_cpt2g[4]= " << p_cpt2g[4] << " nn8=" << nn8 << endl;
-		cout << Char54out(andvalid) << " andvalid" << endl;
-		cout << Char54out(orvalid) << " orvalid" << endl;
-	}
-#endif
 	while (pw < myend) {
 		p_cpt2g[5]++;
 		myb12 = *pw++;
@@ -765,13 +756,6 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 
 void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	p_cpt2g[7]++;
-#ifdef DEBUGBELOW
-	uint64_t cc = _popcnt64(bf);
-	//if(p_cpt2g[7]<10 || cc< (limb12-2))
-	//cout << Char54out(bf)<< "  p_cpt2g[7]="<< p_cpt2g[7]<< " cc="<<cc << endl;
-	//else return;
-#endif
-
 	register uint64_t uaandr,uar = IsValidB12(uaandr);// loop on add if not valid
 	clean_valid_done = 1;
 	if (uar) {// add one cell hitting all uas
@@ -805,16 +789,7 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	}
 	chvb12b.Shrink(chvb12, bf,ac);
 	vaddh.SetUpAdd0(chvb12b, ac);
-	if (p_cpt2g[17] < 200) {
-		if (chvb12b.nt >100) {
-			cout << Char54out(ac) << " ac p_cpt2g[17]="<< p_cpt2g[17] << endl;
-			chvb12b.Dumpt2();
-			chvb12b.Dumptmore();
-			vaddh.Dump();
-		}
-		//ExpandAddB1B2(bf);
-
-	}
+	ExpandAddB1B2(bf);
 }
 void GCHK::VADD_HANDLER::Dump() {
 	cout << Char64out((v0&v2).bf.u64[0]) << " c2" << endl;
@@ -859,11 +834,6 @@ void GCHK::ExpandAddB1B2Go(int step) {
 	nmiss = ncluesb3 - nmin;
 	if (nmin > ncluesb3) return;
 	p_cpt2g[27]++;
-#ifdef DEBUGBELOW
-	cout << Char54out(myb12add) << " step= " << step << " " << _popcnt64(myb12add)  
-		<< "  [27]=" << p_cpt2g[27]	<< " min=" << nmin << "  nclb3=" << ncluesb3 
-		<< " nc2="<<(va&vaddh.v2).Count()  << " nc4_6=" << (va&vaddh.vm).Count() << endl;
-#endif
 	BF128 wm = va & vaddh.vm;
 	register uint64_t V = wm.bf.u64[0];
 	while (bitscanforward64(i64, V)) {
@@ -877,9 +847,6 @@ void GCHK::ExpandAddB1B2Go(int step) {
 	}
 	svb12add.CleanTmore(chvb12b.tma, chvb12b.ntma);
 	GoB3(mynclues + step, svb12add);
-
-
-
 }
 void GCHK::ExpandAddB1B2(uint64_t bf) {// add up to n cells
 	mynclues = (uint32_t)_popcnt64(bf);
@@ -891,11 +858,6 @@ void GCHK::ExpandAddB1B2(uint64_t bf) {// add up to n cells
 	s = spb;
 	memset(s, 0, sizeof spb[0]);//	s->icur=0
 	s->all_previous_cells = bf;// mode 54 previous cells
-#ifdef DEBUGBELOW
-	cout << Char54out(bf) << "expand add ncl=" << mynclues
-		<< " lim="<< (18 - mincluesb3) << endl;
-#endif
-
 	//____________ here start the search nclues
 next:
 	if (s->icur >= ntadd) goto back;
@@ -967,8 +929,8 @@ int GCHK::VB12::GetsminF(	BF128 * t2,	uint32_t nt2) {// apply filter myb12
 void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets redundancy and sort
 	mytmore = tmore;
 	myntmore = ntmore;
-	uint32_t tw[400], ntw = 0,
-		tt[6][100],ntt[20];
+	uint32_t tw[400],tt[6][100], ntt[6];
+	int ntw = 0;
 	memset(ntt, 0, sizeof ntt);
 	for (uint32_t i = 0; i < ntg2ok; i++)
 		tw[ntw++] = gchk.tg2[tg2ok[i]].pat;
@@ -978,7 +940,7 @@ void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets re
 		if (F & gchk.gaddb3.tmore[i].bf.u64[0]) continue;
 		register uint32_t R = gchk.gaddb3.tmore[i].bf.u32[2],
 			cc = _popcnt32(R)-3;// 3 is the minimum in tmore
-		if(cc>5 )continue;// should not be more then 8 clues in b3
+		if(cc>5 )cc = 5;// should not be more then 8 clues in b3
 		tt[cc][ntt[cc]++] = R;
 	}
 
@@ -987,7 +949,7 @@ void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets re
 		if (F & tmore[i].bf.u64[0]) continue;
 		register uint32_t R = tmore[i].bf.u32[2],
 			cc = _popcnt32(R) - 3;// 3 is the minimum in tmore
-		if (cc > 5)continue;// should not be more then 8 clues in b3
+		if (cc > 5)cc = 5;// should not be more then 8 clues in b3
 		tt[cc][ntt[cc]++] = R;
 	}
 
@@ -997,7 +959,7 @@ void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets re
 		for (uint32_t j = 0; j < ntt[i]; j++) {
 			register uint32_t R = tt[i][j],
 				Rn = ~R;
-			for (uint32_t k = 0; k < ntw; k++) 
+			for (int k = 0; k < ntw; k++) 
 				if (!(tw[k] & Rn)) goto nextj;
 			tw[ntw++] = R;
 			tmore27[ntmore27++] = R;
@@ -1065,11 +1027,6 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 	int isdirect = 0;
 	ntaddgob3 = 0;
 	nclf = ncl;
-
-
-#ifdef DEBUGBELOW
-
-#endif
 
 	// _direct process unless compulsory outfield clues
 	if (nmiss > 2)isdirect = 1;
@@ -1164,12 +1121,6 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 void  GCHK::ExpandB3Vect(uint32_t cl0bf, uint32_t active0) {
 	p_cpt2g[14]++;
 	int limspot = 17 - nclf - _popcnt32(cl0bf);
-#ifdef DEBUGBELOW
-	//if (p_cpt2g[8] == 997444) {
-	//	cout << Char27out(cl0bf) << "check entry b3 nclf"<<nclf	<< endl;
-	//	cout << Char54out(myb12f) << "myb12f" << endl;
-	//}
-#endif	
 	uint32_t tadd[500], ntadd = 0;
 	// uas basis in b3direct and chunkh.band3[2]
 	struct SPB {
@@ -1269,14 +1220,6 @@ next:
 				((ua12 & BIT_SET_B2) >> 5);
 			w.bf.u64[0] = ua54;// store in 54 cells mode
 			if (cc < 3) 	w.bf.u32[2] = GetI27(ua);
-#ifdef DEBUGBELOW
-			//if (p_cpt2g[8] == 997444 && cc==2 && w.bf.u32[2]==1) {
-				//cout<<Char27out(sn->all_previous_cells) << "check status add ntadd=" << ntadd
-					//<<" gaddb3.nt2=" <<gaddb3.nt2 
-					//<< " zhgxn.nua=" << zhgxn.nua << endl;
-				//cout << Char27out(ua)<<"ua added" << endl;
-			//}
-#endif
 			gaddb3.Add(w, cc);
 			if (cc < 7 && cc0 < 17) {
 				if(cc<3)p_cpt2g[35]++;else p_cpt2g[36]++;
@@ -1564,7 +1507,7 @@ void GCHK::Out17(uint32_t bfb3) {
 		int cell = tcf[i];
 		ws[cell] = ze[cell] ;
 	}
-	cout << ws << " one solentry mode"  << endl;
+	cout << ws << " one sol "  << endl;
 #ifdef TEST_ON
 #endif
 	//if(zp)strcpy(zp, ws);
