@@ -1,7 +1,7 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
-//#define HAVEKNOWN 1
+#define HAVEKNOWN 1
 #ifdef HAVEKNOWN
 #endif
 
@@ -19,7 +19,6 @@
 
 #define GUALIMSIZE 18
 #define TUASIZE 5000
-#define TUA64_12SIZE 2000
 
 #define UA32_10 0xffc00000
 #define UA64_54 0x3fffffffffffff

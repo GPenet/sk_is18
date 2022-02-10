@@ -37,6 +37,8 @@ int  GCHK::StartIs18() {
 		puzknown.Set_c(i);// store the pattern in 3X mode
 		// this can be a pattern, no check of the digit with the solution
 	}
+	register uint64_t R = puzknown.bf.u64[0];
+	pk54= (R & BIT_SET_27) |	((R & BIT_SET_B2) >> 5);
 	if ((int)__popcnt(puzknown.bf.u32[2] ) < mincluesb3) return  0;
 #endif		
 	int * zs0 = grid0, *zs0_diag = grid0_diag;
@@ -353,7 +355,7 @@ void  GCHK::PutUasStartInVector() {	// split guas 2/3 and others
 	}
 }
 
-//__ start expand 3/4 + no more uas
+//________________________________ start expand 3/4 + no more uas
 #define nphase1 4
 
 GCHK::CPT_4::CPT_4() {
@@ -366,16 +368,18 @@ GCHK::CPT_4::CPT_4() {
 
 }
 void GCHK::BuildVectorsForExpand4B12() {
-	morev2a.Init();	morev2b.Init();
+	morev2a.Init();
 	morev2c.Init();	morev2d.Init();
+	// switch here tua to 54 mode
+	tuasb12.SwitchTo54Mode();
+
 	for (int i = 0; i < 54; i++)memset(v12_4_c, 255, sizeof v12_4_c);
 	for (uint32_t i = 0; i < 64; i++) {
-		register uint64_t R = tuasb12.tua[i] & BIT_SET_2X;
-		uint32_t xcell;
-		while (bitscanforward64(xcell, R)) {
-			uint32_t cell = From_128_To_81[xcell];
+		register uint64_t R = tuasb12.tua[i];
+		uint32_t cell;
+		while (bitscanforward64(cell, R)) {
 			uint64_t bit = (uint64_t)1 << i;
-			R ^= (uint64_t)1 << xcell; //clear bit
+			R ^= (uint64_t)1 << cell; //clear bit
 			v12_4_c[cell] ^= bit;
 		}
 	}
@@ -394,20 +398,19 @@ void  GCHK::Expand4B12() {
 	}spb[5], *s, *sn;
 	s = spb;
 	memset(s, 0, sizeof spb[0]);
-	s->active_cells = BIT_SET_2X;
-	s->possible_cells = twu[0] & BIT_SET_2X;
+	s->active_cells = maskLSB[54].u64[0];
+	s->possible_cells = twu[0] ;
 	s->v = ~0;// initial nothing done
 	//____________ here start the search nclues
 next:
 	uint64_t ispot = s - spb;
 	// catch and apply cell in bitfields
-	register int xcell;
+	register int cell;
 	uint64_t p = s->possible_cells;
 	if (!p)goto back;
-	bitscanforward64(xcell, p);
-	register uint64_t bit = (uint64_t)1 << xcell;
+	bitscanforward64(cell, p);
+	register uint64_t bit = (uint64_t)1 << cell;
 	s->possible_cells ^= bit;
-	int cell = From_128_To_81[xcell];
 	tclues[ispot] = cell;
 	s->active_cells ^= bit;
 	uint64_t ac = s->active_cells;
@@ -452,15 +455,15 @@ back:
 #ifdef HAVEKNOWN
 	nt4ok = -1;
 	{
-		register uint64_t K = puzknown.bf.u64[0], Kn = ~K;
+		register uint64_t K = pk54, Kn = ~K;
 		for (uint64_t i = 0; i < nt4_to_expand; i++) {
 			T4_TO_EXPAND w=t4_to_expand[i];
 			register uint64_t B = w.bf, A = w.active;
 			if (B & Kn)continue;// not partial known
 			if (K & (~(B | A))) continue;
 			if (nt4ok < 0) nt4ok = (int)i;
-			cout << Char2Xout(B) << " bf" << endl;
-			cout <<Char2Xout(A) << " ac" <<endl;
+			cout << Char54out(B) << " bf" << endl;
+			cout <<Char54out(A) << " ac" <<endl;
 		}
 	}
 	cout << "expected i=" << nt4ok << endl;
@@ -482,8 +485,7 @@ back:
 
 void GCHK::Do_phase2(T4_TO_EXPAND w) {
 	p_cpt2g[3]++;
-	{	register uint64_t bf54 = (w.bf & BIT_SET_27) | ((w.bf & BIT_SET_B2) >> 5),
-		ac54 = (w.active & BIT_SET_27) | ((w.active & BIT_SET_B2) >> 5);
+	{	register uint64_t bf54 = w.bf, ac54 = w.active;
 
 	{	//____ load the first clues
 		register uint64_t R = bf54;
@@ -495,18 +497,16 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 		}
 		tcluesxy = &tclues[nclues_step];
 	}
+	morev2a.Init(); // now in vector
 	{// build still valid uas sorted by size 
 		uint64_t tt[30][500], ntt[30];
 		memset(ntt, 0, sizeof ntt);
 		{
-			register uint64_t F = w.bf, A = w.active;
-
 			for (uint32_t i = 0; i < tuasb12.nua; i++) {
 				register uint64_t R = tuasb12.tua[i];
-				if (R&F) continue;
-				R &= A;
+				if (R&bf54) continue;
+				R &= ac54;
 				if (!R)return; //dead
-				R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);// now r54
 				register uint64_t cc = _popcnt64(R);
 				tt[cc][ntt[cc]++] = R;
 			}
@@ -564,6 +564,19 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 	}
 }
 void  GCHK::Do_phase2Expand(uint64_t bf, uint64_t ace) {// mode 54 not 2x
+#ifdef HAVEKNOWN
+	if (okcheck) {
+		okcheck = 1;
+		if ((bf&pk54) == bf) {
+			cout << Char54out(bf) << " possible expand p_cpt2g[3]=" << p_cpt2g[3] << endl;
+			uint64_t w = (ace &pk54) | bf;
+			cout << Char54out(w) << " ace & sol";
+			if (w == pk54) { cout << " will be ok"; okcheck = 2; }
+			cout << endl;
+		}
+	}
+
+#endif
 	pendbufvalid = &bufvalid[BUFVALIDS];
 	pbufvalid = bufvalid;
 	uint64_t limspot = 17 - nphase1 - mincluesb3,
@@ -663,7 +676,6 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 	{// catch more still valid after andvalid
 		moreand.ntm = 0;
 		morev2a.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
-		morev2b.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
 		morev2c.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
 		morev2d.Extract(tclues, nclues_step, moreand.tm, moreand.ntm);
 	}
@@ -671,24 +683,38 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 	chunkh.GetMoreClean(chvb12.tmore, chvb12.ntmore, tclues, nclues_step);
 	//chvb12.SortTmore();
 	gaddb3.Init();
+#ifdef HAVEKNOWN
+	if (okcheck==2) {
+		if ((andvalid&pk54) == andvalid) {
+			cout << Char54out(andvalid) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
+		}
+	}
+
+#endif
 	while (pw < myend) {
 		p_cpt2g[5]++;
 		myb12 = *pw++;
 		int ncl = (int)_popcnt64(myb12);
-		if (ncl < limb12)myac = *pw++;
-		else myac = 0;
+		if (ncl < limb12)myac = *pw++;		else myac = 0;
 		if ((mincluesb3 + _popcnt64(myb12 >> 32)) > 12) continue;
 #ifdef HAVEKNOWN
-		//if (okcheck)cout << Char2Xout(bf) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
-		if (okcheck&& p_cpt2g[4] == 4842934) {
-			cout << Char2Xout(puzknown.bf.u64[0]) << " known" << endl;
-			cout << Char2Xout(bf) << " p_cpt2g[4]=" << p_cpt2g[4] << endl;
-			cout << Char2Xout(ac) << " ac=" << endl;
-	}
+		int locdiag = 0;
+		if (okcheck == 2) {
+			if ((myb12&pk54) == myb12) {
+				cout << Char54out(myb12) << " p_cpt2g[5]=" << p_cpt2g[5] 
+					<<" ncl=" << ncl<<" limb12="<<limb12<< endl;
+				locdiag = 1;
+				moreand.Dump();
+			}
+		}			
 #endif
-
 		p_cpt2g[16]++;
-		if (moreand.Check(myb12))continue;// check "more" not common
+		// don't apply moreand and if free cells available in bands 1+2
+		if (ncl == limb12) 
+			if (moreand.Check(myb12))continue;// check "more" not common
+#ifdef HAVEKNOWN
+		if (locdiag)		cout << "ok moreand" << endl;
+#endif
 		{//____ load the remaining  clues
 			register uint64_t R = myb12 ^ andvalid;
 			nclues = nclues_step;
@@ -711,71 +737,173 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 #endif
 		clean_valid_done = 0;
 		if (nclues == limb12) 	InitGoB3(myb12, myac);	
-		else CheckValidBelow(myb12,myac);
+		else {// apply moreand mis uas if anysing
+			MOREANDB mab;
+			mab.GetdUnHit(myb12, moreand.tm, moreand.ntm);
+			if (mab.ntm) {
+#ifdef HAVEKNOWN
+				if (locdiag) {
+					cout << "have unhit ua'(s)" << endl;
+					//mab.Dump();
+					CleanMoreUas(myb12, myac, nclues,mab);
+					return;
+				}
+#endif
+			}
+			//else CheckValidBelow(myb12, myac);
+		}
 	}
 }
-uint64_t GCHK::IsValidB12(uint64_t & uaandr) {
-	uint64_t ccmin = 100, ua54min=0;
-	uaandr = ~0;
+
+
+
+int GCHK::IsValidB12() {
 	p_cpt2g[15]++;
+	mbisvalid.ntm = 0;
 	if (zh2b[1].IsValid(tclues, nclues)) {
 		p_cpt2g[30]++;
 		for (uint32_t i = 0; i < zh2gxn.nua; i++) {
 			register uint64_t ua = zh2gxn.tua[i],
 				cc = _popcnt64(ua),
 				ua54 = (ua & BIT_SET_27) | ((ua & BIT_SET_B2) >> 5);
-			uaandr &= ua54;
 			moreand.tm[moreand.ntm++] = ua54;
-			if (cc < ccmin) { ccmin = cc; ua54min = ua54; }
-			if (cc < 19) {
+			mbisvalid.tm[mbisvalid.ntm++] = ua54;
+			if (cc < 20) {
 				p_cpt2g[31]++;
 				morev2a.Add54(ua54);  //12-20
+				if(tuasb12.nua<4096)tuasb12.tua[tuasb12.nua++] = ua54;
 				//cout << Char54out(ua54) << " add ";
 				//cout << Char54out(myb12) << " nclues=" << nclues << endl;
 			}
 			else if (cc < 21)morev2c.Add54(ua54); // 19 20
 			else if (cc < 23) morev2d.Add54(ua54);// 21-22
 		}
-		return ua54min;
 	}
-	return 0;
+	return (int)mbisvalid.ntm;
 }
 void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	p_cpt2g[6]++;
+#ifdef HAVEKNOWN
+	int locdiag = 0;
+	if (okcheck == 2) {
+		//cout << Char54out(bf54) << endl;
+		if ((bf54&pk54) == bf54) {
+			cout << Char54out(bf54) << " p_cpt2g[6]=" << p_cpt2g[6] << endl;
+			locdiag = 1;
+		}
+	}
+
+#endif
 	clean_valid_done = 0;
-	myb12f = myb12;
+	myb12f = bf54;
 	int nmin = svb12.GetsminF(chvb12.t2, chvb12.nt2);
 	ncluesb3 = 18 - limb12;
 	nmiss = ncluesb3 - nmin;
+#ifdef HAVEKNOWN
+	if (locdiag) {
+		cout << Char54out(bf54) << " nmin=" << nmin  << "nmiss=" << nmiss<< endl;
+
+	}
+#endif
 	if (nmiss >= 0) {
 		svb12.CleanTmore(chvb12.tmore, chvb12.ntmore);
 		GoB3(limb12,  svb12);
 	}
 }
 
+void GCHK::CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo) {
+	p_cpt2g[18]++;
+#ifdef HAVEKNOWN
+	int locdiag;
+	if (okcheck == 2) {
+		if ((bf&pk54) == bf) {
+			cout << Char54out(bf) << " p_cpt2g[18]=" << p_cpt2g[18]
+				<< " miss=" << (limb12 - ncl) << endl;
+			locdiag = 1;
+		}
+	}
+#endif
+	uint64_t ua = mabo.tm[0];
+	MOREANDB mabn;
+	if (ncl == limb12 - 1) // last step must hit all uas
+		for (uint64_t i = 1; i < mabo.ntm; i++)ua &= mabo.tm[i];
+	ua &= ac;// only active cells used
+#ifdef HAVEKNOWN
+	if (locdiag)cout << Char54out(ua) << "ua to add" << endl;
+#endif
+	// apply ua and loop if more uas or call add process
+	uint32_t cell;
+	while (bitscanforward64(cell, ua)) {
+		uint64_t bit = (uint64_t)1 << cell;
+		ua ^= bit;
+		tclues[ncl] = cell;
+		nclues = ncl + 1;
+		ac ^= bit;// not active downstream
+		{// build MOREAND for the next cycle
+			mabn.ntm = 0;
+			for (uint64_t i = 1; i < mabo.ntm; i++) {
+				register uint64_t R = mabo.tm[i];
+				if(!(R&bit))		mabn.tm[mabn.ntm++] =R;
+			}
+		}
+#ifdef HAVEKNOWN
+		//if (locdiag) 
+		//	cout << Char54out(bf | bit) << " mabn.ntm="<< mabn.ntm << " nclues="<<nclues<< endl;
+#endif
 
+		if (nclues == limb12) {
+			if (mabn.ntm)continue;
+			else {
+				myb12f = bf | bit;
+				myacf = ac;
+				mynclues = nclues;
+#ifdef HAVEKNOWN
+				if (locdiag) {
+					locdiag = 1;
+					if (myb12f==pk54) {
+						cout << Char54out(myb12f) << " expected band 12 after more uas"  << endl;
+						locdiag = 2;
+					}					
+				}
+#endif
+				ncluesb3 = 18 - mynclues;
+				chvb12b.Shrink(chvb12, myb12f, myac);
+				int nmin = svb12add.GetsminF(chvb12b.t, chvb12b.nt2);
+				nmiss = ncluesb3 - nmin;
+				if (nmin > ncluesb3) continue;
+				svb12add.CleanTmore(&chvb12b.t[chvb12b.nt2], 
+					chvb12b.nt- chvb12b.nt2);
+
+#ifdef HAVEKNOWN
+				if (locdiag==2) {
+					//chvb12b.Dumpt2();
+					//chvb12b.Dumptmore();
+					svb12add.smin.Status(" ");
+					cout << "nmin=" << nmin << endl;
+					svb12add.Dumptmore27();
+				}
+#endif
+				GoB3(mynclues , svb12add);
+			}
+		}
+		else {
+			continue;
+			if (mabn.ntm)CleanMoreUas(bf | bit, ac, nclues, mabn);
+			else  CheckValidBelow(bf | bit, ac);
+		}
+	}
+}
 void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	p_cpt2g[7]++;
-	register uint64_t uaandr,uar = IsValidB12(uaandr);// loop on add if not valid
-	clean_valid_done = 1;
-	if (uar) {// add one cell hitting all uas
-		if (nclues == limb12)uar = uaandr;
-		int ncluemore = nclues;
-		uar &= ac;// no redundancy
-		uint32_t cell;
-		while (bitscanforward64(cell, uar)) {
-			clean_valid_done = 0;
-			uint64_t bit= (uint64_t)1 << cell;
-			uar ^= bit; //clear bit
-			tclues[ncluemore] = cell;
-			nclues = ncluemore + 1;
-			if (nclues == limb12) InitGoB3(myb12|bit, ac^bit);
-			else CheckValidBelow(bf|bit,ac^bit);// check more missing uas
-		}
+	if (IsValidB12()) {// add one cell hitting all uas
+		if (nclues == limb12) return;
+		CleanMoreUas( bf,  ac, nclues, mbisvalid);
 		return;
 	}
+//	if (1) return;
+	clean_valid_done = 1;
+
 	p_cpt2g[17]++;
-	//if (1) return;
 	{//______________  build tadd from active cells
 		ntadd = 0;
 		memset(vaddh.mapcell, 255, sizeof vaddh.mapcell);
@@ -1087,8 +1215,7 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 		if (!clean_valid_done) {
 			clean_valid_done = 1;
 			//cout << " check b12"	<< endl;
-			uint64_t uaandr;
-			if (IsValidB12(uaandr)) return;
+			if (IsValidB12()) return;
 			//cout << " check b12 valid" << endl;
 		}
 		if (zhou[0].CallCheckB3(tclues, nclf, cl0bf)) {
@@ -1198,8 +1325,7 @@ next:
 	p_cpt2g[19]++;
 	if (!clean_valid_done) {
 		clean_valid_done = 1;
-		uint64_t uaandr;
-		if (IsValidB12(uaandr)) return;
+		if (IsValidB12()) return;
 	}
 	p_cpt2g[20]++;
 

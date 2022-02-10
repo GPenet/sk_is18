@@ -104,9 +104,18 @@ struct TUAS81 {
 	}
 
 };
+
 struct TUASB12 {
-	uint64_t tua[TUA64_12SIZE], t2[3000];
+	uint64_t tua[4096], t2[3000];
+	// 4096 size of vectors used in expansion
 	uint32_t nua, nt2;
+	void SwitchTo54Mode() {
+		for (uint32_t i = 0; i < nua; i++) {
+			register uint64_t R = tua[i];
+			R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);
+			tua[i]=R;// now r54
+		}
+	}
 	void SortBySize() {
 		uint64_t t[50][300], nt[50];
 		memset(nt, 0, sizeof nt);
@@ -516,7 +525,7 @@ struct MOREV2 {// 2 more64vect paired
 	}
 
 
-}morev2a, morev2b, morev2c, morev2d;
+}morev2a,  morev2c, morev2d;
 
 struct MORE32 {// FIFO table of more for band b
 	uint32_t  t[32];
@@ -553,6 +562,7 @@ struct MORE32 {// FIFO table of more for band b
 struct GCHK {
 	//=========== kwon puzzle filters
 	BF128 puzknown;
+	uint64_t pk54;
 	uint32_t kpfilt[4]; //initial statu 3 
 	int kn_ir1, kn_ir2;
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
@@ -657,20 +667,7 @@ struct GCHK {
 	uint32_t ntua4;
 	uint64_t bufvalid[BUFVALIDS+1], *pbufvalid,*pendbufvalid;
 	int nt4ok,okcheck;// for known
-
-
-	void BuildVectorsForExpand4B12();//64 uas
-	void Expand4B12();
-	void Do_phase2(T4_TO_EXPAND w);
-	void Do_phase2Expand(uint64_t bf, uint64_t ac);
-	uint64_t IsValidB12(uint64_t & uaandr);
-	void CheckValidBelow(uint64_t bf,uint64_t ac);
-	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
-	//_____________ validb12
-	uint64_t myb12, myb12f, myac, myacf, myb12add;
-	uint32_t  mynclues;//valid status
-	int 	limb12;
-	uint32_t tadd[50], ntadd;
+	// bands 1+2 valid epansion
 	struct CHUNKVB12
 	{
 		BF128 tmore[1024 + 64], t2[1024 + 64];
@@ -686,13 +683,13 @@ struct GCHK {
 				if (cc > 4)cc = 4;
 				tt[cc][ntt[cc]++] = w;
 			}
-			ntmore  = 0;
+			ntmore = 0;
 			for (int i = 0; i < 5; i++) //3,4;5;6; more
 				for (uint32_t j = 0; j < ntt[i]; j++)
-					 tmore[ntmore++] = tt[i][j];
+					tmore[ntmore++] = tt[i][j];
 
 		}
-		void Dumpt2(int ix=-1) {
+		void Dumpt2(int ix = -1) {
 			cout << "dumpt2 nt2=" << nt2 << endl;
 			for (uint32_t i = 0; i < nt2; i++) {
 				if (ix >= 0 && (t2[i].bf.u32[2] != ix)) continue;
@@ -710,10 +707,10 @@ struct GCHK {
 	}chvb12;
 	struct CHUNKVB12ADD
 	{
-		BF128 t[128],t2a[64],tma[128];
-		uint32_t nt, nt2,nt2a,ntma;
+		BF128 t[128], t2a[64], tma[128];
+		uint32_t nt, nt2, nt2a, ntma;
 		void Shrink(CHUNKVB12 & o, uint64_t bf, uint64_t ac) {// apply band 1+2 to old
-			nt= 0;
+			nt = 0;
 			register uint64_t F = bf;
 			for (uint64_t i = 0; i < o.nt2; i++) {
 				BF128 w = o.t2[i];
@@ -731,7 +728,7 @@ struct GCHK {
 				BF128 w = o.tmore[i];
 				if (!(w.bf.u64[0] & F)) {
 					w.bf.u64[0] &= ac;
-					uint32_t cc = _popcnt32(w.bf.u32[2 ])-3;
+					uint32_t cc = _popcnt32(w.bf.u32[2]) - 3;
 					if (cc > 4) cc = 4;
 					tt[cc][ntt[cc]++] = w;	//tmore[ntmore++] = w;
 				}
@@ -749,39 +746,40 @@ struct GCHK {
 			}
 		}
 		void Dumptmore() {
-			cout << "dumptmore ntmore=" << nt-nt2 << endl;
-			for (uint32_t i = nt2; i < nt ; i++) {
+			cout << "dumptmore ntmore=" << nt - nt2 << endl;
+			for (uint32_t i = nt2; i < nt; i++) {
 				cout << Char54out(t[i].bf.u64[0]) << " ";
 				cout << Char27out(t[i].bf.u32[2]) << endl;
 			}
 		}
 	}  chvb12b;
 	struct VB12
-	{	BF128 tof128[50],	*myt2,*mytmore;
-	uint32_t mynt2, myntmore;
-	//+64 margin against overflow
-	uint64_t ort2, orof;
+	{
+		BF128 tof128[50], *myt2, *mytmore;
+		uint32_t mynt2, myntmore;
+		//+64 margin against overflow
+		uint64_t ort2, orof;
 		uint32_t tg2ok[27], ntg2ok,
-			tmore27[384],ntmore27;// max is from tmore
+			tmore27[384], ntmore27;// max is from tmore
 		uint32_t tclues[15], nclues, bfbf2; //assign compulsory bf2
 		uint32_t tof[50], ntof; // outfield
 
 		MINCOUNT smin;
-		int GetsminF(BF128 * t2,uint32_t nt2);
+		int GetsminF(BF128 * t2, uint32_t nt2);
 		void CleanTmore(BF128 * tmore, uint32_t ntmore);
 		inline void ApplyBf2();// forcing common cell 2 pairs
 		inline void BuildOf();
-		inline void BuildOrOf(CHUNKVB12& o,uint64_t ac);
+		inline void BuildOrOf(CHUNKVB12& o, uint64_t ac);
 		inline uint32_t GetAnd() {// called with ntof>0
 			register uint32_t andw = tof[0];
-			for(uint32_t i=1;i<ntof;i++)andw&= tof[i];
+			for (uint32_t i = 1; i < ntof; i++)andw &= tof[i];
 			return andw;
 		}
 		inline uint32_t GetAndExcept(uint32_t f) {
 			register uint32_t andw = BIT_SET_27;
 			for (uint32_t i = 0; i < ntof; i++) {
 				register uint32_t U = tof[i];
-				if(!(f&U))andw &= U;
+				if (!(f&U))andw &= U;
 			}
 			return andw;
 		}
@@ -820,10 +818,10 @@ struct GCHK {
 
 
 	}svb12, svb12b, svb12add;
-	struct GADDB3	{ //Add during a clean chunk
+	struct GADDB3 { //Add during a clean chunk
 		BF128 tmore[384], t2[256];
 		uint32_t ntmore, nt2;
-		inline void Init(){ ntmore= nt2=0; }
+		inline void Init() { ntmore = nt2 = 0; }
 		inline void Add(BF128 w, int cc) {
 			if (cc < 3) {
 				if (nt2 < 256)t2[nt2++] = w;
@@ -848,35 +846,67 @@ struct GCHK {
 		}
 
 	}gaddb3;
-
-
-	// bands 1+2 valid epansion
 	struct VADD_HANDLER {
 		BF128 v0, v2, vm, vsteps[10], vcells[50];
 		uint32_t mapcell[54];
-		void SetUpAdd0(CHUNKVB12ADD& vb12,  uint64_t ac);
+		void SetUpAdd0(CHUNKVB12ADD& vb12, uint64_t ac);
 		inline void Apply(uint64_t stepold, uint64_t icur) {
-			vsteps[stepold + 1]= vsteps[stepold ]& vcells[icur];
+			vsteps[stepold + 1] = vsteps[stepold] & vcells[icur];
 		}
 		void Dump();
 
 	}vaddh;
-
 	struct MOREAND {
 		uint64_t tm[500], ntm;
 		inline int Check(uint64_t bf) {
 			register uint64_t F = bf, i;
 			for (i = 0; i < ntm; i++)
-				if (!(F&tm[i]) )return 1;
+				if (!(F&tm[i]))return 1;
 			return 0;
+		}
+		inline uint64_t GetAndUnHit(uint64_t bf) {
+			register uint64_t andw = ~0;
+			register uint64_t F = bf, i;
+			for (i = 0; i < ntm; i++)
+				if (!(F&tm[i]))andw &= tm[i];
+			return andw;
 		}
 		void Dump() {
 			for (uint64_t i = 0; i < ntm; i++)
 				cout << Char54out(tm[i]) << " " << i << " "
-				<< _popcnt64(tm[i] )<< endl;
+				<< _popcnt64(tm[i]) << endl;
 		}
 
 	}moreand;
+	struct MOREANDB {
+		uint64_t tm[100], ntm;
+		inline void GetdUnHit(uint64_t bf, uint64_t *tmo, uint64_t ntmo) {
+			ntm = 0;
+			register uint64_t F = bf, i;
+			for (i = 0; i < ntmo; i++)
+				if (!(F&tmo[i]))tm[ntm++] = tmo[i];
+		}
+		void Dump() {
+			for (uint64_t i = 0; i < ntm; i++)
+				cout << Char54out(tm[i]) << endl;
+		}
+
+	}mbisvalid;
+
+	void BuildVectorsForExpand4B12();//64 uas
+	void Expand4B12();
+	void Do_phase2(T4_TO_EXPAND w);
+	void Do_phase2Expand(uint64_t bf, uint64_t ac);
+	int IsValidB12();
+	void CheckValidBelow(uint64_t bf,uint64_t ac);
+	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
+	void CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo);
+	//_____________ validb12
+	uint64_t myb12, myb12f, myac, myacf, myb12add;
+	uint32_t  mynclues;//valid status
+	int 	limb12;
+	uint32_t tadd[50], ntadd;
+
 
 	void ExpandAddB1B2(uint64_t bf);
 	void ExpandAddB1B2Go(int step);
@@ -891,29 +921,12 @@ struct GCHK {
 
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
 	int nclues_step, nclues,nclf,nmiss;
-	//uint64_t n_to_clean, n_to_clean2,nwc;
 	int  ncluesb3,mincluesb3;
-
-
-	uint32_t nua_add, nua_3x3y, nxy_filt1,nvalid,n128add;
 
 	//================== clean process
 	uint64_t wb12bf, wb12active, myua;
-	GINT64  stack_count_step, stack_count, stack_countf;
-
-	uint32_t	ua_of_seen;
-
-	//________ clean and valid
-	uint32_t uasb3_1[10000], uasb3_2[2000], 
-		nuasb3_1, nuasb3_2,  b3_andout;
-	uint32_t nb64_1,nb64_2;
-	uint32_t taddgob3[100], ntaddgob3;
+	uint32_t taddgob3[100], ntaddgob3, clean_valid_done;
 	MORE32 moreuas_b3;
-	uint32_t ua_out_seen,clean_valid_done;
-	//==================== current band 3 to process
-	uint32_t tcluesb3[10],ntcl3,ntcl3_bf2,*tclues3;
-	//_______ processing potential valid bands 1+2
-
 
 	void Out17(uint32_t bfb3);
 
