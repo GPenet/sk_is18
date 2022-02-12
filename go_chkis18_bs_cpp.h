@@ -23,6 +23,7 @@ void STD_B416::InitBand2_3(char * ze, BANDMINLEX::PERM & p
 //_______________ process band ordered
 int  GCHK::StartIs18() {
 	if (aigstop) return 0;
+	p_cpt2g[0]++;
 #ifdef HAVEKNOWN
 	// put knownn in the right order
 	if (strlen(ze) < 163) return -1;// skip blank lines
@@ -467,16 +468,21 @@ back:
 		}
 	}
 	cout << "expected i=" << nt4ok << endl;
-	if(nt4ok<0) 	return;
-	else nt4_to_expand = nt4ok+1;
+
+//	if(nt4ok<0) 	return;
+//	else nt4_to_expand = nt4ok+1;
 #endif
 	cout << "nt4_to_expand=" << nt4_to_expand << endl;
 	for (uint64_t i = 0; i < nt4_to_expand; i++) {
 #ifdef HAVEKNOWN
-		okcheck = (i == nt4ok);
+		if(nt4ok>=0)		okcheck = (i == nt4ok);
+		else okcheck = 0;
+		if (okcheck) cout <<i  << " start expand the expected ckunk" << endl;
 #endif
 		Do_phase2(t4_to_expand[i]);
-		if (aigstop) return;
+		//if(p_cpt2g[0] == 3) cout << " back expand aigstop="<<aigstop << " for i=" << i << endl;
+		if (aigstop) 			return;
+	
 	}
 
 }
@@ -745,10 +751,10 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 				if (locdiag) {
 					cout << "have unhit ua'(s)" << endl;
 					//mab.Dump();
-					CleanMoreUas(myb12, myac, nclues,mab);
-					return;
 				}
 #endif
+				CleanMoreUas(myb12, myac, nclues, mab);
+				continue;
 			}
 			//else CheckValidBelow(myb12, myac);
 		}
@@ -792,7 +798,6 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 			locdiag = 1;
 		}
 	}
-
 #endif
 	clean_valid_done = 0;
 	myb12f = bf54;
@@ -800,10 +805,8 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	ncluesb3 = 18 - limb12;
 	nmiss = ncluesb3 - nmin;
 #ifdef HAVEKNOWN
-	if (locdiag) {
+	if (locdiag) 
 		cout << Char54out(bf54) << " nmin=" << nmin  << "nmiss=" << nmiss<< endl;
-
-	}
 #endif
 	if (nmiss >= 0) {
 		svb12.CleanTmore(chvb12.tmore, chvb12.ntmore);
@@ -814,7 +817,7 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 void GCHK::CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo) {
 	p_cpt2g[18]++;
 #ifdef HAVEKNOWN
-	int locdiag;
+	int locdiag=0;
 	if (okcheck == 2) {
 		if ((bf&pk54) == bf) {
 			cout << Char54out(bf) << " p_cpt2g[18]=" << p_cpt2g[18]
@@ -1055,8 +1058,8 @@ int GCHK::VB12::GetsminF(	BF128 * t2,	uint32_t nt2) {// apply filter myb12
 
 }
 void GCHK::VB12::CleanTmore(BF128 * tmore, uint32_t ntmore) {// clean subsets redundancy and sort
-	mytmore = tmore;
-	myntmore = ntmore;
+	//mytmore = tmore;
+	//myntmore = ntmore;
 	uint32_t tw[400],tt[6][100], ntt[6];
 	int ntw = 0;
 	memset(ntt, 0, sizeof ntt);
@@ -1113,8 +1116,8 @@ inline void GCHK::VB12::ApplyBf2() {
 inline void GCHK::VB12::BuildOf() {
 	ntof = 0;
 	register uint32_t F = smin.critbf | bfbf2; // assigned or critbf
-	for (uint32_t i = 0; i < myntmore; i++) {
-		register uint32_t U = mytmore[i].bf.u32[2];
+	for (uint32_t i = 0; i <ntmore27; i++) {
+		register uint32_t U =tmore27[i];
 		if (!(U&F))tof[ntof++] = U;
 		if (ntof > 20) return;//enough to check higher min
 	}
@@ -1155,12 +1158,31 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 	int isdirect = 0;
 	ntaddgob3 = 0;
 	nclf = ncl;
-
+#ifdef HAVEKNOWN
+	int locdiag = 0;
+	if (okcheck == 2) {
+		//cout << Char54out(bf54) << endl;
+		if ((myb12f&pk54) == myb12f) {
+			cout << Char54out(myb12f) << " p_cpt2g[8]=" << p_cpt2g[8] << endl;
+			vbx.smin.Status("");
+			vbx.Dumptmore27();
+			locdiag = 1;
+		}
+	}
+#endif
 	// _direct process unless compulsory outfield clues
 	if (nmiss > 2)isdirect = 1;
 	else {
-		vbx.ApplyBf2();// assign critical 2 pairs
+		vbx.bfbf2 = 0;
+		if(!nmiss)	vbx.ApplyBf2();// assign critical 2 pairs
 		vbx.BuildOf();// outfield after 2 pairs
+#ifdef HAVEKNOWN
+		if (locdiag) {
+			cout << Char27out(vbx.bfbf2) << "bfb2" << endl;
+			vbx.Dumptof();
+		}
+
+#endif		
 		if (!nmiss) {
 			p_cpt2g[10]++;
 			if (vbx.ntof) return;
@@ -1170,6 +1192,7 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 			if (! vbx.ntof) isdirect = 1;
 			else {
 				p_cpt2g[11]++;
+				vbx.ApplyBf2();// assign critical 2 pairs
 				uint32_t ua = vbx.GetAnd();
 				if (!ua)return;// to many clues				
 				uint32_t  c;// use ua as first clue and go std
@@ -1235,8 +1258,8 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 		register uint32_t U = tg2[vbx.tg2ok[i]].pat;
 		if(!(U&cl0bf))	b3direct.Add(U);
 	}
-	for (uint32_t i = 0; i <vbx.myntmore; i++) {
-		register uint32_t U = vbx.mytmore[i].bf.u32[2];
+	for (uint32_t i = 0; i <vbx.ntmore27; i++) {
+		register uint32_t U = vbx.tmore27[i];
 		if (!(U&cl0bf))	b3direct.Add(U&active0);
 	}
 	for (uint32_t i = 0; i < ntaddgob3; i++) {

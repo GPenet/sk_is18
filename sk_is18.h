@@ -755,8 +755,8 @@ struct GCHK {
 	}  chvb12b;
 	struct VB12
 	{
-		BF128 tof128[50], *myt2, *mytmore;
-		uint32_t mynt2, myntmore;
+		BF128 tof128[50], *myt2;// , *mytmore;
+		uint32_t mynt2;// , myntmore;
 		//+64 margin against overflow
 		uint64_t ort2, orof;
 		uint32_t tg2ok[27], ntg2ok,
