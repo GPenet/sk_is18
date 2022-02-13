@@ -721,7 +721,7 @@ struct GCHK {
 			}
 			nt2 = nt;
 			// keep the best first 64 (smallest band3)
-			BF128 tt[5][100];
+			BF128 tt[5][200];
 			uint32_t ntt[5];
 			memset(ntt, 0, sizeof ntt);
 			for (uint64_t i = 0; i < o.ntmore; i++) {
@@ -729,7 +729,9 @@ struct GCHK {
 				if (!(w.bf.u64[0] & F)) {
 					w.bf.u64[0] &= ac;
 					uint32_t cc = _popcnt32(w.bf.u32[2]) - 3;
-					if (cc > 4) cc = 4;
+					if (cc > 4)
+						if(ntt[4]<50)cc = 4;
+						else continue;
 					tt[cc][ntt[cc]++] = w;	//tmore[ntmore++] = w;
 				}
 			}

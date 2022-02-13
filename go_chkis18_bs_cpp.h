@@ -488,7 +488,7 @@ back:
 }
 //______  process a "no more uas bands 1+2
 
-
+#define DEBUG
 void GCHK::Do_phase2(T4_TO_EXPAND w) {
 	p_cpt2g[3]++;
 	{	register uint64_t bf54 = w.bf, ac54 = w.active;
@@ -746,6 +746,12 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 		else {// apply moreand mis uas if anysing
 			MOREANDB mab;
 			mab.GetdUnHit(myb12, moreand.tm, moreand.ntm);
+#ifdef DEBUG
+			//if (p_cpt2g[34] > 9060  )
+			//	cout << Char54out(myb12) << " p_cpt2g[16]=" << p_cpt2g[16]
+			//	<< " ncl=" << ncl << " limb12=" << limb12
+			//	<< " mab.ntm" << mab.ntm	<< endl;
+#endif
 			if (mab.ntm) {
 #ifdef HAVEKNOWN
 				if (locdiag) {
@@ -815,6 +821,7 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 }
 void GCHK::InitGoB3below(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	p_cpt2g[6]++;
+	//if (1) return;
 #ifdef HAVEKNOWN
 	int locdiag = 0;
 	if (okcheck == 2) {
@@ -834,11 +841,10 @@ void GCHK::InitGoB3below(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	if (locdiag)
 		cout << Char54out(bf54) << " nmin=" << nmin << "nmiss=" << nmiss << endl;
 #endif
-	if (1) return;
 	if (nmiss >= 0) {
 		BF128 * tm = &chvb12b.t[chvb12b.nt2];
 		uint32_t	ntm = chvb12b.nt- chvb12b.nt2;
-		svb12.CleanTmore(tm, ntm);
+		svb12b.CleanTmore(tm, ntm);
 		GoB3(nclues, svb12b);
 	}
 }
@@ -936,6 +942,14 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	}
 
 #endif	
+#ifdef DEBUG
+	int locdiag = 0;
+	if (p_cpt2g[16] == 2052714) {
+		locdiag = 1;
+		cout << " CheckValidBelow in bug" << endl;
+	}
+#endif
+
 	if (IsValidB12()) {// add one cell hitting all uas
 #ifdef HAVEKNOWN
 		if (locdiag)  
@@ -951,6 +965,7 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 #endif	
 	p_cpt2g[17]++;
 	chvb12b.Shrink(chvb12, bf, ac);
+
 	InitGoB3below(bf, ac);// try first direct with more clurs in b3
 #ifdef HAVEKNOWN
 	if (locdiag) cout << "  back from direct" << endl;
@@ -1252,6 +1267,7 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 		}
 		else {// now nmiss=2
 			if (vbx.ntof < 2 || vbx.GetAnd()) isdirect = 1;
+			//vbx.ApplyBf2();// assign critical 2 pairs bug voir pourquoi
 			uint32_t ua1 = vbx.GetMinOf();// start with smallest
 			uint32_t  c;// use ua as first clue and go std
 			while (bitscanforward(c, ua1)) {

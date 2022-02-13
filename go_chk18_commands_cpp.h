@@ -1,6 +1,6 @@
 //========================================
 const char * libs_c17_00_cpt2g[70] = {
-	"0  ",//0
+	"0  compte entrée",//0
 	"1  uas b12 start ",//1
 	"2  uas g2 start",//2
 	"3  steps first 3/4 ",//3
