@@ -1254,7 +1254,10 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 			if (! vbx.ntof) isdirect = 1;
 			else {
 				p_cpt2g[11]++;
-				vbx.ApplyBf2();// assign critical 2 pairs
+				if (vbx.smin.mini_bf2) {
+					vbx.ApplyBf2();// assign critical 2 pairs
+					vbx.BuildOf();// outfield after 2 pairs
+				}
 				uint32_t ua = vbx.GetAnd();
 				if (!ua)return;// to many clues				
 				uint32_t  c;// use ua as first clue and go std
@@ -1267,7 +1270,10 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 		}
 		else {// now nmiss=2
 			if (vbx.ntof < 2 || vbx.GetAnd()) isdirect = 1;
-			//vbx.ApplyBf2();// assign critical 2 pairs bug voir pourquoi
+			if (vbx.smin.mini_bf2) {
+				vbx.ApplyBf2();// assign critical 2 pairs
+				vbx.BuildOf();// outfield after 2 pairs
+			}
 			uint32_t ua1 = vbx.GetMinOf();// start with smallest
 			uint32_t  c;// use ua as first clue and go std
 			while (bitscanforward(c, ua1)) {
