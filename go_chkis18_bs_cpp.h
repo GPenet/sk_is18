@@ -710,7 +710,7 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 				cout << Char54out(myb12) << " p_cpt2g[5]=" << p_cpt2g[5] 
 					<<" ncl=" << ncl<<" limb12="<<limb12<< endl;
 				locdiag = 1;
-				moreand.Dump();
+				//moreand.Dump();
 			}
 		}			
 #endif
@@ -756,7 +756,7 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 				CleanMoreUas(myb12, myac, nclues, mab);
 				continue;
 			}
-			//else CheckValidBelow(myb12, myac);
+			else CheckValidBelow(myb12, myac);
 		}
 	}
 }
@@ -813,7 +813,35 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 		GoB3(limb12,  svb12);
 	}
 }
-
+void GCHK::InitGoB3below(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
+	p_cpt2g[6]++;
+#ifdef HAVEKNOWN
+	int locdiag = 0;
+	if (okcheck == 2) {
+		//cout << Char54out(bf54) << endl;
+		if ((bf54&pk54) == bf54) {
+			cout << Char54out(bf54) << " below  p_cpt2g[6]=" << p_cpt2g[6] << endl;
+			locdiag = 1;
+		}
+		//else return;
+	}
+#endif
+	myb12f = bf54;
+	int nmin = svb12b.GetsminF(chvb12b.t, chvb12b.nt2);
+	ncluesb3 = 18 - nclues;
+	nmiss = ncluesb3 - nmin;
+#ifdef HAVEKNOWN
+	if (locdiag)
+		cout << Char54out(bf54) << " nmin=" << nmin << "nmiss=" << nmiss << endl;
+#endif
+	if (1) return;
+	if (nmiss >= 0) {
+		BF128 * tm = &chvb12b.t[chvb12b.nt2];
+		uint32_t	ntm = chvb12b.nt- chvb12b.nt2;
+		svb12.CleanTmore(tm, ntm);
+		GoB3(nclues, svb12b);
+	}
+}
 void GCHK::CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo) {
 	p_cpt2g[18]++;
 #ifdef HAVEKNOWN
@@ -898,15 +926,35 @@ void GCHK::CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo) {
 }
 void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	p_cpt2g[7]++;
+#ifdef HAVEKNOWN
+	int locdiag = 0;
+	if (okcheck == 2) {
+		if ((bf&pk54) == bf) {
+			cout << Char54out(bf) << " start below p_cpt2g[7]=" << p_cpt2g[7] << endl;
+			locdiag = 1;
+		}
+	}
+
+#endif	
 	if (IsValidB12()) {// add one cell hitting all uas
+#ifdef HAVEKNOWN
+		if (locdiag)  
+			cout  << " not valid go to clean more uas"  << endl;
+#endif	
 		if (nclues == limb12) return;
 		CleanMoreUas( bf,  ac, nclues, mbisvalid);
 		return;
 	}
-//	if (1) return;
 	clean_valid_done = 1;
-
+#ifdef HAVEKNOWN
+	if (locdiag) cout << "  valid enter the add process" << endl;
+#endif	
 	p_cpt2g[17]++;
+	chvb12b.Shrink(chvb12, bf, ac);
+	InitGoB3below(bf, ac);// try first direct with more clurs in b3
+#ifdef HAVEKNOWN
+	if (locdiag) cout << "  back from direct" << endl;
+#endif	
 	{//______________  build tadd from active cells
 		ntadd = 0;
 		memset(vaddh.mapcell, 255, sizeof vaddh.mapcell);
@@ -918,7 +966,6 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 			tadd[ntadd++] = cell;
 		}
 	}
-	chvb12b.Shrink(chvb12, bf,ac);
 	vaddh.SetUpAdd0(chvb12b, ac);
 	ExpandAddB1B2(bf);
 }

@@ -1,7 +1,7 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
-//#define HAVEKNOWN 1
+#define HAVEKNOWN 1
 #ifdef HAVEKNOWN
 #endif
 

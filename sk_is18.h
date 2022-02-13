@@ -911,6 +911,7 @@ struct GCHK {
 	void ExpandAddB1B2(uint64_t bf);
 	void ExpandAddB1B2Go(int step);
 	void InitGoB3(uint64_t bf, uint64_t ac54);
+	void InitGoB3below(uint64_t bf, uint64_t ac54);
 
 	void GoB3(  int ncl,  VB12 & vbx);
 	void BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
