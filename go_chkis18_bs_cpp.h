@@ -56,7 +56,7 @@ int  GCHK::StartIs18() {
 	}
 	register uint64_t R = puzknown.bf.u64[0];
 	pk54= (R & BIT_SET_27) |	((R & BIT_SET_B2) >> 5);
-	if ((int)__popcnt(puzknown.bf.u32[2] ) < mincluesb3) return  0;
+	if ((int)_popcnt32(puzknown.bf.u32[2] ) < mincluesb3) return  0;
 #endif		
 	int * zs0 = grid0, *zs0_diag = grid0_diag;
 	BANDMINLEX::PERM perm_ret;
@@ -438,36 +438,38 @@ next:
 	register int cell;
 	uint64_t p = s->possible_cells;
 	if (!p)goto back;
-	bitscanforward64(cell, p);
-	register uint64_t bit = (uint64_t)1 << cell;
-	s->possible_cells ^= bit;
-	tclues[ispot] = cell;
-	s->active_cells ^= bit;
-	uint64_t ac = s->active_cells;
-	sn = s + 1; *sn = *s; // (copy the stack count)
-	sn->all_previous_cells = s->all_previous_cells | bit;
-	if (ispot == limspot) {// 4 cells to use later
-		T4_TO_EXPAND & w = t4_to_expand[nt4_to_expand++];
-		BF64 vsort; vsort.bf.u64 = 0;
-		w.bf = sn->all_previous_cells;
-		w.active = ac;
-		vsort.bf.u32[1] = cpt_4c.GetCount(w.bf);
-		vsort.bf.u32[0] = 27 - (uint32_t)_popcnt64(ac);
-		w.vsort = vsort.bf.u64;
+	{
+		bitscanforward64(cell, p);
+		register uint64_t bit = (uint64_t)1 << cell;
+		s->possible_cells ^= bit;
+		tclues[ispot] = cell;
+		s->active_cells ^= bit;
+		uint64_t ac = s->active_cells;
+		sn = s + 1; *sn = *s; // (copy the stack count)
+		sn->all_previous_cells = s->all_previous_cells | bit;
+		if (ispot == limspot) {// 4 cells to use later
+			T4_TO_EXPAND & w = t4_to_expand[nt4_to_expand++];
+			BF64 vsort; vsort.bf.u64 = 0;
+			w.bf = sn->all_previous_cells;
+			w.active = ac;
+			vsort.bf.u32[1] = cpt_4c.GetCount(w.bf);
+			vsort.bf.u32[0] = 27 - (uint32_t)_popcnt64(ac);
+			w.vsort = vsort.bf.u64;
+			goto next;
+		}
+		// find next ua
+		sn->v &= v12_4_c[cell];
+		if (!sn->v) {// no more uas should never be
+			cout << "no more uas" << endl;		goto next;
+		}
+		uint32_t ir;
+		bitscanforward64(ir, sn->v);//ir ua to load
+		uint64_t Ru = twu[ir] & ac;
+		if (!Ru)goto next;//dead branch unlikely
+		sn->possible_cells = Ru;
+		s++; // switch to next spot
 		goto next;
 	}
-	// find next ua
-	sn->v &= v12_4_c[cell];
-	if (!sn->v) {// no more uas should never be
-		cout << "no more uas" << endl;		goto next;
-	}
-	uint32_t ir;
-	bitscanforward64(ir, sn->v);//ir ua to load
-	uint64_t Ru = twu[ir] & ac;
-	if (!Ru)goto next;//dead branch unlikely
-	sn->possible_cells = Ru;
-	s++; // switch to next spot
-	goto next;
 	// going back, for a non empty index, count it back
 back:
 	if (--s >= spb)goto next;
@@ -1195,17 +1197,19 @@ void GCHK::ExpandAddB1B2(uint64_t bf) {// add up to n cells
 	//____________ here start the search nclues
 next:
 	if (s->icur >= ntadd) goto back;
-	uint64_t ispot = s - spb;
-	register int cell = tadd[s->icur++];
-	register uint64_t bit = (uint64_t)1 << cell;
-	tgo[ispot] = cell;
-	sn = s + 1; *sn = *s; 
-	sn->all_previous_cells = s->all_previous_cells | bit;
-	myb12add = sn->all_previous_cells;
-	ExpandAddB1B2Go((int)ispot + 1);// call the process for this 
-	if (ispot >= lim) 	goto next;
-	s++; // switch to next spot (icur+1)
-	goto next;
+	{
+		uint64_t ispot = s - spb;
+		register int cell = tadd[s->icur++];
+		register uint64_t bit = (uint64_t)1 << cell;
+		tgo[ispot] = cell;
+		sn = s + 1; *sn = *s;
+		sn->all_previous_cells = s->all_previous_cells | bit;
+		myb12add = sn->all_previous_cells;
+		ExpandAddB1B2Go((int)ispot + 1);// call the process for this 
+		if (ispot >= lim) 	goto next;
+		s++; // switch to next spot (icur+1)
+		goto next;
+	}
 back:
 	if (--s >= spb)goto next;
 

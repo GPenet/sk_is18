@@ -759,7 +759,7 @@ void ZHGXN::SetupFsol(int * grid0) {
 
 int ZHOU2::GoZ2(int  fl) {
 	zhgxn.nua = 0;
-	if (__popcnt(fl) != 2) {
+	if (_popcnt32(fl) != 2) {
 		cout << "bug fl not 2 digits" << endl;
 		return 1;// not valid fl
 	}
@@ -922,7 +922,7 @@ FD[W][0].bf.u32[3] = r_free;}
 ZHOU3 zhou3[10];
 
 int ZHOU3::GoZ3(int  fl) {
-	if (__popcnt(fl) != 3) return 1;// not valid fl
+	if (_popcnt32(fl) != 3) return 1;// not valid fl
 	//memset(zh_g2.Digit_cell_Assigned, 0, sizeof zh_g2.Digit_cell_Assigned);
 	//memcpy(FD, zhoustart, sizeof FD);
 	int n = 0;

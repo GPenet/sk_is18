@@ -733,7 +733,7 @@ int ZH2B::GetNetUaCell4box() {
 	// setup ok cells
 	uint64_t sok = 0; // zh2gxn.unsolved_field;
 	for (int i = 0; i < 9; i++) {
-		sok |= (FD[i] & zh2gxn.fsol[i]).bf.u64;
+		sok |= (FD[i].bf.u64 & zh2gxn.fsol[i]);
 	}
 	uint64_t sok2 = sok & ~cells_unsolved.bf.u64;
 	sok &= cells_unsolved.bf.u64;
@@ -785,7 +785,7 @@ inline void ZH2B::ComputeNext4box() {
 			if (nu) {
 				uint64_t sok = 0; // zh2gxn.unsolved_field;
 				for (int i = 0; i < 9; i++) {
-					sok |= (FD[i] & zh2gxn.fsol[i]).bf.u64;
+					sok |= (FD[i].bf.u64 & zh2gxn.fsol[i]);
 				}
 				//cout << Char2Xout(sok) << " sok" << endl;
 				for (int iu = 0; iu < nu; iu++) {
@@ -866,7 +866,7 @@ void ZH2_3::GoZ3A(int fl) {
 	memset(CompFD, 0, sizeof CompFD);
 }
 int ZH2_3::GoZ3(int  fl) {
-	if (__popcnt(fl) != 3) {
+	if (_popcnt32(fl) != 3) {
 		cout << "bug fl not 3 digits" << endl;
 		return -1;// not valid fl
 	}
@@ -891,7 +891,7 @@ int ZH2_3::GoZ3(int  fl) {
 	return (int)cc;
 }
 int ZH2_3::GoZ3G2(int fl, int c1, int d1, int c2, int d2) {
-	if (__popcnt(fl) != 3) {
+	if (_popcnt32(fl) != 3) {
 		cout << "bug fl not 3 digits" << endl;
 		return -1;// not valid fl
 	}
@@ -1036,7 +1036,7 @@ int ZH2_3::GetNetUaCell() {
 	// setup ok cells
 	uint64_t sok = 0; // zh2gxn.unsolved_field;
 	for (int i = 0; i < 3; i++) {
-		sok |= (FD[i] & zh2gxn.fsolw[i]).bf.u64;
+		sok |= (FD[i].bf.u64 & zh2gxn.fsolw[i].bf.u64);
 	}
 	uint64_t sok2 = sok & ~cells_unsolved.bf.u64;
 	sok &= cells_unsolved.bf.u64;
@@ -1069,8 +1069,8 @@ void ZH2_3::ComputeNext() {
 			int nu = *zh2gxn.nknownuas;
 			if (nu) {
 				uint64_t sok = 0; // zh2gxn.unsolved_field;
-				for (int i = 0; i < 4; i++) {
-					sok |= (FD[i] & zh2gxn.fsolw[i]).bf.u64;
+				for (int i = 0; i < 3; i++) {
+					sok |= FD[i].bf.u64 & zh2gxn.fsolw[i].bf.u64;
 				}
 				for (int iu = 0; iu < nu; iu++) {
 					register uint64_t U = zh2gxn.knownuas[iu];
@@ -1190,7 +1190,7 @@ void ZH2_4::GoZ4A(int  fl) {
 
 }
 int ZH2_4::GoZ4(int  fl) {
-	if (__popcnt(fl) != 4) {
+	if (_popcnt32(fl) != 4) {
 		cout << "bug fl not 4 digits" << endl;
 		return -1;// not valid fl
 	}
@@ -1215,7 +1215,7 @@ int ZH2_4::GoZ4(int  fl) {
 	return (int)cc;;
 }
 int ZH2_4::GoZ4G2(int fl, int c1, int d1, int c2, int d2) {
-	if (__popcnt(fl) != 4) {
+	if (_popcnt32(fl) != 4) {
 		cout << "bug fl not 4 digits" << endl;
 		return -1;// not valid fl
 	}
@@ -1407,7 +1407,7 @@ void ZH2_4::ComputeNext() {
 			if (nu) {
 				uint64_t sok = 0; // zh2gxn.unsolved_field;
 				for (int i = 0; i < 4; i++) {
-					sok |= (FD[i] & zh2gxn.fsolw[i]).bf.u64;
+					sok |= FD[i].bf.u64 & zh2gxn.fsolw[i].bf.u64;
 				}
 				for (int iu = 0; iu < nu; iu++) {
 					register uint64_t U = zh2gxn.knownuas[iu];
@@ -1540,7 +1540,7 @@ void ZH2_5::GoZ5A(int  fl) {
 	memset(CompFD, 0, sizeof CompFD);
 }
 	int ZH2_5::GoZ5(int  fl) {
-		if (__popcnt(fl) != 5) {
+		if (_popcnt32(fl) != 5) {
 			cout << "bug fl not 5 digits" << endl;
 			return -1;// not valid fl
 		}
@@ -1564,7 +1564,7 @@ void ZH2_5::GoZ5A(int  fl) {
 		return (int)cc;;
 	}
 	int ZH2_5::GoZ5G2(int fl, int c1, int d1, int c2, int d2) {
-		if (__popcnt(fl) != 5) {
+		if (_popcnt32(fl) != 5) {
 			cout << "bug fl not 5 digits" << endl;
 			return -1;// not valid fl
 		}
@@ -1761,7 +1761,7 @@ void ZH2_5::GoZ5A(int  fl) {
 				if (nu) {
 					uint64_t sok = 0; // zh2gxn.unsolved_field;
 					for (int i = 0; i < 5; i++) {
-						sok |= (FD[i] & zh2gxn.fsolw[i]).bf.u64;
+						sok |= FD[i].bf.u64 & zh2gxn.fsolw[i].bf.u64;
 					}
 					for (int iu = 0; iu < nu; iu++) {
 						register uint64_t U = zh2gxn.knownuas[iu];

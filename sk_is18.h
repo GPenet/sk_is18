@@ -83,7 +83,7 @@ struct TUAS81 {
 			if (!(F&fl))told[ntold++] = w;
 		}
 	}
-	void Debug(BF128 *t, uint32_t nt, char * lib) {
+	void Debug(BF128 *t, uint32_t nt, const char * lib) {
 		cout << lib << " " << nt << endl;
 		for (uint32_t iua = 0; iua < nt; iua++) {
 			BF128 wt = t[iua];
