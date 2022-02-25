@@ -1,21 +1,11 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
-//#define HAVEKNOWN 1
-#ifdef HAVEKNOWN
-#endif
+#define TEST_ON
+#define HAVEKNOWN 1
 
 //#define COLOIN
-#ifdef COLOIN
-#endif
-#ifndef COLOIN
-#endif
 
-#define TEST_ON 1
-
-//#define TEST_ON_KNOWN
-#ifdef TEST_ON_KNOWN
-#endif
 
 #define GUALIMSIZE 18
 #define TUASIZE 5000
