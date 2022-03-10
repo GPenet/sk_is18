@@ -1,7 +1,7 @@
 struct TUAS81 {
 	BF128 tall[5000],
 		told[3000], // later  has band 3
-		t2_2[1000];//band 3 2/3 after 5 clues 
+		t2_2[3000];//band 3 2/3 after 5 clues 
 	uint32_t ntall, ntold, nt2_2;
 	int Add(BF128 w, uint32_t floor) {
 		uint32_t cc = w.Count96(), nfloor = ~floor;
@@ -107,29 +107,29 @@ struct TUAS81 {
 
 struct TUASB12 {
 	uint64_t tua[4096], t2[3000];
+	uint64_t ta14[4096], ta15[4096], ta16[4096], ta17[4096], ta18[4096], tamore[4096];
 	// 4096 size of vectors used in expansion
 	uint32_t nua, nt2;
+	uint32_t nta14, nta15, nta16, nta17, nta18, ntamore;
 	void SwitchTo54Mode() {
+		nta14 = nta15 = nta16 = nta17 = nta18 = ntamore = 0;
 		for (uint32_t i = 0; i < nua; i++) {
 			register uint64_t R = tua[i];
 			R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);
 			tua[i]=R;// now r54
 		}
 	}
-	void SortBySize() {
-		uint64_t t[50][300], nt[50];
-		memset(nt, 0, sizeof nt);
-		for (uint32_t iua = 0; iua < nua; iua++) {
-			register uint64_t wu = tua[iua] & BIT_SET_2X,
-				cc = _popcnt64(wu);
-			t[cc][nt[cc]++] = wu;
-		}
-		nua = 0;
-		for (uint32_t i = 0; i < 50; i++)if (nt[i]) {
-			uint64_t *to = t[i];
-			for (uint32_t j = 0; j < nt[i]; j++)
-				tua[nua++] = to[j];
-		}
+	inline int ADD14(uint64_t u) {// add and check
+		for (uint32_t i = 0; i < nta14; i++)
+			if (u == ta14[i])return 1;
+		ta14[nta14++] = u;
+		return 0;
+	}
+	inline int ADD17(uint64_t u) {// add and check
+		for (uint32_t i = 0; i < nta17; i++)
+			if (u == ta17[i])return 1;
+		ta17[nta17++] = u;
+		return 0;
 	}
 	uint32_t CountT2(uint64_t filter) {
 		nt2 = 0;
@@ -176,6 +176,28 @@ struct TUASB12 {
 		cout << "dump t2 nua=" << nt2 << endl;
 		for (uint32_t iua = 0; iua < nt2; iua++)
 			cout << Char2Xout(t2[iua]) << " i=" << iua << endl;;
+	}
+	void Stats() {
+		cout << "tuasb12 status end of perm"
+			<< " nua=" << nua 
+			<< " nta14=" << nta14 << " nta15=" << nta15
+			<< " nta16=" << nta16 << " nta17=" << nta17
+			<< " nta18=" << nta18 << " ntamore=" << ntamore
+			<< endl;
+		if (0) {
+			cout << "add14" << endl;
+			for (uint32_t i = 0; i < nta14; i++) 
+				cout << Char54out(ta14[i]) << endl;
+			cout << "add15" << endl;
+			for (uint32_t i = 0; i < nta15; i++)
+				cout << Char54out(ta15[i]) << endl;
+			cout << "add16" << endl;
+			for (uint32_t i = 0; i < nta16; i++)
+				cout << Char54out(ta16[i]) << endl;
+		}
+
+
+
 	}
 };
 //___________ all uas in bands 1+2 and band 3
@@ -772,7 +794,7 @@ struct MOREV2 {// 2 more64vect paired
 	}
 
 
-}morev2a,  morev2c, morev2d;
+}morev2a, morev2b, morev2c, morev2d;
 
 struct MORE32 {// FIFO table of more for band b
 	uint32_t  t[32];
@@ -910,8 +932,11 @@ struct GCHK {
 
 		}
 	}t4_to_expand[5000];
-	uint64_t tua4[2048];
+	uint64_t tua4[4096];// also tuaclean
 	uint32_t ntua4;
+	uint64_t tuaclean[4096]; 
+	uint32_t ntuaclean;
+
 	uint64_t bufvalid[BUFVALIDS+1], *pbufvalid,*pendbufvalid;
 	int nt4ok,okcheck;// for known
 	// bands 1+2 valid epansion
@@ -1051,7 +1076,7 @@ struct GCHK {
 
 	}gaddb3;
 	struct MOREAND {
-		uint64_t tm[500], ntm;
+		uint64_t tm[700], ntm;
 		inline int Check(uint64_t bf) {
 			register uint64_t F = bf, i;
 			for (i = 0; i < ntm; i++)
@@ -1097,7 +1122,7 @@ struct GCHK {
 	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
 	void CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo);
 	//_____________ validb12
-	uint64_t myb12, myb12f, myac, myacf, 
+	uint64_t myb12, myb12f, myac_4, myac, myacf,
 		myb12add, myacadd;
 	uint32_t  mynclues;//valid status
 	int 	limb12;

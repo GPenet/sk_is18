@@ -33,7 +33,7 @@ const char * libs_c17_00_cpt2g[70] = {
 	"29 ",//29
 
 	"30  new ua b12",	
-	"31 add to <19",	
+	"31 add to <18",	
 	"32 ",	"33 add to uasb12 +2",	
 	"34  ",	
 	
