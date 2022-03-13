@@ -19,7 +19,7 @@ const char * libs_c17_00_cpt2g[70] = {
 	"15 isvalid b12",//15
 	"16 clean not 6 b2 forbidden",//16
 	"17 add after valid",//17
-	"18  ",
+	"18 clean more uas ",
 	"19  final checkb3",
 	"20  call checkb3",
 	"21 ",
@@ -27,9 +27,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"23  max cmore",
 	"24 ",//24
 	"25 entry add b1 b2 ",//25
-	"26 add one cell b1 b2 ",//26
-	"27 add one more",//27
-	"28 ",//28
+	"26 cells added b1 b2 ",//26
+	"27 add after g2",//27
+	"28 add after g3",//28
 	"29 ",//29
 
 	"30  new ua b12",	

@@ -110,20 +110,14 @@ struct TUASB12 {
 	uint64_t ta14[4096], ta15[4096], ta16[4096], ta17[4096], ta18[4096], tamore[4096];
 	// 4096 size of vectors used in expansion
 	uint32_t nua, nt2;
-	uint32_t nta14, nta15, nta16, nta17, nta18, ntamore;
+	uint32_t  nta17, nta18, ntamore;
 	void SwitchTo54Mode() {
-		nta14 = nta15 = nta16 = nta17 = nta18 = ntamore = 0;
+		nta17 = nta18 = ntamore = 0;
 		for (uint32_t i = 0; i < nua; i++) {
 			register uint64_t R = tua[i];
 			R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);
 			tua[i]=R;// now r54
 		}
-	}
-	inline int ADD14(uint64_t u) {// add and check
-		for (uint32_t i = 0; i < nta14; i++)
-			if (u == ta14[i])return 1;
-		ta14[nta14++] = u;
-		return 0;
 	}
 	inline int ADD17(uint64_t u) {// add and check
 		for (uint32_t i = 0; i < nta17; i++)
@@ -180,24 +174,9 @@ struct TUASB12 {
 	void Stats() {
 		cout << "tuasb12 status end of perm"
 			<< " nua=" << nua 
-			<< " nta14=" << nta14 << " nta15=" << nta15
-			<< " nta16=" << nta16 << " nta17=" << nta17
+			 << "\tnta17=" << nta17
 			<< " nta18=" << nta18 << " ntamore=" << ntamore
 			<< endl;
-		if (0) {
-			cout << "add14" << endl;
-			for (uint32_t i = 0; i < nta14; i++) 
-				cout << Char54out(ta14[i]) << endl;
-			cout << "add15" << endl;
-			for (uint32_t i = 0; i < nta15; i++)
-				cout << Char54out(ta15[i]) << endl;
-			cout << "add16" << endl;
-			for (uint32_t i = 0; i < nta16; i++)
-				cout << Char54out(ta16[i]) << endl;
-		}
-
-
-
 	}
 };
 //___________ all uas in bands 1+2 and band 3
@@ -286,7 +265,16 @@ struct CHUNK3B {// storing 64 uas and vectors 3 bands
 			td54[ntd++] = tu54[ir];
 		}
 	}
-
+	void GetAddClean(uint64_t * td54, uint32_t * td27, uint32_t&  ntd) {
+		ntd = 0;
+		register uint64_t V = vclean;
+		register uint32_t ir;
+		while (bitscanforward64(ir, V)) {
+			V ^= (uint64_t)1 << ir;
+			td27[ntd] = tu27[ir];
+			td54[ntd++] = tu54[ir];
+		}
+	}
 	void DebugC2(int all=1) {
 		for (uint32_t i = 0; i < nt; i++) {
 			cout << Char54out(tu54[i]) << " " << tu27[i] << "\ti=" << i << endl;
@@ -371,33 +359,38 @@ struct CHUNKS_HANDLER {
 		band3[0].Init(); band3[1].Init();
 	}
 	inline int GetC2Count() { return 64 * ic2 + (int)c2[ic2].nt; }
+
+	inline int  Check2(BF128 w54);
+	inline int  Check3(BF128 w54);
 	inline void Add128(BF128 w54, uint32_t cc) {
 		switch (cc) {
 		case 2:
+			if(Check2(w54 ))return;
 			if (ic2 == CSIZE && c2[CSIZE].nt > 63) return;
 			if (c2[ic2].nt > 63)c2[++ic2].Init();
 			c2[ic2].Add(w54.bf.u64[0], w54.bf.u32[2]);
-			break;
+			return;
 		case 3:
+			if (Check3(w54))return;
 			if (ic3 == CSIZE && c3[CSIZE].nt > 63) return;
 			if (c3[ic3].nt > 63)c3[++ic3].Init();
 			c3[ic3].Add(w54.bf.u64[0], w54.bf.u32[2]);
-			break;
+			return;
 		case 4:
 			if (ic4 == CSIZE && c4[CSIZE].nt > 63) return;
 			if (c4[ic4].nt > 63)c4[++ic4].Init();
 			c4[ic4].Add(w54.bf.u64[0], w54.bf.u32[2]);
-			break;
+			return;
 		case 5:
 			if (ic5 == CSIZE && c5[CSIZE].nt > 63) return;
 			if (c5[ic5].nt > 63)c5[++ic5].Init();
 			c5[ic5].Add(w54.bf.u64[0], w54.bf.u32[2]);
-			break;
+			return;
 		default:
 			if (icmore == CSIZE && cmore[CSIZE].nt > 63) return;
 			if (cmore[icmore].nt > 63)cmore[++icmore].Init();
 			cmore[icmore].Add(w54.bf.u64[0], w54.bf.u32[2]);
-			break;
+			return;
 		}
 
 	}
@@ -495,8 +488,8 @@ struct CHUNKS_HANDLER {
 			band3[i].Debug(0);
 
 	}
-	void Debug4Clean() {
-		cout << "chunkh debug all"
+	void Debug4Clean(int full = 0) {
+		cout << "chunkh debugclean all"
 			<< "\nic2/nc2 " << ic2 << " " << c2[ic2].nt
 			<< "\nic3/nc3 " << ic3 << " " << c3[ic3].nt
 			<< "\nic4/nc4 " << ic4 << " " << c4[ic4].nt
@@ -507,6 +500,10 @@ struct CHUNKS_HANDLER {
 		cout << Char64out(c4[0].vclean) << " c4" << endl;
 		cout << Char64out(c5[0].vclean) << " c5" << endl;
 		cout << Char64out(cmore[0].vclean) << " cmore" << endl;
+		if (!full) return;
+		cout << "guas 2 cells" << endl;
+		for (uint32_t i = 0; i <= ic2; i++)
+			c2[i].DebugC2(0);
 	}
 	void C2Status() {
 		for (uint32_t i = 0; i <= ic2; i++)

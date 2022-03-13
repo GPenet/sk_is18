@@ -1,16 +1,67 @@
-//#define DEBUG0 1
-//#define BUGDEBUG
+//#define DEBUG0 3
 //#define DEBUG3 10000
-//#define DEBUG4 691
-//#define DEBUG5 4661936
-//#define DEBUG3 128
-//#define DEBUG4 12870
-//#define DEBUG5 21205939
+//#define DEBUG4 1
+//#define DEBUG5 951
+#define DEBUG3 36
+#define DEBUG4 4673
+//#define DEBUG5 2647578
 //#define DEBUG4 136600
-//#define DEBUG5 1921951
+#define DEBUG5 82
 //#define DEBUG6 1921951
 
+#define DEBUGPH2
 
+inline int  CHUNKS_HANDLER::Check2(BF128 w54) {
+#ifdef DEBUGPH2
+	if (gchk.aigstop)return 1;
+	register uint32_t i27 = w54.bf.u32[2];
+	register uint64_t u = w54.bf.u64[0];
+	//cout <<Char54out(u)<< " try add i27=" << i27 << endl;
+	for (uint32_t i = 0; i <= ic2; i++) {
+		CHUNK3B & wc2 = c2[i];
+		for (uint32_t j = 0; j < wc2.nt; j++) {
+			CHUNK3B & wc2 = c2[i];
+			if (wc2.tu27[j] != i27) continue;
+			if (wc2.tu54[j] != u) continue;
+			gchk.aigstop = 1;
+			cout << " bugstop chexk redundant add c2 "
+				<< " [3] " << p_cpt2g[3] << " [4] " << p_cpt2g[4]
+				<< " [5] " << p_cpt2g[5]
+				//<< " [4] " << p_cpt2g[4]
+				<< endl;
+			return 1;
+		}
+	}
+
+#endif
+	return 0;
+}
+
+inline int  CHUNKS_HANDLER::Check3(BF128 w54) {
+#ifdef DEBUGPH2
+	if (gchk.aigstop)return 1;
+	register uint32_t i9 = w54.bf.u32[2];
+	register uint64_t u = w54.bf.u64[0];
+	cout << Char54out(u) << " try add i9=" << i9 << endl;
+	for (uint32_t i = 0; i <= ic3; i++) {
+		CHUNK3B & wc3 = c3[i];
+		for (uint32_t j = 0; j < wc3.nt; j++) {
+			CHUNK3B & wc3 = c3[i];
+			if (wc3.tu27[j] != i9) continue;
+			if (wc3.tu54[j] != u) continue;
+			gchk.aigstop = 1;
+			cout << " bugstop chexk redundant add c3 "
+				<< " [3] " << p_cpt2g[3] << " [4] " << p_cpt2g[4]
+				<< " [5] " << p_cpt2g[5]
+				//<< " [4] " << p_cpt2g[4]
+				<< endl;
+			return 1;
+		}
+	}
+
+#endif
+	return 0;
+}
 
 //_______________ start  a band3 perm and UAs GUAs search 
 
@@ -527,11 +578,9 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 	{	register uint64_t bf54 = w.bf, ac54 = w.active;
 		myac_4 = ac54;
 #ifdef DEBUG3
-
-	//if (p_cpt2g[3] >= DEBUG3 -3) 
-	cout << Char54out(bf54) << " p_cpt2g[3]= " << p_cpt2g[3] << endl;
-	//if (p_cpt2g[3] > DEBUG3) return;
-
+		if (p_cpt2g[3] > DEBUG3) return;
+		if (p_cpt2g[3] >= DEBUG3 -3) 
+		cout << Char54out(bf54) << " p_cpt2g[3]= " << p_cpt2g[3] << endl;
 #endif
 
 	{	//____ load the first clues
@@ -789,14 +838,14 @@ int GCHK::IsValidB12() {
 						tuasb12.tua[tuasb12.nua++] = ua54;
 				}
 				else  {
-					if (tuasb12.ADD17(ua54)) {
-						cout << Char54out(ua54) << "redundancy "
-							<< "[3]" << p_cpt2g[3] << "[4]" << p_cpt2g[4]
-							<< "[5]" << p_cpt2g[5]<<" ";
-						cout << Char54out(myb12) << endl;
-					}
-//					if (tuasb12.nta16 < 4096)
-//					tuasb12.ta16[tuasb12.nta16++] = ua54;
+					//if (tuasb12.ADD17(ua54)) {
+						//cout << Char54out(ua54) << "redundancy "
+						//	<< "[3]" << p_cpt2g[3] << "[4]" << p_cpt2g[4]
+						//	<< "[5]" << p_cpt2g[5]<<" ";
+						//cout << Char54out(myb12) << endl;
+					//}
+					if (tuasb12.nta17 < 4096)
+						tuasb12.ta17[tuasb12.nta17++] = ua54;
 				}
 			}
 			else if (cc < 20) {
@@ -805,12 +854,12 @@ int GCHK::IsValidB12() {
 					if (tuasb12.nta18 < 4096)
 						tuasb12.ta18[tuasb12.nta18++] = ua54;
 				}
-				else {
-					if (tuasb12.ntamore < 4096)  //cc= 19
-						tuasb12.tamore[tuasb12.ntamore++] = ua54;
-					if (cc < 21)morev2c.Add54(ua54); // 20
-					else if (cc < 23) morev2d.Add54(ua54);// 21-22
-				}
+				else if (tuasb12.ntamore < 4096)  //cc= 19
+					tuasb12.tamore[tuasb12.ntamore++] = ua54;
+			}
+			else {
+				if (cc < 21)morev2c.Add54(ua54); // 20
+				else if (cc < 23) morev2d.Add54(ua54);// 21-22
 			}
 		}
 	}
@@ -868,11 +917,12 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 		cout << Char54out(andvalid) << " CleanBufferAndGo p_cpt2g[4] debug " 
 			<< p_cpt2g[4] << " size" << nn8 
 			<<"  moreand ntm="<< moreand.ntm << endl;
-
+		//chunkh.Debug4Clean(1);
 	}
 #endif
 	uint64_t ntm_start = moreand.ntm;
 	while (pw < myend) {
+		if (aigstop) return;
 		p_cpt2g[5]++;
 		myb12 = *pw++;
 		int ncl = (int)_popcnt64(myb12);
@@ -959,6 +1009,9 @@ void GCHK::CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid) {
 
 void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	p_cpt2g[6]++;
+#ifdef DEBUGPH2
+	//return;
+#endif
 #ifdef HAVEKNOWN
 	int locdiag = 0;
 	if (okcheck == 2) {
@@ -1126,15 +1179,20 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 	if (locdiag)
 		cout << "  valid try bands 1+2 below " << endl;
 #endif	
+
 	clean_valid_done = 1;
 	p_cpt2g[17]++;
 	InitGoB3(bf, ac);// try first direct with more clues in b3
-#ifdef HAVEKNOWN
-	if (locdiag) cout << "  back InitGoB3 now add missing clean_valid_done="		
-		<< clean_valid_done << endl;
-#endif	
+	//chunkh.ApplyCleanB12C2(&tclues[nclues_step], nclues - nclues_step);//alwaysdone initgob3
 	chunkh.ApplyCleanB12C3(&tclues[nclues_step], nclues - nclues_step);
 	chunkh.ApplyCleanB12CX(&tclues[nclues_step], nclues - nclues_step);
+#ifdef HAVEKNOWN
+	if (locdiag) {
+		cout << "  back InitGoB3 now add missing clean_valid_done="
+			<< clean_valid_done << endl;
+		chunkh.Debug4Clean();
+	}
+#endif	
 	{//______________  build still valid guas in chunkhadd
 		chunkhadd.Init();
 		myacadd = myac_4 & ~bf;// ac;//;
@@ -1146,28 +1204,36 @@ void GCHK::CheckValidBelow(uint64_t bf, uint64_t ac) {
 				chunkhadd.Enter2(tu54[j], tu27[j]);
 		}
 		for (uint32_t i = 0; i <= chunkh.ic3; i++) {
-			chunkh.c3[i].GetAdd(tu54, tu27, nt);
+			chunkh.c3[i].GetAddClean(tu54, tu27, nt);
 			for (uint32_t j = 0; j < nt; j++) {
 				chunkhadd.Enter3(tu54[j], tu27[j]);
 			}
 		}
 		for (uint32_t i = 0; i <= chunkh.ic4; i++) {
-			chunkh.c4[i].GetAdd(tu54,tu27,nt);
+			chunkh.c4[i].GetAddClean(tu54,tu27,nt);
 			for (uint32_t j = 0; j < nt; j++)
 				chunkhadd.Enter4(tu54[j], tu27[j]);
 		}
 		for (uint32_t i = 0; i <= chunkh.ic5; i++) {
-			chunkh.c5[i].GetAdd(tu54, tu27, nt);
+			chunkh.c5[i].GetAddClean(tu54, tu27, nt);
 			for (uint32_t j = 0; j < nt; j++)
 				chunkhadd.Enter5(tu54[j], tu27[j]);
 		}
 		for (uint32_t i = 0; i <= chunkh.icmore; i++) {
-			chunkh.cmore[i].GetAdd(tu54, tu27, nt);
+			chunkh.cmore[i].GetAddClean(tu54, tu27, nt);
 			for (uint32_t j = 0; j < nt; j++)
 				chunkhadd.EnterMore(tu54[j], tu27[j]);
 		}
 
 	}
+#ifdef HAVEKNOWN
+#ifdef DEBUGPH2
+	//if (locdiag)		chunkhadd.DebugAll(1);
+	if (p_cpt2g[5]==DEBUG5)	chunkhadd.DebugAll(1);
+
+#endif
+#endif
+
 
 	{//______________  build tadd from active cells
 		ntadd = 0;
@@ -1219,13 +1285,17 @@ void GCHK::CheckValidBelowPack2() {
 }
 
 void GCHK::ExpandAddB1B2Go(int step) {
+
+	if (aigstop) return;
 	p_cpt2g[26]++;
 	myb12f = myb12add;
+
+
 #ifdef HAVEKNOWN
 	int locdiag = 0;
-	if(diagtestadd && p_cpt2g[0]>1) {
-		cout << Char54out(myb12f) << " diagtest add" 
-			<< " p_cpt2g[26]=" << p_cpt2g[26] << endl;
+	if(diagtestadd ) {
+		//cout << Char54out(myb12f) << " diagtest add" 
+		//	<< " p_cpt2g[26]=" << p_cpt2g[26] << endl;
 		if (myb12f == pk54) {
 			cout << Char54out(myb12f) << " expected bands 1+2 in add"
 				<< " p_cpt2g[26]=" << p_cpt2g[26] << endl;
@@ -1239,25 +1309,47 @@ void GCHK::ExpandAddB1B2Go(int step) {
 	nclues = mynclues + step;
 	// get the active GUAs2 in vf then active guas2
 	chunkhadd.GetB12C2(gguas2);
+#ifdef DEBUGPH2
+	if (p_cpt2g[26] == 4897040) {
+		cout <<" this is the expected add to check" << endl;
+		locdiag = 2;
+	}
+	//return;
+#endif
 	int nmin = svb12.GetsminF(gguas2);
 	ncluesb3 = 18 - nclues;
 	nmiss = ncluesb3 - nmin;
-	if (nmiss < 0) return;
-#ifdef DEBUG5 
-	int locdiag = 0;
-	if (p_cpt2g[5] == DEBUG5) {
-		cout << Char54out(myb12f) << " ExpandAddB1B2Go p_cpt2g[26] " << p_cpt2g[26] 
-			<<" nmin="<< nmin <<" nmiss="<< nmiss << endl;
-		locdiag = 1;
+#ifdef HAVEKNOWN
+	if (locdiag) {
+		svb12.smin.Status(" after guas2 ");
+		cout << Char27out(gguas2) << " gguas2 from chunkadd nmiss="<<nmiss << endl;
 	}
 
+#endif		
+	if (nmiss < 0) return;
+#ifdef DEBUG5 
+	//int locdiag = 0;
+	//if (p_cpt2g[5] == DEBUG5) {
+		//cout << Char54out(myb12f) << " ExpandAddB1B2Go p_cpt2g[26] " << p_cpt2g[26] 
+			//<<" nmin="<< nmin <<" nmiss="<< nmiss << endl;
+		//locdiag = 1;
+	//}
+
 #endif
+	p_cpt2g[27]++;
 
 	//____________ passing the first filter nclues band 3 see Guas3
 	chunkhadd.GetB12C3(gguas3);
 	gguas3 &= ~svb12.smin.mini2all;// clean redundancy
 	if (gguas3) {
 		register int n3 = _popcnt32(gguas3);
+#ifdef HAVEKNOWN
+		if (locdiag >1) {
+			cout <<Char9out(gguas3)<<"n3="<<n3<< " nmiss="<<nmiss<< endl;
+		}
+
+#endif		
+
 		if (nmiss < n3) return;
 		svb12.smin.mincount += n3;
 		nmin += n3;
@@ -1271,6 +1363,16 @@ void GCHK::ExpandAddB1B2Go(int step) {
 		<< " nt2=" << chunkhadd.nt12 << endl;
 
 #endif
+	p_cpt2g[28]++;
+#ifdef HAVEKNOWN
+	if (locdiag) {
+		svb12.smin.Status(" after guas3 ");
+		cout<< "[28]"<< p_cpt2g[28] << "after guas3 " << " nmin=" << nmin << " nmiss=" << nmiss
+			<< " nt2=" << chunkhadd.nt12 << endl;
+		chunkhadd.Debug27();
+	}
+
+#endif		
 	GoB3(nclues, svb12);
 }
 void GCHK::ExpandAddB1B2(uint64_t bf) {// add up to n cells
@@ -1385,11 +1487,17 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 	}
 #endif
 #ifdef DEBUG5 
-	int locdiag = 0;
+//	int locdiag = 0;
 	if (p_cpt2g[5] == DEBUG5) {
-		cout << Char54out(myb12f) << " go b3 p_cpt2g[5] debug " << p_cpt2g[5] << " nmiss="<<nmiss<< endl;
+		cout << Char54out(myb12f) << " go b3 p_cpt2g[8] debug " << p_cpt2g[8] << " nmiss="<<nmiss<< endl;
 		locdiag = 1;
-		vbx.smin.Status("entry gob3");
+		if (p_cpt2g[8] == 52) {
+			vbx.smin.Status("entry gob3 ");
+			for (uint32_t i = 0; i < vbx.ntg2ok; i++)
+				cout << vbx.tg2ok[i] << " ";
+			cout << endl;
+			locdiag = 2;
+		}
 	}
 #endif
 	// _direct process unless compulsory outfield clues
@@ -1442,21 +1550,24 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 			}
 		}
 		else {// now nmiss=2
-#ifdef HAVEKNOWN
-			if (locdiag==3) 				cout << "checkk bug5 miss2" << endl;
-
-#endif	
 			if (vbx.ntof < 3 || vbx.GetAnd()) isdirect = 1;
 			else {
-#ifdef HAVEKNOWN
-				if (locdiag == 3) 				cout << "check bug5continue miss2 " << endl;
-
-#endif	
 				if (vbx.smin.mini_bf2) {
 					vbx.ApplyBf2();// assign critical 2 pairs
 					vbx.BuildOf();// outfield after 2 pairs
 				}
 				uint32_t ua1 = vbx.GetMinOf();// start with smallest
+#ifdef DEBUG5 
+				if (locdiag==2) {
+					cout << " vbx.tg2ok after apply Bf2" << endl;
+					for (uint32_t i = 0; i < vbx.ntg2ok; i++)
+						cout << vbx.tg2ok[i] << " ";
+					cout << endl;
+					vbx.Dumptof();
+					cout << Char27out(vbx.bfbf2) << " nmiss=2 bfb2 ntof=" << vbx.ntof << endl;
+					cout << Char27out(ua1) << " vbx.GetMinOf" << endl;
+				}
+#endif
 				uint32_t  c;// use ua as first clue and go std
 				while (bitscanforward(c, ua1)) {
 					uint32_t bit = 1 << c, bfbf2 = vbx.bfbf2 | bit;
@@ -1475,7 +1586,7 @@ void GCHK::GoB3(  int ncl, VB12 & vbx) {
 	if (isdirect) {// go direct
 		p_cpt2g[13]++;
 #ifdef HAVEKNOWN 
-		if (locdiag > 1) {
+		if (locdiag ) {
 			cout << Char54out(myb12) << "  go b3 is direct p_cpt2g[13]  "
 				<< p_cpt2g[13] << endl;
 		}
@@ -1497,13 +1608,21 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 
 #endif
 #ifdef DEBUG5 
-	int locdiag = 0;
-	if (p_cpt2g[5] == DEBUG5) {
-		cout << Char54out(cl0bf) << " active 0 BuildExpandB3Vect in diag clean_valid_done"
+//	int locdiag = 0;
+	if (p_cpt2g[5] == DEBUG5) if (p_cpt2g[8] == 52) {
+		cout << Char27out(cl0bf) << " cl0bf BuildExpandB3Vect in diag clean_valid_done"
 			<< clean_valid_done << endl;
+		cout << Char27out(active0) << "  active0"<< endl;
+		cout << " vbx.tg2ok BuildExpandB3Vect vbx.ng2ok " ;
+		for (uint32_t i = 0; i < vbx.ntg2ok; i++)
+			cout << vbx.tg2ok[i] << " ";
+		cout << endl;
+		vbx.Dumptmore27();
 		locdiag = 1;
 	}
 #endif
+
+
 	b3direct.Init();
 	uint32_t is1 = 0;
 	{// try to improve the process avoiding redundancy
@@ -1561,31 +1680,24 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 				tt[ccu][ntt[ccu]++] = U;
 			}
 		}
-		if (is1) {// now singles to assign
-			F |= is1;// add to assign
-			AC &= ~is1;// clear bit in active
-		}
 #ifdef HAVEKNOWN 
 		if (locdiag) {
-			cout << " build ntt ";
+			cout << Char27out(is1) << " is1   build ntt ";
 			for (int i = 0; i < 5; i++)cout << " " << ntt[i];
 			cout << " ntmore27=" << vbx.ntmore27 << " ntaddgob3=" << ntaddgob3 << endl;
 			cout << Char27out(is1) << " to assign" << endl;
 		}
 
 #endif
+		if (is1) {// now singles to assign
+			F |= is1;// add to assign
+			AC &= ~is1;// clear bit in active
+		}
+
 		cl0bf = F;// be sure to be after new assign
 		active0 = AC;
 		int cc = _popcnt32(F);
 		if (cc > ncluesb3)return;
-		if (cc == ncluesb3) {
-			if (0)
-				cout << " full band reached in BuildExpandB3Vectb3 direct.nt="
-				<< b3direct.nt << endl;
-			if (b3direct.nt) return;
-			NoExpandB3(F);
-			return;
-		}
 		if (!is1) {// apply directly stored uas
 			for (int i = 2; i < 5; i++)
 				for (uint32_t j = 0; j < ntt[i]; j++)  
@@ -1609,6 +1721,15 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 				for (uint32_t j = 0; j < ntt2[i]; j++)
 					b3direct.Add(tt2[i][j]);
 		}
+		if (cc == ncluesb3) {
+			if (0)
+				cout << " full band reached in BuildExpandB3Vectb3 direct.nt="
+				<< b3direct.nt << endl;
+			if (b3direct.nt) return;
+			NoExpandB3(F);
+			return;
+		}
+
 #ifdef HAVEKNOWN 
 		if (locdiag) {
 			cout << " final ntt =0 from uas b3direct.nt="<< b3direct.nt << endl;
@@ -1688,6 +1809,13 @@ uint32_t GCHK::NoExpandB3(uint32_t cl0bf) {
 
 void  GCHK::ExpandB3Vect(uint32_t cl0bf, uint32_t active0) {
 	//if(clean_valid_done == 2)return;
+#ifdef DEBUGPH2
+	//if (p_cpt2g[26] == 219 && p_cpt2g[5] == 951) {
+	//	cout << Char27out(cl0bf) << " diag expandb3 cl0bf" << endl;
+	//	cout << Char27out(active0) << " active0" << endl;
+	//	b3direct.Debug(1);
+	//}
+#endif
 #ifdef BUGDEBUG
 	if (_popcnt32(cl0bf) < 2) {
 		if (!clean_valid_done) {
