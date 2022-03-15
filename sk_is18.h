@@ -285,6 +285,13 @@ struct CHUNK3B {// storing 64 uas and vectors 3 bands
 			if ((vc[i] & v0) != v0)
 				cout << Char64out(vc[i] & v0) << " cell=" <<i<< endl;
 	}
+	void DebugC2Clean() {
+		for (uint32_t i = 0; i < nt; i++) {
+			uint64_t bit = (uint64_t)1 << i;
+			if (vclean & bit) 
+			cout << Char54out(tu54[i]) << " " << tu27[i]<< endl;
+		}
+	}
 	void DebugMore(int all = 1) {
 		for (uint32_t i = 0; i < nt; i++) {
 			cout << Char54out(tu54[i]) << " ";
@@ -503,11 +510,21 @@ struct CHUNKS_HANDLER {
 		if (!full) return;
 		cout << "guas 2 cells" << endl;
 		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].DebugC2(0);
+			c2[i].DebugC2Clean();
+	}
+	void DebugApplyClean() {
+		cout << Char64out(c3[0].vclean) << " c3 clean" << endl;
+		cout << Char64out(c3[0].vf) << " c3 f" << endl;
+
 	}
 	void C2Status() {
 		for (uint32_t i = 0; i <= ic2; i++)
 			c2[i].DebugC2(0);
+	}
+	void C3StatusClean() {
+		cout << "status for c3 clean" << endl;
+		for (uint32_t i = 0; i <= ic3; i++)
+			c3[i].DebugC2Clean();
 	}
 	void Debug27() {
 		cout << "chunk extract status n=" << nt12 << endl;
@@ -615,18 +632,18 @@ struct CHUNKS_HANDLER_ADD{
 			cmore[i].DebugMore(0);
 
 	}
-	void Debug4Clean() {
+	void DebugCleanf() {
 		cout << "chunkhadd debug all"
 			<< "\nic2/nc2 " << ic2 << " " << c2[ic2].nt
 			<< "\nic3/nc3 " << ic3 << " " << c3[ic3].nt
 			<< "\nic4/nc4 " << ic4 << " " << c4[ic4].nt
 			<< "\nic5/nc5 " << ic5 << " " << c5[ic5].nt
 			<< "\nicm/ncm " << icmore << " " << cmore[icmore].nt << endl;
-		cout << Char64out(c2[0].vclean) << " c2" << endl;
-		cout << Char64out(c3[0].vclean) << " c3" << endl;
-		cout << Char64out(c4[0].vclean) << " c4" << endl;
-		cout << Char64out(c5[0].vclean) << " c5" << endl;
-		cout << Char64out(cmore[0].vclean) << " cmore" << endl;
+		cout << Char64out(c2[0].vf) << " c2" << endl;
+		cout << Char64out(c3[0].vf) << " c3" << endl;
+		cout << Char64out(c4[0].vf) << " c4" << endl;
+		cout << Char64out(c5[0].vf) << " c5" << endl;
+		cout << Char64out(cmore[0].vf) << " cmore" << endl;
 	}
 	void C2Status(){
 		for (uint32_t i = 0; i <= ic2; i++)
@@ -1055,12 +1072,29 @@ struct GCHK {
 			else if (ntmore < 384)
 				tmore[ntmore++] = w;
 		}
-
+		inline void Get3(uint64_t F, uint32_t &guas3) {
+			for (uint32_t i = 0; i < nt3; i++)
+				if (!(F & t3[i].bf.u64[0]))
+					guas3 |= 1 << t3[i].bf.u32[2];
+		}
+		inline void GetMore(uint64_t F,
+			uint32_t *t, uint32_t &nt) {
+			for (uint32_t i = 0; i < ntmore; i++)
+				if (!(F & tmore[i].bf.u64[0]))
+					t[nt++] =tmore[i].bf.u32[2];
+		}
 		void Dumpt2() {
 			cout << "dumpt2 nt2=" << nt2 << endl;
 			for (uint32_t i = 0; i < nt2; i++) {
 				cout << Char54out(t2[i].bf.u64[0])
 					<< " " << t2[i].bf.u32[2] << endl;
+			}
+		}
+		void Dumpt3() {
+			cout << "dumpt3 nt3=" << nt3 << endl;
+			for (uint32_t i = 0; i < nt3; i++) {
+				cout << Char54out(t3[i].bf.u64[0])
+					<< " " << t3[i].bf.u32[2] << endl;
 			}
 		}
 		void Dumptmore() {
@@ -1115,7 +1149,6 @@ struct GCHK {
 	void Do_phase2Expand(uint64_t bf, uint64_t ac);
 	int IsValidB12();
 	void CheckValidBelow(uint64_t bf,uint64_t ac);
-	void CheckValidBelowPack2();
 	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
 	void CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo);
 	//_____________ validb12
@@ -1145,7 +1178,8 @@ struct GCHK {
 
 	//================== clean process
 	uint64_t wb12bf, wb12active, myua;
-	uint32_t taddgob3[100], ntaddgob3, clean_valid_done;
+	uint32_t clean_valid_done;
+	uint32_t taddgob3[100], ntaddgob3;
 	MORE32 moreuas_b3;
 
 	void Out17(uint32_t bfb3);
