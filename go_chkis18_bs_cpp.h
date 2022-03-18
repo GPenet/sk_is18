@@ -1,14 +1,14 @@
 //#define DEBUG0 3
-//#define DEBUG3 10000
+//#define DEBUG3 1
 //#define DEBUG4 1
-//#define DEBUG5 951
+//#define DEBUG5 104
+//#define DEBUG6 46
 //#define DEBUG3 36
 //#define DEBUG4 4673
 //#define DEBUG5 2644790
 //#define DEBUG26 4905500
 //#define DEBUG4 136600
 //#define DEBUG5 299
-//#define DEBUG6 1921951
 
 //#define DEBUGPH2
 
@@ -61,6 +61,34 @@ inline int  CHUNKS_HANDLER::Check3(BF128 w54) {
 			return 1;
 		}
 	}
+
+#endif
+	return 0;
+}
+inline int  CHUNKS_HANDLER::Check4(BF128 w54) {
+	if (gchk.aigstop)return 1;
+	register uint32_t u3 = w54.bf.u32[2];
+	register uint64_t u = w54.bf.u64[0];
+	//cout << Char54out(u)<< " ";
+	//cout << Char54out(u3) << " try add4" 
+		//<< " [3] " << p_cpt2g[3] << " [4] " << p_cpt2g[4]
+		//<< " [5] " << p_cpt2g[5]		<< endl;
+	for (uint32_t i = 0; i <= ic4; i++) {
+		CHUNK3B & wc3 = c4[i];
+		for (uint32_t j = 0; j < wc3.nt; j++) {
+			CHUNK3B & wc4 = c4[i];
+			if (wc3.tu27[j] != u3) continue;
+			if (wc3.tu54[j] != u) continue;
+			gchk.aigstop = 1;
+			cout << " bugstop chexk redundant add c4 "
+				<< " [3] " << p_cpt2g[3] << " [4] " << p_cpt2g[4]
+				<< " [5] " << p_cpt2g[5]
+				//<< " [4] " << p_cpt2g[4]
+				<< endl;
+			return 1;
+		}
+	}
+#ifdef DEBUGPH2
 
 #endif
 	return 0;
@@ -151,6 +179,7 @@ int  GCHK::StartIs18() {
 	Expand4B12();
 #ifdef TEST_ON
 	tuasb12.Stats();
+	chunkh.Stats();
 #endif
 	return a_18_seen;
 }
@@ -169,6 +198,7 @@ inline void GCHK::Adduab12() {
 		AddUaB12UN(w, cc);
 	}
 }
+BF128 wubuf_tfua[24][200];// put it out of the stack
 void GCHK::FirstUasCollect() {// produce all uas 2/3 digits
 	tuas81.ntall = 0;// no ua so far
 	zhgxn.SetupFsol(grid0);
@@ -181,7 +211,7 @@ void GCHK::FirstUasCollect() {// produce all uas 2/3 digits
 		}
 	}
 	// insert bands and stacks and apply subsets
-	BF128 tsort[27 - 4][200]; // max is 27  min is 4
+	//BF128 wubuf_tfua[24][200]; 
 	uint32_t ntsort[27 - 4];
 	memset(ntsort, 0, sizeof ntsort); // empty table
 	{ //sort all by size
@@ -191,7 +221,7 @@ void GCHK::FirstUasCollect() {// produce all uas 2/3 digits
 			BF128 wt = t[iua];
 			uint32_t cc = wt.bf.u16[7] - 4;// index is 0 for 4
 			wt.bf.u32[3] = 0; // clear digits and count
-			tsort[cc][ntsort[cc]++] = wt;
+			wubuf_tfua[cc][ntsort[cc]++] = wt;
 		}
 	}
 	// here insert all missing uas one band/stack
@@ -204,7 +234,7 @@ void GCHK::FirstUasCollect() {// produce all uas 2/3 digits
 			//if (cc < 7)continue;// all 2/3 digits covered
 			cc -= 4;
 			wt.bf.u32[i] = u;
-			tsort[cc][ntsort[cc]++] = wt;
+			wubuf_tfua[cc][ntsort[cc]++] = wt;
 		}
 	}
 
@@ -221,13 +251,19 @@ void GCHK::FirstUasCollect() {// produce all uas 2/3 digits
 				wt.Set_c(cell);
 			}
 			cc -= 4;
-			tsort[cc][ntsort[cc]++] = wt;
+			wubuf_tfua[cc][ntsort[cc]++] = wt;
 		}
 	}
+	cout << "call FirstUasCollect reload" << endl;
+	//for (int ii = 0; ii < 23; ii++) {
+		//if (ii >= 20) break;
+		//cout << ii << " " << ntsort[ii] << endl;
+	//}
+
 	// reload tall and check subsets/redundancy
 	tuas81.ntall = 0;
-	for (int i = 0; i < 24; i++)if (ntsort[i]) {
-		BF128 * tt = tsort[i];
+	for (int i = 0; i < 23; i++)if (ntsort[i]) {
+		BF128 * tt = wubuf_tfua[i];
 		for (uint32_t j = 0; j < ntsort[i]; j++) {
 			tuas81.Add2(tt[j], i + 4);
 		}
@@ -589,7 +625,8 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 	morev2b.Init(); // now in vector
 	uint32_t   n = 0;
 	{// build still valid uas sorted by size 
-		uint64_t tt[30][4000], ntt[30];
+		//uint64_t wubuf.tdophase2[30][4000];
+		uint64_t  ntt[30];
 		memset(ntt, 0, sizeof ntt);
 		{
 			for (uint32_t i = 0; i < tuasb12.nua; i++) {
@@ -600,7 +637,7 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 				register uint64_t cc = _popcnt64(R);
 				n++;
 				if (cc > 20)cc = 20;
-				tt[cc][ntt[cc]++] = R;
+				wubuf.tdophase2[cc][ntt[cc]++] = R;
 			}
 			for (uint32_t i = 0; i < tuasb12.nta17; i++) {
 				register uint64_t R = tuasb12.ta17[i];
@@ -609,7 +646,7 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 				if (!R)return; //dead
 				register uint64_t cc = _popcnt64(R);
 				n++;
-				tt[cc][ntt[cc]++] = R;
+				wubuf.tdophase2[cc][ntt[cc]++] = R;
 			}
 			if (n < 5000)for (uint32_t i = 0; i < tuasb12.nta18; i++) {
 				register uint64_t R = tuasb12.ta18[i];
@@ -618,7 +655,7 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 				if (!R)return; //dead
 				register uint64_t cc = _popcnt64(R);
 				n++;
-				tt[cc][ntt[cc]++] = R;
+				wubuf.tdophase2[cc][ntt[cc]++] = R;
 			}
 			if (n < 5000)for (uint32_t i = 0; i < tuasb12.ntamore; i++) {
 				register uint64_t R = tuasb12.tamore[i];
@@ -627,7 +664,7 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 				if (!R)return; //dead
 				register uint64_t cc = _popcnt64(R);
 				n++;
-				tt[cc][ntt[cc]++] = R;
+				wubuf.tdophase2[cc][ntt[cc]++] = R;
 				if (n >= 5000) break;
 			}
 
@@ -636,7 +673,7 @@ void GCHK::Do_phase2(T4_TO_EXPAND w) {
 			ntua4 = 0;
 			uint32_t lim = 0;
 			for (int i = 0; i < 30; i++)if (ntt[i]) {
-				register uint64_t * tj = tt[i];
+				register uint64_t * tj = wubuf.tdophase2[i];
 				if (i < 14) lim = (ntua4 < 100) ? ntua4 : 100;
 				for (uint64_t j = 0; j < ntt[i]; j++) {
 					register uint64_t R = tj[j], Rn = ~R;
@@ -972,6 +1009,13 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 		locdiag = 1;
 	}
 #endif
+#ifdef DEBUG5 
+	int locdiag = 0;
+	if (p_cpt2g[5] == DEBUG5) {
+		locdiag = 1;
+		cout << Char54out(myb12) << " clean p_cpt2g[6] debug " << p_cpt2g[6] << endl;
+	}
+#endif
 	myb12f = bf54;
 	// get the active GUAs2 in vf then active guas2
 	chunkh.ApplyCleanB12C2(&tclues[nclues_step], nclues - nclues_step);
@@ -1007,8 +1051,15 @@ void GCHK::InitGoB3(uint64_t bf54, uint64_t ac54) {// bands1+2 locked
 	chunkh.ApplyCleanB12CX(&tclues[nclues_step], nclues - nclues_step);
 	chunkh.GetB12CX();
 	// add more  from this add loop
-	gaddb3.GetMore(myb12f, chunkhadd.t12, chunkhadd.nt12);
+	gaddb3.GetMore(myb12f, chunkh.t12, chunkh.nt12);
 	svb12.AttachMore(chunkh.t12, chunkh.nt12);
+#ifdef DEBUG5
+	if (locdiag) {
+		cout << Char54out(bf54) << " nmin=" << nmin << "nmiss=" << nmiss << endl;
+		svb12.smin.Status(" call gob3 ");
+	}
+#endif
+
 	GoB3(nclues, svb12);
 }
 
@@ -1147,9 +1198,11 @@ void GCHK::ExpandAddB1B2Go(int step) {
 	if (aigstop) return;
 	p_cpt2g[26]++;
 	myb12f = myb12add;
-
-
-
+	{// clean redundancy
+		uint64_t n12 = _popcnt64(myb12f),n2= _popcnt64(myb12f>>27),
+			n1=n12-n2,n3=18-n12;
+		if (n3 < n1 || n3 < n2) return;
+	}
 	uint32_t *tgo = &tclues[mynclues];
 	chunkhadd.ApplyCleanF(tgo, step);
 #ifdef HAVEKNOWN
@@ -1397,18 +1450,19 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 	b3direct.Init();
 	uint32_t is1 = 0;
 	{// try to improve the process avoiding redundancy
-		uint32_t tt[5][500], ntt[5];
+		//uint32_t wubuf.tbuilexpand3[5][500];
+		uint32_t  ntt[5];
 		memset(ntt, 0, sizeof ntt);
 		register uint32_t AC = active0,F=cl0bf; 
 		for (uint32_t i = 0; i < vbx.ntg2ok; i++) {
 			register uint32_t U = tg2[vbx.tg2ok[i]].pat;
-			if (!(U&F)) tt[2][ntt[2]++] = U;
+			if (!(U&F))  wubuf.tbuilexpand3[2][ntt[2]++] = U;
 		}
 		if (gguas3) {// add guas3 if any
 			for (int i = 0; i < 9; i++)if (gguas3 & (1 << i))
-				tt[3][ntt[3]++] = 7 << (3 * i);
+				wubuf.tbuilexpand3[3][ntt[3]++] = 7 << (3 * i);
 		}
-		register uint32_t * t2 = tt[2], nt2 = ntt[2];
+		register uint32_t * t2 = wubuf.tbuilexpand3[2], nt2 = ntt[2];
 		for (uint32_t i = 0; i < vbx.ntmore27; i++) {
 			register uint32_t U = vbx.tmore27[i];
 			if (!(U&F)) {
@@ -1423,7 +1477,7 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 					if (x) continue;
 				}
 				if (ccu > 4) ccu = 4;
-				if (ntt[ccu] < 450)tt[ccu][ntt[ccu]++] = U;
+				if (ntt[ccu] < 450) wubuf.tbuilexpand3[ccu][ntt[ccu]++] = U;
 			}
 		}
 		// add small band 3 residual uas
@@ -1435,7 +1489,7 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 				if (!ccu) return;
 				if (ccu == 1) { is1 |= U; continue; }
 				if (ccu > 4) ccu = 4;
-				tt[ccu][ntt[ccu]++] = U;
+				wubuf.tbuilexpand3[ccu][ntt[ccu]++] = U;
 				//cout << Char27out(U) << "b3 added" << endl;
 			}
 		}
@@ -1447,7 +1501,7 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 				if (!ccu) return;
 				if (ccu == 1) { is1 |= U; continue; }
 				if (ccu > 4) ccu = 4;
-				tt[ccu][ntt[ccu]++] = U;
+				wubuf.tbuilexpand3[ccu][ntt[ccu]++] = U;
 			}
 		}
 #ifdef HAVEKNOWN 
@@ -1469,25 +1523,25 @@ void  GCHK::BuildExpandB3Vect( uint32_t cl0bf, uint32_t active0,
 		if (!is1) {// apply directly stored uas
 			for (int i = 2; i < 5; i++)
 				for (uint32_t j = 0; j < ntt[i]; j++)  
-					b3direct.Add(tt[i][j]);				 
+					b3direct.Add(wubuf.tbuilexpand3[i][j]);
 		}
 		else {// after added clues, revise the others
-			uint32_t tt2[5][500], ntt2[5];
+			uint32_t  ntt2[5];//tt2[i][500]is wubuf.tbuilexpand3[i+5][500]
 			memset(ntt2, 0, sizeof ntt2);
 			for (int i = 2; i < 5; i++)
 				for (uint32_t j = 0; j < ntt[i]; j++) {
-					register uint32_t U = tt[i][j];
+					register uint32_t U = wubuf.tbuilexpand3[i][j];
 					if (!(U&F)) {
 						U &= AC;
 						register int cc = _popcnt32(U);
 						if (cc > 4) cc = 4;
-						tt2[cc][ntt2[cc]++] = U;
+						wubuf.tbuilexpand3[cc+5][ntt2[cc]++] = U;
 					}
 				}
 			if (ntt2[0]) return; // dead branch
 			for (int i = 1; i < 5; i++)
 				for (uint32_t j = 0; j < ntt2[i]; j++)
-					b3direct.Add(tt2[i][j]);
+					b3direct.Add(wubuf.tbuilexpand3[i+5][j]);
 		}
 		if (cc == ncluesb3) {
 			if (b3direct.nt) return;

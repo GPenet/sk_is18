@@ -1,3 +1,8 @@
+typedef union WUBUF_t{
+	uint64_t tdophase2[30][4000];
+	uint32_t tbuilexpand3[10][500];// 5+5
+}WUBUF;
+WUBUF wubuf;
 struct TUAS81 {
 	BF128 tall[5000],
 		told[3000], // later  has band 3
@@ -369,21 +374,23 @@ struct CHUNKS_HANDLER {
 
 	inline int  Check2(BF128 w54);
 	inline int  Check3(BF128 w54);
+	inline int  Check4(BF128 w54);
 	inline void Add128(BF128 w54, uint32_t cc) {
 		switch (cc) {
 		case 2:
-			if(Check2(w54 ))return;
+			//if(Check2(w54 ))return;
 			if (ic2 == CSIZE && c2[CSIZE].nt > 63) return;
 			if (c2[ic2].nt > 63)c2[++ic2].Init();
 			c2[ic2].Add(w54.bf.u64[0], w54.bf.u32[2]);
 			return;
 		case 3:
-			if (Check3(w54))return;
+			//if (Check3(w54))return;
 			if (ic3 == CSIZE && c3[CSIZE].nt > 63) return;
 			if (c3[ic3].nt > 63)c3[++ic3].Init();
 			c3[ic3].Add(w54.bf.u64[0], w54.bf.u32[2]);
 			return;
 		case 4:
+			//if (Check4(w54))return;
 			if (ic4 == CSIZE && c4[CSIZE].nt > 63) return;
 			if (c4[ic4].nt > 63)c4[++ic4].Init();
 			c4[ic4].Add(w54.bf.u64[0], w54.bf.u32[2]);
@@ -530,6 +537,15 @@ struct CHUNKS_HANDLER {
 		cout << "chunk extract status n=" << nt12 << endl;
 		for (uint32_t i = 0; i < nt12; i++)
 			cout << Char27out(t12[i]) << endl;
+	}
+	void Stats() {
+		cout << " chunks status ";
+		cout << " ic2 " << ic2 << ";" << c2[ic2].nt;
+		cout << " ic3 " << ic3 << ";" << c3[ic3].nt;
+		cout << " ic4 " << ic4 << ";" << c4[ic4].nt;
+		cout << " ic5 " << ic5 << ";" << c5[ic5].nt;
+		cout << " icmore " << icmore << ";" << cmore[icmore].nt;
+		cout << endl;
 	}
 }chunkh;
 //______________ same in Add mode smaller size
