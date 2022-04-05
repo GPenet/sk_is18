@@ -112,40 +112,21 @@ struct TUAS81 {
 
 struct TUASB12 {
 	uint64_t tua[4096], t2[3000];
-	uint64_t ta14[4096], ta15[4096], ta16[4096], ta17[4096], ta18[4096], tamore[4096];
+	uint64_t   ta17[2000], ta18[2000], ta19[4096], ta20[4096], 
+		ta21[4096], ta22[4096], tamore[4096];
 	// 4096 size of vectors used in expansion
 	uint32_t nua, nt2;
-	uint32_t  nta17, nta18, ntamore;
+	uint32_t  nta17, nta18, nta19, nta20, nta21, nta22, ntamore;
 	void SwitchTo54Mode() {
-		nta17 = nta18 = ntamore = 0;
+		nta17 = nta18 = nta19 = nta20 = nta21 = nta22 = ntamore = 0;
 		for (uint32_t i = 0; i < nua; i++) {
 			register uint64_t R = tua[i];
 			R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);
 			tua[i]=R;// now r54
 		}
 	}
-	inline int ADD17(uint64_t u) {// add and check
-		for (uint32_t i = 0; i < nta17; i++)
-			if (u == ta17[i])return 1;
-		ta17[nta17++] = u;
-		return 0;
-	}
-	uint32_t CountT2(uint64_t filter) {
-		nt2 = 0;
-		register uint64_t F = filter;
-		for (uint32_t iua = 0; iua < nua; iua++)
-			if (!(tua[iua] & F))nt2++;
-		return nt2;
-	}
-	uint32_t SetupT2(uint64_t filter, uint64_t active) {
-		nt2 = 0;
-		register uint64_t F = filter, w;
-		for (uint32_t iua = 0; iua < nua; iua++) {
-			w = tua[iua];
-			if (!(w&F))t2[nt2++] = w & active;
-		}
-		return nt2;
-	}
+	inline void Add(uint64_t u, uint64_t cc);
+
 	void GetT2(uint64_t filter) {
 		nt2 = 0;
 		register uint64_t Fn = ~filter, w;
@@ -178,22 +159,342 @@ struct TUASB12 {
 	}
 	void Stats() {
 		cout << "tuasb12 status end of perm"
-			<< " nua=" << nua 
-			 << "\tnta17=" << nta17
-			<< " nta18=" << nta18 << " ntamore=" << ntamore
-			<< endl;
+			<< " nua=" << nua << "\tnta17=" << nta17
+			<< " nta18=" << nta18 << " nta19=" << nta19
+			<< " nta20=" << nta20 << " nta21=" << nta21
+			<< " nta22=" << nta22 << " tot=" 
+			<< nua+nta17+nta18+nta19+nta20+nta21+nta22	<< endl;
 	}
 };
+
 //___________ all uas in bands 1+2 and band 3
+struct GUA {
+	uint64_t tu54[64], killer;
+	uint32_t nt, uab3, index, igua2_gua3;
+	void Init(uint32_t i, uint32_t u3, uint32_t i23, uint64_t ua0) {
+		nt = 1; index = i; igua2_gua3 = i23; uab3 = u3;
+		killer = tu54[0]=ua0;
+	}
+	inline void Add( uint64_t ua0) {
+		if (nt < 64) {	killer &= ua0;	tu54[nt++] = ua0;	}
+	}
+	void Dump() {
+		cout << Char27out(uab3) << "pat nt="<<nt 
+			<<" i9/27="<< igua2_gua3 << endl;
+		cout << Char54out(killer) << " killer" << endl;
+		if(nt>1)	for (uint32_t i = 0; i < nt; i++)
+			cout << Char54out(tu54[i]) << " " << i << endl;
+	}
+	void DumpShort() {
+		cout << Char27out(uab3) << "pat nt=" << nt<< endl;
+	}
+};
+struct GUASHORT {
+	uint32_t   igua2_gua3, uab3,istart, iend;
+};
+struct GUAHANDLER {
+	GUA guabuf[12*64];
+	uint64_t shortbuf[5000], 
+		vg2,vg3,vgm;// active guas2 and guas3 in first vkill
+	GUASHORT guashort[12 * 64];
+	uint32_t nbuf,nshort,nvkill, 
+		c2_i27[27],c3_i9[9], 
+		c2index[27], c3index[9], nc2i, nc3i,
+		c4index[200], c4uab3[200],nc4i,
+		c5index[200], c5uab3[200], nc5i,
+		cmindex[400], cmuab3[400], ncmi,
+		g2,g3, nstartx;
+	struct VKILL {// storing 64 uas and vectors 3 bands
+		uint64_t  v0,
+			vc[54], //cell for tu54
+			vf, // vclean after a given band 1+2
+			nt;
+		inline void Init() {
+			nt = 0, v0 = 0;
+			memset(vc, 255, sizeof vc);
+		}
+		inline void Add(uint64_t u54) {//add a new killer
+			uint64_t bit = (uint64_t)1 << nt++;
+			v0 |= bit;
+			uint32_t cc54;// build cells vectors
+			register  uint64_t Rw = u54;
+			while (bitscanforward64(cc54, Rw)) {
+				Rw ^= (uint64_t)1 << cc54;// clear bit
+				vc[cc54] ^= bit;
+			}
+		}
+		inline void ApplyClean(uint32_t * tc, uint32_t ntc) {
+			register uint64_t V = v0;
+			for (uint32_t i = 0; i < ntc; i++)
+				V &= vc[tc[i]];
+			vf = V;
+		}
+	}vkill[12];
+
+	void Init() {
+		nc2i = nc3i = nc4i = nc5i = ncmi = nbuf= 0;
+	}
+	void AddG2(uint32_t u3, uint32_t i27, uint64_t ua0) {
+		register uint32_t bit = 1 << i27;
+		if (!(g2&bit)) {
+			c2index[nc2i++] = nbuf;
+			guabuf[nbuf].Init(nbuf, u3, i27, ua0);
+			c2_i27[i27] = nbuf++;
+			g2 |=bit;
+		}
+		else guabuf[c2_i27[i27]].Add(ua0);
+
+	}
+	void AddG3( uint32_t i9, uint64_t ua0) {
+		register uint32_t bit = 1 << i9;
+		if (!(g3&bit)) {
+			guabuf[nbuf].Init(nbuf, 7 << (3 * i9), i9, ua0);
+			c3index[nc3i++] = nbuf;
+			c3_i9[i9] = nbuf++;
+			g3 |= bit;
+		}
+		else guabuf[c3_i9[i9]].Add(ua0);
+
+	}
+	void AddG4(uint32_t pat, uint64_t ua0) {
+		int ipat = -1;
+		for (uint32_t i = 0; i < nc4i; i++)		
+			if (pat ==c4uab3[i]) {
+				ipat = c4index[i];
+				break;
+			}
+		if (ipat < 0) {
+			guabuf[nbuf].Init(nbuf,	pat,0, ua0);
+			c4uab3[nc4i] = pat;
+			c4index[nc4i++] = nbuf++;
+		}
+		else guabuf[ipat].Add(ua0);
+	}
+	void AddG5(uint32_t pat, uint64_t ua0) {
+		int ipat = -1;
+		for (uint32_t i = 0; i < nc5i; i++)
+			if (pat == c5uab3[i]) {
+				ipat = c5index[i];
+				break;
+			}
+		if (ipat < 0) {
+			guabuf[nbuf].Init(nbuf, pat, 0, ua0);
+			c5uab3[nc5i] = pat;
+			c5index[nc5i++] = nbuf++;
+		}
+		else guabuf[ipat].Add(ua0);
+	}
+	void AddGm(uint32_t pat, uint64_t ua0) {
+		int ipat = -1;
+		for (uint32_t i = 0; i < ncmi; i++)
+			if (pat == cmuab3[i]) {
+				ipat = cmindex[i];
+				break;
+			}
+		if (ipat < 0) {
+			guabuf[nbuf].Init(nbuf,pat, 0, ua0);
+			cmuab3[ncmi] = pat;
+			cmindex[ncmi++] = nbuf++;
+		}
+		else guabuf[ipat].Add(ua0);
+	}
+	void AddGx(uint32_t pat, uint64_t ua0) {
+		//cout << Char27out(pat) << " ";
+		//cout << Char54out(ua0) << " to add guashadd "<<endl;
+
+		uint64_t cc = __popcnt64(pat);
+		switch (cc) {
+		case 4: AddG4(pat, ua0); return;
+		case 5: AddG5(pat, ua0); return;
+		}
+		AddGm(pat, ua0);
+	}
+	void Pack() {
+		nshort = 0;
+		for (uint32_t i = 0; i < nbuf; i++) {
+			GUA & w = guabuf[i];
+			GUASHORT & ws = guashort[i];
+			ws.igua2_gua3 = w.igua2_gua3;
+			ws.uab3 = w.uab3;
+			ws.istart = nshort;
+			ws.iend = nshort;
+			shortbuf[nshort++] = w.killer;
+			if (w.nt > 1) {
+				for (uint32_t j = 0; j < w.nt; j++) {
+					shortbuf[nshort++] = w.tu54[j];
+					ws.iend++;
+				}
+			}
+		}
+		vg2 = maskLSB[nc2i].u64[0];
+		vg3 = maskLSB[nc3i].u64[0];
+		vg3 <<= nc2i;
+		vgm = ~(vg2 | vg3);
+	}
+	void DoVkill() {
+		nvkill = (nbuf + 63) >> 6;
+		for (uint32_t i = 0; i < nvkill; i++)vkill[i].Init();
+		//cout << "nbuf="<<nbuf << " nvkill=" << nvkill << endl;
+		for (uint32_t i = 0; i < nbuf; i++) {
+			vkill[i >> 6].Add(shortbuf[guashort[i].istart]);
+		}
+	}
+
+	inline void ApplyClean0(uint32_t * tc, uint32_t ntc,uint64_t bf) {
+		vkill[0].ApplyClean(tc, ntc);
+		// extract still valid guas2
+		g2 = 0;
+		register uint64_t v2 = vg2 & vkill[0].vf,
+			V = v2;
+		//cout << Char64out(v2) << " v2 debut" << endl;
+		uint32_t x;// build cells vectors
+		while (bitscanforward64(x, V)) {
+			uint64_t bit= (uint64_t)1 << x;
+			V ^= bit;// clear bit
+			GUASHORT w = guashort[x];
+			//cout << "x=" << x << " w.igua2_gua3=" << w.igua2_gua3 << endl;
+			if (w.istart != w.iend) {// more than one ua
+				for (uint32_t i = w.istart+1; i <= w.iend; i++) 
+					if (!(bf & shortbuf[i])) {	bit = 0; break;	}
+			}
+			else bit = 0; // not hit
+			v2 ^= bit; //cleared if all uas hit				
+			if (!bit) { // convert to i27in g2if not all hit
+				//cout << "go x=" << x << " w.igua2_gua3=" << w.igua2_gua3 << endl;
+				g2 |= 1 << w.igua2_gua3;
+			}
+			
+		}
+		//cout << Char64out(v2) << " v2" << endl;
+
+
+	}
+	inline void GetG3( uint64_t bf) {
+		// extract still valid guas3
+		g3 = 0;
+		register uint64_t V = vg3 & vkill[0].vf;
+		uint32_t x;// build cells vectors
+		while (bitscanforward64(x, V)) {
+			uint64_t bit = (uint64_t)1 << x;
+			V ^= bit;// clear bit
+			GUASHORT w = guashort[x];
+			if (w.istart != w.iend) {// more than one ua
+				for (uint32_t i = w.istart + 1; i <= w.iend; i++)
+					if (!(bf & shortbuf[i])) { bit = 0; break; }
+			}
+			else bit = 0; // not hit
+			if (!bit) { // convert to i27in g2if not all hit
+				g3 |= 1 << w.igua2_gua3;
+			}
+		}
+
+
+	}
+	//___________ extract others for band 3
+	uint32_t t12[1100], nt12;
+	inline void GetB12CX(uint32_t * tc, uint32_t ntc,uint64_t bf) {
+		for (uint32_t i = 1; i <= nvkill; i++)
+			vkill[i].ApplyClean(tc, ntc);
+		nt12 = 0;
+		for (uint32_t i64 = 0; i64 < nvkill; i64++) {
+			register uint64_t V = vkill[i64].vf;
+			uint32_t x; 
+			if (!i64)V &= vgm;
+			while (bitscanforward64(x, V)) {
+				uint64_t bit = (uint64_t)1 << x;
+				V ^= bit;// clear bit
+				GUASHORT w = guashort[x + 64 * i64];
+				register  uint32_t pat = w.uab3, i = w.istart;
+				if (w.istart == w.iend) // killer is the only ua (not hit )
+					t12[nt12++]=pat;
+				else {// look for not hit uas
+					for (++i; i <= w.iend; i++) {
+						register uint64_t U = shortbuf[i];
+						if (!(bf & U)) {  // not hit first ok
+							t12[nt12++] = pat; break;
+						}
+					}
+				}
+			}
+		}
+	}
+	void Dumpg2Kill() {
+		cout << "dump g2kill" << endl;
+		for (uint32_t i = 0; i <nc2i; i++)
+			cout << Char54out(shortbuf[guashort[i].istart])  << endl;
+
+	}
+	void Dumpg2() {
+		cout << "dump g2" << endl;
+		for (uint32_t i = 0, bit = 1; i < 27; i++, bit <<= 1)
+			if (g2&bit) {
+				cout << c2_i27[i] << "\t to dump i27=" << i << endl;
+				guabuf[c2_i27[i]].Dump();
+			}
+	}
+	void Dumpg3() {
+		cout << "dump g3" << endl;
+		for (uint32_t i = 0, bit = 1; i < 9; i++, bit <<= 1)
+			if (g3&bit) {
+				cout << c3_i9[i] << "\t to dump i9=" << i << endl;
+				guabuf[c3_i9[i]].Dump();
+			}
+	}
+	void Dumpg4() {
+		cout << "dump g4 nc4i=" << nc4i << endl;
+		for (uint32_t i = 0; i < nc4i; i++) {
+			cout << c4index[i] << "\t to dump "  << endl;
+			guabuf[c4index[i]].Dump();
+		}
+	}
+	void Dumpg5() {
+		cout << "dump g5 nc5i=" << nc5i << endl;
+		for (uint32_t i = 0; i < nc5i; i++) {
+			cout << c5index[i] << "\t to dump " << endl;
+			guabuf[c5index[i]].Dump();
+		}
+	}
+	void Dumpgm() {
+		cout << "dump gm ncmi=" << ncmi << endl;
+		for (uint32_t i = 0; i < ncmi; i++) {
+			cout << cmindex[i] << "\t to dump " << endl;
+			guabuf[cmindex[i]].Dump();
+		}
+	}
+	void DumpPack() {
+		cout << "dump pack nshort=" << nshort << " nbuf=" << nbuf << endl;
+		for (uint32_t i = 0; i < nbuf; i++) {
+			GUASHORT & ws = guashort[i];
+			cout << Char27out(ws.uab3) << "\ti9/27=" << ws.igua2_gua3 << "\t" << ws.istart << "\t" << ws.iend << "\t ";
+			cout << Char54out(shortbuf[ws.istart]) << " killer " << ws.iend - ws.istart << endl;
+			//if (ws.igua2_gua3 == 26)
+			//	for (uint32_t j = ws.istart; j <= ws.iend; j++)
+			//		cout << Char54out(shortbuf[j]) << "  " << j << endl;
+		}
+
+	}
+	void Debug27() {
+		cout << "guash extract status n=" << nt12 << endl;
+		for (uint32_t i = 0; i < nt12; i++)
+			cout << Char27out(t12[i]) << endl;
+	}
+
+	void Status(const char * lib) {
+		cout << lib << " nshort=" << nshort 
+			<< " nbuf=" << nbuf << " nvkill=" << nvkill;
+		cout << "\t nc2i=" << nc2i << " nc3i=" << nc3i << " nc4i=" << nc4i
+			<< " nc5i=" << nc5i << " ncmi=" << ncmi << endl;
+
+	} 
+}guash,guashadd;
 struct CHUNK3B {// storing 64 uas and vectors 3 bands
 	uint64_t tu54[64], v0, 
 		vc[54], //cell for tu54
 		vclean, // v0 after claean groupo
-		vf, // vclean after a given band 1+2
 		nt;
 	uint32_t tu27[64];// index 0-26 or pattern
 	inline void Init() {
-		nt=0,		v0 = 0;
+		nt=0,		v0 = vclean=0;
 		memset(vc, 255, sizeof vc);
 	}
 	inline void Add(uint64_t u54, uint32_t u27) {//add a new ua
@@ -218,34 +519,7 @@ struct CHUNK3B {// storing 64 uas and vectors 3 bands
 			V &= vc[tc[i]];
 		vclean = V;
 	}
-	inline void ApplyCleanB12(uint32_t * tc, uint32_t ntc) {
-		register uint64_t V = vclean;
-		for (uint32_t i = 0; i < ntc; i++)
-			V &= vc[tc[i]];
-		vf = V;
-	}
-	inline void ApplyCleanF(uint32_t * tc, uint32_t ntc) {
-		register uint64_t V = v0;
-		for (uint32_t i = 0; i < ntc; i++)
-			V &= vc[tc[i]];
-		vf = V;
-	}
-	inline void GetB12C2(uint32_t &guas2){
-		register uint64_t V = vf;
-		register uint32_t ir;
-		while (bitscanforward64(ir, V)) {
-			V ^= (uint64_t)1 << ir;
-			guas2 |= 1<< tu27[ir];
-		}
-	}
-	inline void GetB12Cx(uint32_t *td, uint32_t&  ntd) {
-		register uint64_t V = vf;
-		register uint32_t ir;
-		while (bitscanforward64(ir, V)) {
-			V ^= (uint64_t)1 << ir;
-			td[ntd++]= tu27[ir];
-		}
-	}
+
 	void Get2x(BF128 * td, uint32_t&  ntd,
 		uint32_t * tc, uint32_t ntc) {
 		register uint64_t V = v0;
@@ -260,16 +534,7 @@ struct CHUNK3B {// storing 64 uas and vectors 3 bands
 			w.bf.u32[2] = tu27[ir];
 		}
 	}
-	void GetAdd(uint64_t * td54, uint32_t * td27, uint32_t&  ntd) {
-		ntd = 0;
-		register uint64_t V = vf;
-		register uint32_t ir;
-		while (bitscanforward64(ir, V)) {
-			V ^= (uint64_t)1 << ir;
-			td27[ntd] = tu27[ir];
-			td54[ntd++] = tu54[ir];
-		}
-	}
+
 	void GetAddClean(uint64_t * td54, uint32_t * td27, uint32_t&  ntd) {
 		ntd = 0;
 		register uint64_t V = vclean;
@@ -294,7 +559,7 @@ struct CHUNK3B {// storing 64 uas and vectors 3 bands
 		for (uint32_t i = 0; i < nt; i++) {
 			uint64_t bit = (uint64_t)1 << i;
 			if (vclean & bit) 
-			cout << Char54out(tu54[i]) << " " << tu27[i]<< endl;
+			cout << Char54out(tu54[i]) << " " << tu27[i] << " i=" << i<< endl;
 		}
 	}
 	void DebugMore(int all = 1) {
@@ -409,12 +674,13 @@ struct CHUNKS_HANDLER {
 
 	}
 
-	void Addc2(uint64_t ua12, uint32_t ua) {
+	void Addc2(uint64_t ua12, uint32_t i27) {
 		uint64_t ua54 = (ua12 & BIT_SET_27) |
 			((ua12 & BIT_SET_B2) >> 5);
 		if (ic2 == CSIZE && c2[CSIZE].nt > 63) return;
 		if (c2[ic2].nt > 63)c2[++ic2].Init();
-		c2[ic2].Add(ua54, ua);
+		c2[ic2].Add(ua54, i27);
+
 	}
 	void Addband3(uint32_t w) {
 		if (iband3 == 1 && band3[1].nt > 63) return;
@@ -433,47 +699,6 @@ struct CHUNKS_HANDLER {
 			c5[i].ApplyClean(tc, ntc);
 		for (uint32_t i = 0; i <= icmore; i++)
 			cmore[i].ApplyClean(tc, ntc);
-	}
-	inline void ApplyCleanB12C2(uint32_t * tc, uint32_t ntc) {
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].ApplyCleanB12(tc, ntc);
-	}
-	inline void ApplyCleanB12C3(uint32_t * tc, uint32_t ntc) {
-		for (uint32_t i = 0; i <= ic3; i++)
-			c3[i].ApplyCleanB12(tc, ntc);
-	}
-	inline void ApplyCleanB12CX(uint32_t * tc, uint32_t ntc) {
-		for (uint32_t i = 0; i <= ic4; i++)
-			c4[i].ApplyCleanB12(tc, ntc);
-		for (uint32_t i = 0; i <= ic5; i++)
-			c5[i].ApplyCleanB12(tc, ntc);
-		for (uint32_t i = 0; i <= icmore; i++)
-			cmore[i].ApplyCleanB12(tc, ntc);
-	}
-	inline void GetB12C2(uint32_t &guas2) {
-		guas2 = 0;
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].GetB12C2(guas2);
-	}
-	inline void GetB12C3(uint32_t &guas3) {
-		guas3 = 0;
-		for (uint32_t i = 0; i <= ic3; i++)
-			c3[i].GetB12C2(guas3);// samer harvest as guas2
-	}
-	inline void GetB12CX() {
-		nt12 = 0;
-		for (uint32_t i = 0; i <= ic4; i++) {
-			c4[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
-		for (uint32_t i = 0; i <= ic5; i++) {
-			c5[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
-		for (uint32_t i = 0; i <= icmore; i++) {
-			cmore[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
 	}
 
 	void DebugAll(int full = 0) {
@@ -519,15 +744,16 @@ struct CHUNKS_HANDLER {
 		for (uint32_t i = 0; i <= ic2; i++)
 			c2[i].DebugC2Clean();
 	}
-	void DebugApplyClean() {
-		cout << Char64out(c3[0].vclean) << " c3 clean" << endl;
-		cout << Char64out(c3[0].vf) << " c3 f" << endl;
 
-	}
 	void C2Status() {
 		for (uint32_t i = 0; i <= ic2; i++)
 			c2[i].DebugC2(0);
 	}
+	void C4Status() {
+		for (uint32_t i = 0; i <= ic4; i++)
+			c4[i].DebugMore(0);
+	}
+
 	void C3StatusClean() {
 		cout << "status for c3 clean" << endl;
 		for (uint32_t i = 0; i <= ic3; i++)
@@ -548,129 +774,6 @@ struct CHUNKS_HANDLER {
 		cout << endl;
 	}
 }chunkh;
-//______________ same in Add mode smaller size
-struct CHUNKS_HANDLER_ADD{
-#define CSIZEADD 19
-	CHUNK3B c2[CSIZEADD+1], c3[CSIZEADD+1], 
-		c4[CSIZEADD+1], c5[CSIZEADD+1], cmore[CSIZEADD+1];
-	uint32_t ic2, ic3, ic4, ic5, icmore;
-	//___________ valid to process t4 5 6 more
-	uint32_t t12[2000], nt12;
-	void Init() {
-		ic2= ic3= ic4= ic5=icmore= 0;
-		c2[0].Init();  c3[0].Init();
-		c4[0].Init();  c5[0].Init(); cmore[0].Init();
-		
-	}
-	inline void Enter2(uint64_t w54, uint32_t w27) {
-		if (ic2 == CSIZEADD && c2[CSIZEADD].nt > 63) return;
-		if (c2[ic2].nt > 63)c2[++ic2].Init();
-		c2[ic2].Add(w54, w27);
-	}
-	inline void Enter3(uint64_t w54, uint32_t w27) {
-		if (ic3 == CSIZEADD && c3[CSIZEADD].nt > 63) return;
-		if (c3[ic3].nt > 63)c3[++ic3].Init();
-		c3[ic3].Add(w54, w27);
-	}
-	inline void Enter4(uint64_t w54, uint32_t w27) {
-		if (ic4 == CSIZEADD && c4[CSIZEADD].nt > 63) return;
-		if (c4[ic4].nt > 63)c4[++ic4].Init();
-		c4[ic4].Add(w54, w27);
-	}
-	inline void Enter5(uint64_t w54, uint32_t w27) {
-		if (ic5 == CSIZEADD && c5[CSIZEADD].nt > 63) return;
-		if (c5[ic5].nt > 63)c5[++ic5].Init();
-		c5[ic5].Add(w54, w27);
-	}
-	inline void EnterMore(uint64_t w54, uint32_t w27) {
-		if (icmore == CSIZEADD && cmore[CSIZEADD].nt > 63) return;
-		if (cmore[icmore].nt > 63)cmore[++icmore].Init();
-		cmore[icmore].Add(w54, w27);
-	}
-	inline void ApplyCleanF(uint32_t * tc, uint32_t ntc) {
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].ApplyCleanF(tc, ntc);
-		for (uint32_t i = 0; i <= ic3; i++)
-			c3[i].ApplyCleanF(tc, ntc);
-		for (uint32_t i = 0; i <= ic4; i++)
-			c4[i].ApplyCleanF(tc, ntc);
-		for (uint32_t i = 0; i <= ic5; i++)
-			c5[i].ApplyCleanF(tc, ntc);
-		for (uint32_t i = 0; i <= icmore; i++)
-			cmore[i].ApplyCleanF(tc, ntc);
-	}
-	inline void GetB12C2(uint32_t &guas2) {
-		guas2 = 0;
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].GetB12C2( guas2);
-	}
-	inline void GetB12C3(uint32_t &guas3) {
-		guas3 = 0;
-		for (uint32_t i = 0; i <= ic3; i++)
-			c3[i].GetB12C2(guas3);// samer harvest as guas2
-	}
-	inline void GetB12CX() {
-		nt12 = 0;
-		for (uint32_t i = 0; i <= ic4; i++) {
-			c4[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
-		for (uint32_t i = 0; i <= ic5; i++) {
-			c5[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
-		for (uint32_t i = 0; i <= icmore; i++) {
-			cmore[i].GetB12Cx(t12, nt12);
-			if (nt12 > 1000)return;
-		}
-	}
-
-	void DebugAll(int full = 0) {
-		cout << "chunkh_add debug all"
-			<< "\nic2/nc2 " << ic2 << " " << c2[ic2].nt
-			<< "\nic3/nc3 " << ic3 << " " << c3[ic3].nt
-			<< "\nic4/nc4 " << ic4 << " " << c4[ic4].nt
-			<< "\nic5/nc5 " << ic5 << " " << c5[ic5].nt
-			<< "\nicm/ncm " << icmore << " " << cmore[icmore].nt << endl;
-		cout << "guas 3 cells" << endl;
-		for (uint32_t i = 0; i <= ic3; i++)
-			c3[i].DebugC2(0);
-		if (!full) return;
-		cout <<"guas 2 cells"<<endl;
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].DebugC2(0);
-		cout << "guas more cells" << endl;
-		for (uint32_t i = 0; i <= ic4; i++)
-			c4[i].DebugMore(0);
-		for (uint32_t i = 0; i <= ic5; i++)
-			c5[i].DebugMore(0);
-		for (uint32_t i = 0; i <= icmore; i++)
-			cmore[i].DebugMore(0);
-
-	}
-	void DebugCleanf() {
-		cout << "chunkhadd debug all"
-			<< "\nic2/nc2 " << ic2 << " " << c2[ic2].nt
-			<< "\nic3/nc3 " << ic3 << " " << c3[ic3].nt
-			<< "\nic4/nc4 " << ic4 << " " << c4[ic4].nt
-			<< "\nic5/nc5 " << ic5 << " " << c5[ic5].nt
-			<< "\nicm/ncm " << icmore << " " << cmore[icmore].nt << endl;
-		cout << Char64out(c2[0].vf) << " c2" << endl;
-		cout << Char64out(c3[0].vf) << " c3" << endl;
-		cout << Char64out(c4[0].vf) << " c4" << endl;
-		cout << Char64out(c5[0].vf) << " c5" << endl;
-		cout << Char64out(cmore[0].vf) << " cmore" << endl;
-	}
-	void C2Status(){
-		for (uint32_t i = 0; i <= ic2; i++)
-			c2[i].DebugC2(0);
-	}
-	void Debug27() {
-		cout << "chunk extract status n="<<nt12 << endl;
-		for (uint32_t i = 0; i < nt12; i++)
-			cout << Char27out(t12[i]) << endl;
-	}
-}chunkhadd;
 //_________________ minimum clues required in band 3 bands 1+2 locked
 struct MINCOUNT {
 	uint32_t mini_bf1, mini_bf2, mini_bf3,mini2all, mini_triplet,
@@ -789,42 +892,41 @@ struct MORE64VECT {// FIFO table of more for bands 1+2
 			}
 		}
 	}
+	void Dump() {
+		for (uint32_t i = 0; i < nt; i++)
+			cout << Char54out(t[i]) << endl;
+	}
 
 };
-struct MOREV2 {// 2 more64vect paired
-	MORE64VECT mv1, mv2;
-	uint32_t sw12;
-	inline void Init() { mv1.Init(); mv2.Init(); sw12 = 0; }
+struct MORE64VHandler {// vectors for a given chunk
+	MORE64VECT mv[10];
+	uint32_t nmv;
+	inline void Init() { mv[0].Init(); nmv = 0; }
 
 	inline void Add54(uint64_t v) {//add a new more if <128 
-		if (sw12 && (mv2.nt == 128)) {
-			mv1.Init();
-			sw12 = 0;// mv1 active
+		if (mv[nmv].nt == 128) {
+			if (nmv < 10)mv[++nmv].Init();
+			else return;
 		}
-		if ((!sw12) && (mv1.nt == 128)) {
-			mv2.Init();
-			sw12 = 1;// mv2 active
-		}
-		if (sw12)mv2.Add54(v);
-		else mv1.Add54(v);
-	}	
+		mv[nmv].Add54(v);
+	}
 	inline int ApplyXY(uint32_t *tcells, uint32_t ntcells) {
-		if (mv1.ApplyXY(tcells, ntcells)) return 1;
-		return mv2.ApplyXY(tcells, ntcells);
+		for(uint32_t i=0;i<=nmv;i++)
+		if (mv[i].ApplyXY(tcells, ntcells)) return 1;
+		return 0;
 	}
 	inline void Extract(uint32_t *tc, uint32_t ntc,
 		uint64_t *td, uint64_t & ntd) {
-		mv1.Extract(tc, ntc, td, ntd);
-		mv2.Extract(tc, ntc, td, ntd);
+		for (uint32_t i = 0; i <= nmv; i++)
+			mv[i].Extract(tc, ntc, td, ntd);
+	}
+	void Dump(int all = 1) {
+		cout << " nmv=" << nmv	<< " mv[nmv].nt=" << mv[nmv].nt << endl;
+		if (!all)return;
+		for (uint32_t i = 0; i <= nmv; i++) mv[i].Dump();
 	}
 
-	void Status(const char * lib) {
-		cout << "status for more uas " << lib << endl;
-		cout << mv1.nt << " " << mv2.nt << " " << mv1.nt + mv2.nt << endl;
-	}
-
-
-}morev2a, morev2b, morev2c, morev2d;
+}m64vh;
 
 struct MORE32 {// FIFO table of more for band b
 	uint32_t  t[32];
@@ -926,19 +1028,6 @@ struct GCHK {
 	void UasCollect4box();
 	void Guas2Collect();
 	void PutUasStartInVector();
-	//_____ bands 1+2 direct expansion
-	uint64_t v12_v0[64], v12_c[54][64]; //maxi 4096 uas
-
-	struct V12_64 {
-		uint64_t v;// current 64 bit vector
-		uint32_t ind,// vector ind
-		 u_start;//64*ind first ua of the vector
-	};
-	V12_64 *tv12_64f[16];
-	V12_64 tv12_64[16][64]; // max 16 spot and 4096 uas
-
-	uint32_t nv12_64_spot[16]; // maxi 64 spots in expand
-
 	//___________  first 3/4 then expand
 	struct CPT_4 {
 		uint64_t t[11]; // box band stack
@@ -961,13 +1050,30 @@ struct GCHK {
 			cout << (vsort >> 32) << endl;;
 
 		}
-	}t4_to_expand[5000];
+	}t4_to_expand[10000];
 	uint64_t tua4[4096];// also tuaclean
 	uint32_t ntua4;
 	uint64_t tuaclean[4096]; 
 	uint32_t ntuaclean;
+	uint64_t v12_5_v0[64], v12_5_c[64][54]; //maxi 4096 uas
+	uint32_t nv12_5;
 
-	uint64_t bufvalid[BUFVALIDS+1], *pbufvalid,*pendbufvalid;
+	void AddTua4(uint64_t v) {
+		if (ntua4 >= 4096)return;
+		register uint32_t cell, bloc = ntua4 >> 6, 
+			ir = ntua4 - 64 * bloc;
+		tua4[ntua4++] = v;
+		uint64_t bit = (uint64_t)1 << ir;
+		v12_5_v0[bloc] |= bit;
+		if (!ir) nv12_5++; // a new 64 bits bloc
+		while (bitscanforward64(cell, v)) {
+			v ^= (uint64_t)1 << cell;; //clear bit
+			v12_5_c[bloc][cell] ^= bit;
+		}
+
+	}
+
+	uint64_t bufvalid[BUFVALIDS+50], *pbufvalid,*pendbufvalid;
 	int nt4ok,okcheck;// for known
 	// bands 1+2 valid epansion
 	struct CHUNKVB12
@@ -1152,23 +1258,36 @@ struct GCHK {
 			for (i = 0; i < ntmo; i++)
 				if (!(F&tmo[i]))tm[ntm++] = tmo[i];
 		}
+		inline uint64_t GetAnd(uint64_t x) {
+			for (uint64_t i = 0; i < ntm; i++)
+				 x &=tm[i];
+			return x;
+		}
 		void Dump() {
 			for (uint64_t i = 0; i < ntm; i++)
 				cout << Char54out(tm[i]) << endl;
 		}
-
-	}mbisvalid;
+		void DumpAnd(uint64_t a) {
+			for (uint64_t i = 0; i < ntm; i++)
+				cout << Char54out(tm[i]&a) << endl;
+		}
+	}mbisvalid, mab;
 
 	void BuildVectorsForExpand4B12();//64 uas
 	void Expand4B12();
 	void Do_phase2(T4_TO_EXPAND w);
+	void Do_phase2_5(T4_TO_EXPAND w);
 	void Do_phase2Expand(uint64_t bf, uint64_t ac);
+	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
+	void CleanBelow();
 	int IsValidB12();
 	void CheckValidBelow(uint64_t bf,uint64_t ac);
-	void CleanBufferAndGo(uint64_t andvalid, uint64_t orvalid);
+	void BuildReducedGuas();
+	void BuildAddReducedGuas();
+
 	void CleanMoreUas(uint64_t bf, uint64_t ac, int ncl, MOREANDB & mabo);
 	//_____________ validb12
-	uint64_t myb12, myb12f, myac_4, myac, myacf,
+	uint64_t myandvalid, myorvalid, myb12, myb12f, myac_4, myac, myacf,
 		myb12add, myacadd;
 	uint32_t  mynclues;//valid status
 	int 	limb12;
@@ -1188,7 +1307,7 @@ struct GCHK {
 	inline void BuildGua(BF128 & w, int cc);
 
 	uint32_t tclues[40], *tcluesxy;// mini 25+band a
-	int nclues_step, nclues,nclf,nmiss;
+	int nclues_step,ncluesb12, nclues,nclf,nmiss;
 	int  ncluesb3,mincluesb3;
 	uint32_t gguas2, gguas3;// 27;9 bits active guas 2 3
 

@@ -5,9 +5,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"2  uas g2 start",//2
 	"3  steps first 3/4 ",//3
 	"4  entry clean",
-	"5  try b12 ",
-	"6  InitGoB3",
-	"7  entry below ",
+	"5  raw b12 ",
+	"6  try b12 full",
+	"7  try b12  not full ",
 	"8  gob3 ",
 	"9  all band 3 calls",
 	"10 not critical 0",//10
@@ -34,7 +34,8 @@ const char * libs_c17_00_cpt2g[70] = {
 
 	"30  new ua b12",	
 	"31 add to <18",	
-	"32 ",	"33 add to uasb12 +2",	
+	"32 add to <20",	
+	"33 add to <23",	
 	"34  ",	
 	
 	"35 add c2 ",	
@@ -46,7 +47,11 @@ const char * libs_c17_00_cpt2g[70] = {
 	"42 ", 
 	"43 d",	
 	"44","45","46","47","48",	
-	"49","50 ","51 ","52 ",	"53 ",	"54 ",	"55 ",
+	"49",
+	"50 below -1",
+	"51 below -1 kill",
+	"52 below -1 assign",	
+	"53 ",	"54 ",	"55 ",
 	"56 count clean1",	
 	"57 count clean2 actif",	
 	"58 clean2 > gua2",	
