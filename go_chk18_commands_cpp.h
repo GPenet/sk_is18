@@ -17,9 +17,9 @@ const char * libs_c17_00_cpt2g[70] = {
 
 	"14 b3 expand",//14
 	"15 isvalid b12",//15
-	"16 clean not 6 b2 forbidden",//16
-	"17 add after valid",//17
-	"18 clean more uas ",
+	"16 ",//16
+	"17 below not 1 and more uas",//17
+	"18  ",
 	"19  final checkb3",
 	"20  call checkb3",
 	"21 ",
@@ -27,7 +27,7 @@ const char * libs_c17_00_cpt2g[70] = {
 	"23  max cmore",
 	"24 ",//24
 	"25 entry add b1 b2 ",//25
-	"26 cells added b1 b2 ",//26
+	"26  ",//26
 	"27 add after g2",//27
 	"28 add after g3",//28
 	"29 ",//29
@@ -42,12 +42,17 @@ const char * libs_c17_00_cpt2g[70] = {
 	"36 ad other ",	
 	"37 filter one of 3 perms",	"38",	"39",
 
-	"40 ",	
-	"41 limspot",	
+	"40 pass the 666 filter",	
+	"41 ",	
 	"42 ", 
-	"43 d",	
-	"44","45","46","47","48",	
-	"49",
+	"43 compte >=64",	
+	"44 max uas b3 direct",
+	"45 must recheck min",
+	"46 after 67 go",
+	"47 46 somme of add",
+	"48 apply mv64vh",	
+	"49 max mv64h",
+
 	"50 below -1",
 	"51 below -1 kill",
 	"52 below -1 assign",	
@@ -58,7 +63,13 @@ const char * libs_c17_00_cpt2g[70] = {
 	"59 clean2 > gua3",
 	"60 clean2 > get multiple",	
 	"61 final check b3",	
-	"62 final check b3 expand",	"63",	"64",	"65",	"66",	"67",	"68",	"69",
+	"62 final check b3 expand",	
+	"63 max uas b3",	
+	"64 clean more uas",	 
+	"65 entry below check valid",	
+	"66 do check valid below",	
+	"67 ok check valid below",	
+	"68 expand go",	"69",
 };
 
 //=========================entry file of solution grids to search
@@ -191,19 +202,49 @@ int  Is18(char * ze, char * zp) {
 		bandminlex.Getmin(&zs0_diag[27 * ibs], &perm_ret);
 		bax[ibs + 3].InitBand2_3(&ze_diag[27 * ibs], perm_ret, ibs);
 	}
+	/*int t416n6[416] = {	729, 10503, 45333*/
 
-	int tsort[3];
-	{// sort entry increasing order of min clues
-		for (int i = 0; i < 3; i++)
-			tsort[i] = i + (t416n6[bax[i].i416] << 8);
-			//tsort[i] = i + (t16_min_clues[bax[i].i416] << 8);
-		for (int i = 0; i < 2; i++) for (int j = i + 1; j < 3; j++)
-			if (tsort[i] > tsort[j]) {
-				int temp = tsort[i];
-				tsort[i] = tsort[j];
-				tsort[j] = temp;
-			}
+	if (1) {
+		cout << " bands/stacks status" << endl;
+		for (int i = 0; i < 6; i++) {
+			STD_B416 b = bax[i];
+			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
+		}
 	}
+
+	int tsort[3], tsort2[3];
+	{// sort entry increasing order of min clues
+		for (int i = 0; i < 3; i++) {
+			tsort[i] = i + (t416n6[bax[i].i416] << 8);
+			tsort2[i] = i + 3 + (t416n6[bax[i + 3].i416] << 8);
+		}
+		for (int i = 0; i < 2; i++) for (int j = i + 1; j < 3; j++) {
+			if (tsort[i] > tsort[j]) {
+				int temp = tsort[i];	tsort[i] = tsort[j]; tsort[j] = temp;
+			}
+			if (tsort2[i] > tsort2[j]) {
+				int temp = tsort2[i];	tsort2[i] = tsort2[j]; tsort2[j] = temp;
+			}
+		}
+	}
+	uint64_t mi1 = t416n6[bax[tsort[0] & 7].i416]; mi1 *=t416n6[bax[tsort[1] & 7].i416];
+	uint64_t mi2 = t416n6[bax[tsort2[0] & 7].i416]; mi2 *=t416n6[bax[tsort2[1] & 7].i416];
+	if (1) {
+		cout << "sorted  bands/stacks status" << endl;
+		for (int i = 0; i <3; i++) {
+			STD_B416 b = bax[tsort[i] & 7];
+			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
+		}
+		for (int i = 0; i < 3; i++) {
+			STD_B416 b = bax[tsort2[i] & 7];
+			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
+		}
+		cout << mi1 << " " << mi2 << endl;
+		if (mi1 < mi2)cout <<"use bands as min" << endl;
+		else cout <<"use stacks as min" << endl;
+		//return 0;
+	}
+
 	// put bands in the right order  012
 	baxs[0] = bax[tsort[0] & 7];
 	baxs[1] = bax[tsort[1] & 7];
@@ -215,20 +256,19 @@ int  Is18(char * ze, char * zp) {
 	gchk.band_order[2] = tsort[2] & 7;
 	gchk.mincluesb3 = 6;
 	irs= gchk.StartIs18();
-#ifndef COLOIN
-
-	// second perm  exchange bands 2/3  021
+	// second perm  exchange bands 2/3  120
 	gchk.mincluesb3 = 7;
-	gchk.band_order[1] = tsort[2] & 7; // old band 3
+	gchk.band_order[0] = tsort[1] & 7;
+	gchk.band_order[1] = tsort[2] & 7;
+	gchk.band_order[2] = tsort[0] & 7;
+	bax[0] = baxs[1]; bax[1] = baxs[2]; bax[2] = baxs[0];
+	irs += gchk.StartIs18();
+	// third perm    201
+	gchk.band_order[0] = tsort[2] & 7;
+	gchk.band_order[1] = tsort[0] & 7;
 	gchk.band_order[2] = tsort[1] & 7;
-	bax[0] = baxs[0]; bax[1] = baxs[2]; bax[2] = baxs[1];
+	bax[0] = baxs[2]; bax[1] = baxs[0]; bax[2] = baxs[1];
 	irs += gchk.StartIs18();
-	// third perm    120
-	gchk.band_order[0] = tsort[1] & 7;// old band 2
-	gchk.band_order[2] = tsort[0] & 7; // old band 1
-	bax[0] = baxs[1]; baxs[1] = baxs[2]; bax[2] = baxs[0];
-	irs += gchk.StartIs18();
-#endif
 #ifdef TEST_ON
 	cout << "print final stats" << endl;
 	for (int i = 0; i < 70; i++) {
