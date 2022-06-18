@@ -6,20 +6,19 @@ const char * libs_c17_00_cpt2g[70] = {
 	"3  steps first 3/4 ",//3
 	"4  entry clean",
 	"5  raw b12 ",
-	"6  try b12 full",
+	"6  try b12  full",
 	"7  try b12  not full ",
-	"8  gob3 ",
+	"8  init gob3 ",
 	"9  all band 3 calls",
-	"10 not critical 0",//10
-	"11 not critical 1",//11
-	"12 not critical 2",//12
-	"13 b3 direct",//13
-
-	"14 b3 expand",//14
-	"15 isvalid b12",//15
-	"16 ",//16
-	"17 below not 1 and more uas",//17
-	"18  ",
+	"10 toass 0",//10
+	"11       1",//11
+	"12       2",//12
+	"13       3",//13
+	"14       4",//14
+	"15       5",//15
+	"16       6",//16
+	"17 ",//17
+	"18       8",//18
 	"19  final checkb3",
 	"20  call checkb3",
 	"21 ",
@@ -30,7 +29,7 @@ const char * libs_c17_00_cpt2g[70] = {
 	"26  ",//26
 	"27 add after g2",//27
 	"28 add after g3",//28
-	"29 ",//29
+	"29 call checkb12",//29
 
 	"30  new ua b12",	
 	"31 add to <18",	
@@ -40,11 +39,13 @@ const char * libs_c17_00_cpt2g[70] = {
 	
 	"35 add c2 ",	
 	"36 ad other ",	
-	"37 filter one of 3 perms",	"38",	"39",
+	"37 filter one of 3 perms",	
+	"38 expand b3 direct",	
+	"39 expand b3 vector",
 
 	"40 pass the 666 filter",	
-	"41 ",	
-	"42 ", 
+	"41 test vecteurs g2 g3",	
+	"42 debug buildapply", 
 	"43 compte >=64",	
 	"44 max uas b3 direct",
 	"45 must recheck min",
@@ -53,9 +54,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"48 apply mv64vh",	
 	"49 max mv64h",
 
-	"50 below -1",
-	"51 below -1 kill",
-	"52 below -1 assign",	
+	"50 ",
+	"51 ",
+	"52 ",	
 	"53 ",	"54 ",	"55 ",
 	"56 count clean1",	
 	"57 count clean2 actif",	
