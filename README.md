@@ -8,7 +8,7 @@ This code is somehow derived from "blue's" general view on the process to apply.
 
 The code first version has been tested in April/May 2021.
 
-Benchmarks showed that blue's code was much better. The second version expected to be ready in the first months of 2022 tries to approach blue's performance.
+Benchmarks showed that blue's code was much better. The third version expected to be ready in summer 2022 tries to approach blue's performance.
 
 The Unavoidable sets (UA) generator has been completely rewritten, using a mixed funciton combining a "brute force generator" and the previously seen unavoidable sets. 
 The generation is now done in some milliseconds compared to several hundred milliseconds with the previous code.
@@ -30,8 +30,11 @@ If the solution is valid, an attempt to find a 18 adding clues in band 3 is done
 
 A special process is applied if there is room in bands 1+2 for more clues.
 
-Here, all the task is covered in one pass. In the previous design, three permutations of bands were done to avoid high numbers of clues in the bands 1 and 2 
+In this third vresion, the task is covered usin six permutations each band/stack being once reordered as band 3.
+This is very close to the process applied in fact for the 17 clues  scan looking for all 17.
+In this process, most of the redundancy is filtered. The distribution 666 is searched once (out of the 6 permutations) ,666 both in bands and stacks.
 
+Generally speaking, the costly final check that the band 1+2 proosed out of the uas list is postponed to the first proposed 18. 
 
 <<<<<<<<<<<<<<<<<<<<<<<<<<<< Compiling the file
 The file names are given in line with g++ 
