@@ -57,7 +57,7 @@ extern ofstream  fout1;
 GCHK gchk;
 TUAS81 tuas81;
 TUASB12 tuasb12;
-STD_B416 bax[6],baxs[3];// the  bands/stacks at start  
+STD_B416 bax[6],baxs[6];// the  bands/stacks at start  
 //STD_B1_2 myband1, myband2;
 uint64_t  p_cpt2g[70];
 
