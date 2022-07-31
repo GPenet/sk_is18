@@ -1,9 +1,3 @@
-typedef union WUBUF_t{
-	uint64_t tdophase2[30][4000];
-	uint32_t tbuilexpand3[12][500];// 6+6
-	uint32_t tg2[15][100];// in fact 10-(19 and more) 
-}WUBUF;
-WUBUF wubuf;
 struct CBS {// clues band stack
 	uint32_t b[3];
 	uint32_t s[3];
@@ -128,7 +122,7 @@ struct TUAS81 {
 		Debug(told, ntold, "old uas status nuas=");
 	}
 
-};
+}tuas81;
 struct TUASB12 {
 	uint64_t tua[2560], t2[3000];
 	uint32_t nua, nt2;
@@ -212,19 +206,13 @@ struct TUASB12 {
 				<< " " << nb128 << " " << nc128 << endl;
 		}
 	}tv128h;
-
-	uint64_t   ta17[2000];
-	// 4096 size of vectors used in expansion
-	uint32_t  nta17;
 	void SwitchTo54Mode() {
-		nta17 = 0;
 		for (uint32_t i = 0; i < nua; i++) {
 			register uint64_t R = tua[i];
 			R = (R & BIT_SET_27) | ((R& BIT_SET_B2) >> 5);
 			tua[i]=R;// now r54
 		}
 	}
-	inline void Add(uint64_t u, uint64_t cc);
 
 	void GetT2(uint64_t filter) {
 		nt2 = 0;
@@ -258,9 +246,9 @@ struct TUASB12 {
 	}
 	void Stats() {
 		cout << "tuasb12 status end of perm"
-			<< " nua=" << nua << "\tnta17=" << nta17	<< endl;
+			<< " nua=" << nua 	<< endl;
 	}
-};
+}tuasb12;
 
 //___________ all uas in bands 1+2 and band 3
 struct GUA {
@@ -690,9 +678,9 @@ struct CHUNKS_HANDLER {
 	}
 	inline int GetC2Count() { return 64 * ic2 + (int)c2[ic2].nt; }
 
-	inline int  Check2(BF128 w54);
-	inline int  Check3(BF128 w54);
-	inline int  Check4(BF128 w54);
+	//inline int  Check2(BF128 w54);
+	//inline int  Check3(BF128 w54);
+	//inline int  Check4(BF128 w54);
 	inline void Add128(BF128 w54, uint32_t cc) {
 		switch (cc) {
 		case 2:
@@ -894,141 +882,11 @@ struct STD_B1_2 :STD_B416 {
 	void PrintShortStatus();
 };
 
-struct MORE64VECT {// FIFO table of more for bands 1+2
-	BF128 vect, vc[54];
-	uint64_t  t[128];
-	uint32_t nt;
-	inline void Init() {
-		nt = 0;
-		memset(&vect, 0, sizeof vect);
-		memset(vc, 255, sizeof vc);
 
-	}
-
-	inline void Add54(uint64_t v) {//add a new more if <128 
-		if (nt < 128) {
-			uint32_t cc54;// build cells vectors 
-			vect.Set(nt);
-			register uint64_t Rw = v;
-			while (bitscanforward64(cc54, Rw)) {
-				Rw ^= (uint64_t)1 << cc54;// clear bit
-				vc[cc54].clearBit(nt);
-			}
-			t[nt++] = v;
-		}
-	}
-
-
-	inline int ApplyXY(uint32_t *tcells, uint32_t ntcells) {
-		register uint64_t R1 = vect.bf.u64[0];
-		for (uint32_t i = 0; i < ntcells; i++)
-			if(!(R1 &= vc[tcells[i]].bf.u64[0])) break;
-		if(R1) return 1;
-		if (nt > 64) {
-			register uint64_t R2 = vect.bf.u64[1];
-			for (uint32_t i = 0; i < ntcells; i++)
-				if (!(R2 &= vc[tcells[i]].bf.u64[1]))
-					return 0;
-			return 1;
-		}
-		return 0;
-	}
-
-	inline void Extract(uint32_t *tc, uint32_t ntc,
-		uint64_t *td, uint64_t & ntd) {
-		if (!nt) return;
-		BF128 w = vect;
-		uint32_t ir;
-		for (uint32_t i = 0; i < ntc; i++)	w &= vc[tc[i]];
-		{
-			register uint64_t R = w.bf.u64[0];
-			while (bitscanforward64(ir, R)) {
-				R ^= (uint64_t)1 << ir;
-				if(ntd<100)td[ntd++] = t[ir];
-			}
-		}
-		{
-			register uint64_t R = w.bf.u64[1];
-			while (bitscanforward64(ir, R)) {
-				R ^= (uint64_t)1 << ir;
-				if (ntd < 100)td[ntd++] = t[ir+64];
-			}
-		}
-	}
-	void Dump() {
-		for (uint32_t i = 0; i < nt; i++)
-			cout << Char54out(t[i])<< " "<<i<<"\t"
-			<<_popcnt64(t[i])<< endl;
-	}
-
-};
-struct MORE64VHandler {// vectors for a given chunk
-	MORE64VECT mv[10];
-	uint32_t nmv,n;
-	inline void Init() { mv[0].Init(); nmv = 0; }
-
-	inline void Add54(uint64_t v) {//add a new more if <128 
-		if (mv[nmv].nt == 128) {
-			if (nmv < 10)mv[++nmv].Init();
-			else return;
-		}
-		mv[nmv].Add54(v);
-	}
-	inline int ApplyXY(uint32_t *tcells, uint32_t ntcells) {
-		for(uint32_t i=0;i<=nmv;i++)
-		if (mv[i].ApplyXY(tcells, ntcells)) return 1;
-		return 0;
-	}
-	inline void Extract(uint32_t *tc, uint32_t ntc,
-		uint64_t *td, uint64_t & ntd) {
-		for (uint32_t i = 0; i <= nmv; i++)
-			mv[i].Extract(tc, ntc, td, ntd);
-	}
-	void Dump(int all = 1) {
-		cout << " nmv=" << nmv	<< " mv[nmv].nt=" << mv[nmv].nt << endl;
-		if (!all)return;
-		for (uint32_t i = 0; i <= nmv; i++) mv[i].Dump();
-	}
-
-}m64vh;
-
-struct MORE32 {// FIFO table of more for band b
-	uint32_t  t[32];
-	int nt, maxt, curt;
-	inline void Init() { maxt = 32; nt = 0; }
-	inline void Add(uint32_t v) {//add a new more in FIFO 
-		if (nt < maxt) {// use next location
-			curt = nt;
-			t[nt++] = v;
-		}
-		else {// replace the oldest
-			curt++;
-			if (curt == maxt)curt = 0;
-			t[curt] = v;
-		}
-
-	}
-
-	uint32_t Check(uint32_t v) {// check oldest first
-		if (!nt) return 0;
-		register uint32_t V = v, *Rt = &t[curt], *Rtl;
-	loop1:// form curt to 0
-		if (!((*Rt) & V))return 1;
-		if (--Rt >= t)goto loop1;
-		if (nt < maxt) return 0;
-		Rtl = &t[curt];
-		Rt = &t[maxt];
-		while (--Rt > Rtl)if (!((*Rt) & V))return (*Rt);
-		return 0;
-	}
-
-};
-#define BUFVALIDS 8000
 struct GCHK {
 	//=========== kwon puzzle filters
 	BF128 puzknown;
 	uint64_t pk54;
-	uint32_t kpfilt[4]; //initial statu 3 
 	int kn_ir1, kn_ir2;
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
 		a_18_seen,minb1b2, minb1, minb2,iperm;
@@ -1041,7 +899,6 @@ struct GCHK {
 	char zsol[82];// solution grid morphed
 	int grid0[81];// same 0 based
 	int grid0_diag[81];// diagonal symmetry
-	STD_B416 * bands_abc[3],bA,bB;
 
 	//____________structs hosting the  GUA2/3 entries
 	struct SG2 {// 27 possible GUA2  
@@ -1091,97 +948,14 @@ struct GCHK {
 	void Guas2Collect();
 	void PutUasStartInVector();
 
-	uint64_t bufvalid[BUFVALIDS+50], *pbufvalid,*pendbufvalid;
 	int nt4ok,okcheck;// for known
 	// bands 1+2 valid epansion
-	struct CHUNKVB12
-	{
-		BF128 tmore[1024 + 64], t2[1024 + 64];
-		//+64 margin against overflow
-		uint32_t ntmore, nt2;
-		void SortTmore() {// sort by size
-			BF128 tt[5][400];
-			uint32_t ntt[5];
-			memset(ntt, 0, sizeof ntt);
-			for (uint64_t i = 0; i < ntmore; i++) {
-				BF128 w = tmore[i];
-				uint32_t cc = _popcnt32(w.bf.u32[2]) - 3;
-				if (cc > 4)cc = 4;
-				tt[cc][ntt[cc]++] = w;
-			}
-			ntmore = 0;
-			for (int i = 0; i < 5; i++) //3,4;5;6; more
-				for (uint32_t j = 0; j < ntt[i]; j++)
-					tmore[ntmore++] = tt[i][j];
 
-		}
-		void Dumpt2(int ix = -1) {
-			cout << "dumpt2 nt2=" << nt2 << endl;
-			for (uint32_t i = 0; i < nt2; i++) {
-				if (ix >= 0 && (t2[i].bf.u32[2] != ix)) continue;
-				cout << Char54out(t2[i].bf.u64[0])
-					<< " " << t2[i].bf.u32[2] << endl;
-			}
-		}
-		void Dumptmore() {
-			cout << "dumptmore ntmore=" << ntmore << endl;
-			for (uint32_t i = 0; i < ntmore; i++) {
-				cout << Char54out(tmore[i].bf.u64[0]) << " ";
-				cout << Char27out(tmore[i].bf.u32[2]) << endl;
-			}
-		}
-	}chvb12;
-	struct GADDB3 { //Add during a clean chunk
-		BF128 tmore[384], t2[256], t3[256];
-		uint32_t ntmore, nt2, nt3;
-		inline void Init() { ntmore = nt2 = nt3 = 0; }
-		inline void Add(BF128 w, int cc) {
-			if (cc < 3) {
-				if (nt2 < 256)t2[nt2++] = w;
-			}
-			else if (cc == 3) {
-				if (nt3 < 256)t3[nt3++] = w;
-			}
-			else if (ntmore < 384)
-				tmore[ntmore++] = w;
-		}
-		inline void Get3(uint64_t F, uint32_t &guas3) {
-			for (uint32_t i = 0; i < nt3; i++)
-				if (!(F & t3[i].bf.u64[0]))
-					guas3 |= 1 << t3[i].bf.u32[2];
-		}
-		inline void GetMore(uint64_t F,
-			uint32_t *t, uint32_t &nt) {
-			for (uint32_t i = 0; i < ntmore; i++)
-				if (!(F & tmore[i].bf.u64[0]))
-					t[nt++] =tmore[i].bf.u32[2];
-		}
-		void Dumpt2() {
-			cout << "dumpt2 nt2=" << nt2 << endl;
-			for (uint32_t i = 0; i < nt2; i++) {
-				cout << Char54out(t2[i].bf.u64[0])
-					<< " " << t2[i].bf.u32[2] << endl;
-			}
-		}
-		void Dumpt3() {
-			cout << "dumpt3 nt3=" << nt3 << endl;
-			for (uint32_t i = 0; i < nt3; i++) {
-				cout << Char54out(t3[i].bf.u64[0])
-					<< " " << t3[i].bf.u32[2] << endl;
-			}
-		}
-		void Dumptmore() {
-			cout << "dumptmore ntmore=" << ntmore << endl;
-			for (uint32_t i = 0; i < ntmore; i++) {
-				cout << Char54out(tmore[i].bf.u64[0]) << " ";
-				cout << Char27out(tmore[i].bf.u32[2]) << endl;
-			}
-		}
-
-	}gaddb3;
 	void Expand_03();
+
 	int SetupExpand_46();
 	void Expand_46();
+
 	int SetupExpand_7p();
 	void Init7p_guas();
 	uint64_t ua_ret7p;
@@ -1192,6 +966,7 @@ struct GCHK {
 	inline int GetLastAndUa(SPB03* sn);
 	void Expand_7_11();
 	void Expand_7_12();
+
 	void GoBelow(SPB03* sn);
 	void ExpandAddB1B2(SPB03* sn);
 
@@ -1223,16 +998,14 @@ struct GCHK {
 	inline void BuildGua(BF128 & w, int cc);
 	uint32_t IsValidB3(uint32_t bf);
 	uint32_t NotThisPermB3(uint32_t bf);
-	uint32_t tclues[40], *tcluesxy;// mini 25+band a
-	int nclues_step,ncluesb12,nclgo, nmiss;
+	uint32_t tclues[40];// mini 25+band a
+	int nclgo, nmiss;
 	int  ncluesb3,mincluesb3;
-	uint32_t gguas2, gguas3;// 27;9 bits active guas 2 3
 
 	//================== clean process
 	uint64_t wb12bf, wb12active, myua;
 	uint32_t clean_valid_done,rclean_valid_done;
 	uint32_t taddgob3[100], ntaddgob3;
-	MORE32 moreuas_b3;
 
 	void Out17(uint32_t bfb3);
 

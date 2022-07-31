@@ -55,13 +55,10 @@ extern ofstream  fout1;
 
 #include "sk_is18.h" 
 GCHK gchk;
-TUAS81 tuas81;
-TUASB12 tuasb12;
+
 STD_B416 bax[6],baxs[6];// the  bands/stacks at start  
 //STD_B1_2 myband1, myband2;
 uint64_t  p_cpt2g[70];
-
-uint64_t to_clean[200];
 
 #include "go_17sol_tables.h"
 #include "go_18_bands_cpp.h" 

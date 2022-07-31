@@ -3,9 +3,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"0  compte entrée",//0
 	"1  uas b12 start ",//1
 	"2  uas g2 start",//2
-	"3  steps first 3/4 ",//3
-	"4  entry clean",
-	"5  raw b12 ",
+	"3  steps first 3 ",//3
+	"4  steps first 6",
+	"5  raw b12 11/12 ",
 	"6  check mincount",
 	"7  after mincount ",
 	"8  after minplus ",
@@ -18,9 +18,9 @@ const char * libs_c17_00_cpt2g[70] = {
 	"15      10 11",//15
 	"16 entry go below",//16
 	"17 count 11 go after",//17
-	"18     ",//18
-	"19  final checkb3",
-	"20  call checkb3",
+	"18 count 12 go after  ",//18
+	"19  checkb3 below 18",
+	"20 entry go after ",
 	"21 ",
 	"22  max c2",
 	"23  max cmore",
