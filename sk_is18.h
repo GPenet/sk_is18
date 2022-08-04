@@ -964,7 +964,7 @@ struct GCHK {
 	inline int GetNextCell(SPB03* s);
 	inline void GetNextUa( SPB03* sn);
 	inline void GetNextUaAdd(SPB03* sn);
-	inline int GetLastAndUa(SPB03* sn,int d=0);
+	inline int GetLastAndUa(SPB03* sn,int diag=0);
 	void Expand_7_11();
 	void Expand_7_12();
 
@@ -995,7 +995,6 @@ struct GCHK {
 
 	void ExpandB3Direct(int ntoass);
 	void ExpandB3Vect(int ntoass);
-	uint32_t NoExpandB3(uint32_t cl0bf );
 	inline void BuildGua(BF128 & w, int cc);
 	uint32_t IsValidB3(uint32_t bf);
 	uint32_t NotThisPermB3(uint32_t bf);

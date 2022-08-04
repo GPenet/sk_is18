@@ -180,7 +180,7 @@ int  Is18Blue(char * ze, char * zp) {
 int  Is18(char * ze, char * zp) {
 	gchk.ze = ze;
 	gchk.zp = zp;
-	gchk.diagbugchk = gchk.aigstop = 0;
+	gchk.aigstop = 0;
 	char ze_diag[164]; ze_diag[163] = 0;
 	memcpy(gchk.zes, ze, 164);
 	gchk.a_18_seen = 0;
@@ -203,13 +203,6 @@ int  Is18(char * ze, char * zp) {
 		bandminlex.Getmin(&zs0_diag[27 * ibs], &perm_ret);
 		bax[ibs + 3].InitBand2_3(&ze_diag[27 * ibs], perm_ret, ibs);
 	}
-	if (1) {
-		cout << " bands/stacks status" << endl;
-		for (int i = 0; i < 6; i++) {
-			STD_B416 b = bax[i];
-			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
-		}
-	}
 
 	int tsort[3], tsort2[3];
 	{// sort entry increasing order of min clues
@@ -228,21 +221,6 @@ int  Is18(char * ze, char * zp) {
 	}
 	uint64_t mi1 = t416n6[bax[tsort[0] & 7].i416]; mi1 *=t416n6[bax[tsort[1] & 7].i416];
 	uint64_t mi2 = t416n6[bax[tsort2[0] & 7].i416]; mi2 *=t416n6[bax[tsort2[1] & 7].i416];
-	if (1) {
-		cout << "sorted  bands/stacks status" << endl;
-		for (int i = 0; i <3; i++) {
-			STD_B416 b = bax[tsort[i] & 7];
-			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
-		}
-		for (int i = 0; i < 3; i++) {
-			STD_B416 b = bax[tsort2[i] & 7];
-			cout << b.band << " " << b.i416 << " " << t416n6[b.i416] << endl;
-		}
-		cout << mi1 << " " << mi2 << endl;
-		if (mi1 < mi2)cout <<"use bands as min" << endl;
-		else cout <<"use stacks as min" << endl;
-		//return 0;
-	}
 	// setup map81
 	for (int ibs = 0; ibs < 3; ibs++) {
 		STD_B416& b = bax[ibs], & s = bax[ibs + 3];
@@ -274,14 +252,6 @@ int  Is18(char * ze, char * zp) {
 		if(gchk.iperm==5)gchk.mincluesb3 = 6;
 		irs += gchk.StartIs18();
 	}
-
-#ifdef TEST_ON
-	cout << "print final stats" << endl;
-	for (int i = 0; i < 70; i++) {
-		if (!p_cpt2g[i])continue;
-		cout << p_cpt2g[i] << "\t\t" << libs_c17_00_cpt2g[i] << endl;
-	}
-#endif
 
 	return irs;
 }
