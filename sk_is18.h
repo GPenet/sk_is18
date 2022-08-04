@@ -386,8 +386,9 @@ struct G2_256 {//vector 256 chunk level gua2 gua3
 			vw[0] &= vc[0][cell];
 			vw[1] &= vc[1][cell];
 		}
+		register uint64_t* pV = vw[0].bf.u64;
 		for (uint32_t i = 0; i < 4; i++) {// extract
-			register uint64_t V = vw[0].bf.u64[i];
+			register uint64_t V = pV[i];
 			register uint32_t * b = &bits[64 * i], x;
 			while (bitscanforward64(x, V)) {
 				V ^= (uint64_t)1 << x;
@@ -890,7 +891,7 @@ struct GCHK {
 	int kn_ir1, kn_ir2;
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
 		a_18_seen,minb1b2, minb1, minb2,iperm;
-	int diagbugchk,diagtestadd;
+	uint64_t diagknown7p ,diagtestadd;
 	uint64_t debugvalbf;
 	//___________________ studied solution 
 	char * ze;// given solution grid
@@ -963,7 +964,7 @@ struct GCHK {
 	inline int GetNextCell(SPB03* s);
 	inline void GetNextUa( SPB03* sn);
 	inline void GetNextUaAdd(SPB03* sn);
-	inline int GetLastAndUa(SPB03* sn);
+	inline int GetLastAndUa(SPB03* sn,int d=0);
 	void Expand_7_11();
 	void Expand_7_12();
 
@@ -988,7 +989,7 @@ struct GCHK {
 	uint32_t tw3_2[1000], ntw3_2,is1_tw3;
 
 	int BuildB2Table();
-	int BuildFinalTable();
+	void BuildFinalTable();
 
 	void B3FinalNoExpand();
 

@@ -2,7 +2,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 #define TEST_ON
-//#define HAVEKNOWN 1
+#define HAVEKNOWN 1
 
 //#define COLOIN
 
