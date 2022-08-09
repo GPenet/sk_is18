@@ -54,7 +54,7 @@ GCHK gchk;
 STD_B416 bax[6],baxs[6];// the  bands/stacks at start  
 //STD_B1_2 myband1, myband2;
 uint64_t  p_cpt2g[70];
-
+char t18found[100][82];
 #include "go_17sol_tables.h"
 #include "go_18_bands_cpp.h" 
 #include "go_chkis18_bs_cpp.h"  

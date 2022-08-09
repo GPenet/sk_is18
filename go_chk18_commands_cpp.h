@@ -177,19 +177,20 @@ int  Is18Blue(char * ze, char * zp) {
 	return 0;
 }
 
-int  Is18(char * ze, char * zp) {
+int  Is18(char* ze, char* zp, int first) {
 	gchk.ze = ze;
 	gchk.zp = zp;
 	gchk.aigstop = 0;
 	char ze_diag[164]; ze_diag[163] = 0;
 	memcpy(gchk.zes, ze, 164);
-	gchk.a_18_seen = 0;
+	gchk.nok = gchk.n18seen = 0;
+	gchk.modefirst = first;
 	memset(p_cpt2g, 0, sizeof p_cpt2g);
 	zh_g.modevalid = 1;
 	zh_g2.grid0 = gchk.grid0;
 	zh_g2.zsol = zh_g2.stdfirstsol;
 	// search 17 using a file having known  as entry and one 17 given 6 6 5
-	int * zs0 = gchk.grid0, *zs0_diag = gchk.grid0_diag;
+	int* zs0 = gchk.grid0, * zs0_diag = gchk.grid0_diag;
 	gchk.aigstop = 0;
 	long tdeb = GetTimeMillis();
 	// ====catch entry uas and rank
@@ -219,8 +220,8 @@ int  Is18(char * ze, char * zp) {
 			}
 		}
 	}
-	uint64_t mi1 = t416n6[bax[tsort[0] & 7].i416]; mi1 *=t416n6[bax[tsort[1] & 7].i416];
-	uint64_t mi2 = t416n6[bax[tsort2[0] & 7].i416]; mi2 *=t416n6[bax[tsort2[1] & 7].i416];
+	uint64_t mi1 = t416n6[bax[tsort[0] & 7].i416]; mi1 *= t416n6[bax[tsort[1] & 7].i416];
+	uint64_t mi2 = t416n6[bax[tsort2[0] & 7].i416]; mi2 *= t416n6[bax[tsort2[1] & 7].i416];
 	// setup map81
 	for (int ibs = 0; ibs < 3; ibs++) {
 		STD_B416& b = bax[ibs], & s = bax[ibs + 3];
@@ -234,7 +235,7 @@ int  Is18(char * ze, char * zp) {
 	for (int i = 0; i < 3; i++) {
 		if (mi1 < mi2) {
 			baxs[i] = bax[tsort[i] & 7];
-			baxs[3+i] = bax[tsort2[i] & 7];
+			baxs[3 + i] = bax[tsort2[i] & 7];
 		}
 		else {
 			baxs[i] = bax[tsort2[i] & 7];
@@ -249,9 +250,11 @@ int  Is18(char * ze, char * zp) {
 	for (gchk.iperm = 0; gchk.iperm < 6; gchk.iperm++) {// 6 triplets
 		int* ptp = tppp[gchk.iperm];
 		for (int i = 0; i < 3; i++)	bax[i] = baxs[ptp[i]];
-		if(gchk.iperm==5)gchk.mincluesb3 = 6;
-		irs += gchk.StartIs18();
+		if (gchk.iperm == 5)gchk.mincluesb3 = 6;
+		irs = gchk.StartIs18();
+		if (first & irs) return 1;
 	}
-
+	if (gchk.nok != gchk.n18seen) cout << "redundancy to clear" << endl;
 	return irs;
+
 }

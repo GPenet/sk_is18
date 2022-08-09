@@ -469,7 +469,6 @@ struct G2_256Handler {
 
 	}
 
-
 	void ApplyMore(uint32_t * tc, uint32_t ntc,
 		uint32_t * tmore, uint32_t & ntmore, uint32_t asb3) {
 		gm_256[0].ApplyMore( tc, ntc,tmore,  ntmore,asb3);
@@ -890,7 +889,7 @@ struct GCHK {
 	uint64_t pk54;
 	int kn_ir1, kn_ir2;
 	int aigstop, aigstopxy, start_perm, *tpw, *tsortw,
-		a_18_seen,minb1b2, minb1, minb2,iperm;
+		modefirst,nok,n18seen,minb1b2, minb1, minb2,iperm;
 	uint64_t diagknown7p ,diagtestadd;
 	uint64_t debugvalbf;
 	//___________________ studied solution 
@@ -997,7 +996,6 @@ struct GCHK {
 	void ExpandB3Vect(int ntoass);
 	inline void BuildGua(BF128 & w, int cc);
 	uint32_t IsValidB3(uint32_t bf);
-	uint32_t NotThisPermB3(uint32_t bf);
 	uint32_t tclues[40];// mini 25+band a
 	int nclgo, nmiss;
 	int  ncluesb3,mincluesb3;
@@ -1008,6 +1006,9 @@ struct GCHK {
 	uint32_t taddgob3[100], ntaddgob3;
 
 	void Out17(uint32_t bfb3);
+
+	// known
+	int Kn0(); void Kn02();
 
 };
 

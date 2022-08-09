@@ -42,11 +42,12 @@ int Search_ccd(char * ww)
 				  "-v" ,  // value   0 to 9 default 0
 				  "-b" ,  // bit field 0 to 9 default is 0
 				  "-s",  // strings 0 to 9
+				  "-e",// enumeration mode
 	};   // puzzle processing specificities
 	char wt[4]; 
 	strncpy_s(wt,4,ww,2);
 	wt[2]=0;
-	for(int i=0;i<6;i++)
+	for(int i=0;i<7;i++)
 		if(!strcmp(wt,ccd[i])) 
 			return i;
 	return -1;
@@ -57,12 +58,13 @@ int Search_ccd(char * ww)
 SGO sgo;
 ofstream  fout1;
 FINPUT finput;
-extern int  Is18(char * ze, char * zp);
+extern int  Is18(char * ze, char * zp,int first);
 extern int  Is18Blue(char * ze, char * zp);
 
 int main(int narg, char *argv[]) {
 	cerr << "mainstart" << endl;
 	sgo.tdeb=GetTimeMillis();
+	 int modefirst = 1;
 	char * finput_name=0,*foutput_name=0,* ww;
 	char * s_strings[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//optionnal 10 strings
 
@@ -100,11 +102,14 @@ int main(int narg, char *argv[]) {
 			case 0: finput_name = &ww[2]; 	break;  // -i
 			case 1: foutput_name = &ww[2]; 	break;  // -o
 			case 2: command = atoi(&ww[2]);	break; //-c
+			case 6: modefirst = 0;	break; //-e
 			}// end command  
 		}
 	}// end loop on options
 	if(finput_name) cerr <<" file1 (input) " << finput_name<<endl;
 	if(foutput_name) cerr <<" file2 (output) " << foutput_name<<endl;
+	if (modefirst)cout << "mode find first" << endl;
+	else cout << "mode find all" << endl;
 	cerr << "command " << command<<endl;
 	// store command line parameters 
 	sgo.command = command;
@@ -147,21 +152,13 @@ int main(int narg, char *argv[]) {
 			Is18Blue(ze, zp);
 		}
 		else {
-			int ir = Is18(ze, zp);
-			if (ir < 0)	cout << "puz " << npuz << "  band 29 (2 clues)" << endl;
+			int ir = Is18(ze, zp,modefirst);
 			long tendp = GetTimeMillis();
 			if (ir > 0)nok++;
-//#define COLOIN
-#ifdef COLOIN
-		if (ir < 300) {
-#endif
-				fout1 << ze << "n18=" << ir << "  " << tendp - tdebp << " ";
-				if (ir < 0) 	fout1 << "puz " << npuz << " band =29 " << endl;
-				else if (ir == 0) 			fout1 << " no 18" << endl;
+			fout1 << ze << " n18=" << ir << "  " << tendp - tdebp << " ";
+				if (ir == 0) 			fout1 << " no 18" << endl;
 				else fout1 << endl;
-#ifdef COLOIN
-		}
-#endif
+
 
 		}
 		//cout << "back npuz=" << npuz << " vx[3]=" << vx[3] << endl;

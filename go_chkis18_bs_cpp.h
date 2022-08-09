@@ -1,4 +1,46 @@
+//#define HAVEKNOWN
+#ifdef HAVEKNOWN
+int GCHK::Kn0() {
+	// put knownn in the right order
+	if (strlen(ze) < 163) return -1;// skip blank lines
+	char* w = &ze[82], * ww = &zes[82];
+	for (int ib = 0; ib < 3; ib++) {
+		int* m = bax[ib].map81;
+		for (int c = 0; c < 27; c++) {
+			w[27 * ib + c] = ww[m[c]];
+		}
+	}
+	puzknown.SetAll_0();
+	for (int i = 0; i < 81; i++) {
+		char c = w[i];
+		if (c < '1' || c>'9') continue;
+		puzknown.Set_c(i);// store the pattern in 3X mode
+		// this can be a pattern, no check of the digit with the solution
+	}
+	register uint64_t R = puzknown.bf.u64[0];
+	pk54 = (R & BIT_SET_27) | ((R & BIT_SET_B2) >> 5);
+	int n1 = (int)_popcnt32(puzknown.bf.u32[0]),
+		n2 = (int)_popcnt32(puzknown.bf.u32[1]),
+		n3 = (int)_popcnt32(puzknown.bf.u32[2]);
+	//for (int i = 0; i < 81; i++) cout << ze[i + 82];
+	//cout << " known reshaped  "<<n1<<n2<<n3 << endl;
 
+	if (n3 < mincluesb3) return  0;
+	if (n3 == 6 && n2 != 6) return  0;
+	if (n3 < n1 || n3 < n2) return  0;
+	if (n3 == 7 && n2 < 4) return  0;
+	BF128 ws1 = puzknown & band3xBM[3],
+		ws2 = puzknown & band3xBM[4],
+		ws3 = puzknown & band3xBM[5];
+	if (n3 < ws1.Count() || n3 < ws2.Count() || n3 < ws3.Count()) return 0;
+	cout << ws1.Count() << " " << ws2.Count() << " " << ws3.Count() << endl;
+	return 1;
+}
+void GCHK::Kn02() {
+	for (int i = 0; i < 81; i++) cout << ze[i + 82];
+	cout << " known reshaped iperm="<< iperm << endl;
+}
+#endif
 
 //_______________ start  a band3 perm and UAs GUAs search 
 #define AddUaB12UN(X,Y)AddUA64(tuasb12.tua,tuasb12.nua,X|((uint64_t)Y<<59))
@@ -23,6 +65,10 @@ void STD_B416::InitBand2_3(char * ze, BANDMINLEX::PERM & p
 int  GCHK::StartIs18() {
 	if (aigstop) return 0;
 	p_cpt2g[0]++;
+#ifdef HAVEKNOWN
+	if(!Kn0()) return 0;
+	//return 0;
+#endif
 	int * zs0 = grid0, *zs0_diag = grid0_diag;
 	BANDMINLEX::PERM perm_ret;
 	memcpy(zs0, bax[0].band0, sizeof  bax[0].band0);
@@ -38,12 +84,15 @@ int  GCHK::StartIs18() {
 		bandminlex.Getmin(&zs0_diag[27 * ibs], &perm_ret);
 		bax[ibs + 3].InitBand2_3(&ze_diag[27 * ibs], perm_ret, ibs);
 	}
+#ifdef HAVEKNOWN
+	Kn02();
+#endif
 	//__________________________ start uas search
 	UaCollector();
 	p_cpt2g[1] = tuasb12.nua;
 	p_cpt2g[2] = chunkh.GetC2Count();
 	Expand_03();
-	return a_18_seen;
+	return nok;
 }
 //________________ uas generation and store in chunkh
 void GCHK::UaCollector() {
@@ -351,6 +400,8 @@ void TUASB12::TUAVECTH::Build_tv128() {
 void GCHK::Expand_03() {
 	SPB03 *s,*sn;
 	if (aigstop) return;
+	//cout << iperm << "  exp03" << endl;
+	//if (iperm) return;
 	tuasb12.SwitchTo54Mode();// switch tua to 54 mode
 	tuasb12.tv128h.Build_tv128();
 	zh2b[0].InitBands12(grid0);
@@ -380,7 +431,18 @@ next:
 	if (sn->ncl == 3) {// 3 cellsfirst step
 		p_cpt2g[3]++;
 		if (SetupExpand_46()) goto next;// dead
+#ifdef HAVEKNOWN
+		if (!((~pk54) & sn->all_previous_cells)) {
+			cout << Char54out(sn->all_previous_cells) << " expected 3" << endl;
+			Expand_46();
+			aigstop = 1;
+		}
+		else 	Expand_46();
+#else 
 		Expand_46();
+
+#endif
+		if (aigstop) return;
 		goto next;
 	}
 	// find next ua
@@ -446,8 +508,8 @@ int GCHK::SetupExpand_46() {
 	return 0;
 }
 void GCHK::Expand_46() {
-	SPB03*sl= &spb_0_15[4] ,* s=sl, * sn;
 	if (aigstop) return;
+	SPB03*sl= &spb_0_15[4] ,* s=sl, * sn;
 	TUASB12::TUAVECT& tuv128 = tuasb12.tv128h.tvb128[0];
 	uint64_t* twu = tuv128.t;
 	*s = spb_0_15[3];	// duplicate 3 for new vector
@@ -471,8 +533,22 @@ next:	// catch and apply cell in bitfields
 	sn->v &= tuv128.vc[cell];
 	if (sn->ncl == 6) {// 6 cells 
 		SetupExpand_7p();
+#ifdef HAVEKNOWN
+		if (!((~pk54) & sn->all_previous_cells)) {
+			cout << Char54out(sn->all_previous_cells) << " expected 6" << endl;
+			if (mincluesb3 == 6)Expand_7_12();
+			else 		Expand_7_11();
+			aigstop = 1;
+		}
+		else {
+			if (mincluesb3 == 6)Expand_7_12();
+			else 		Expand_7_11();
+		}
+#else
 		if (mincluesb3 == 6)Expand_7_12();
 		else 		Expand_7_11();
+#endif
+		if (aigstop) return;
 		goto next;
 	}
 	// find next ua
@@ -807,6 +883,11 @@ next:	// catch and apply cell in bitfields
 	if (GetNextCell(s))
 		if (--s >= sl)goto next;	else return;
 	sn = s + 1;
+#ifdef HAVEKNOWN
+	if (!((~pk54) & sn->all_previous_cells)) {
+		cout << Char54out(sn->all_previous_cells) << " on the path 7_11 ncl=" << sn->ncl << endl;
+	}
+#endif
 	ua_ret7p = 0;
 	if (sn->ncl == 11) {// 11 cells 
 		if (sn->cbs.IsFilt11()) goto next;
@@ -860,6 +941,11 @@ void GCHK::Expand_7_12() {
 next:	// catch and apply cell in bitfields
 	if (GetNextCell(s))	if (--s >= sl)goto next; else return;
 	sn = s + 1;
+#ifdef HAVEKNOWN
+	if (!((~pk54) & sn->all_previous_cells)) {
+		cout << Char54out(sn->all_previous_cells) << " on the path 7_12 ncl=" << sn->ncl << endl;
+	}
+#endif
 	ua_ret7p = 0;
 	if (sn->ncl == 12) {// 12 cells 
 		if (sn->cbs.IsFilt12()) goto next;
@@ -889,6 +975,11 @@ next:	// catch and apply cell in bitfields
 		else GetNextUaAdd(sn);
 	}
 	if (!ua_ret7p) {
+#ifdef HAVEKNOWN
+		if (!((~pk54) & sn->all_previous_cells)) {
+			cout << Char54out(sn->all_previous_cells) << " after on the path 7_12 ncl=" << sn->ncl << endl;
+		}
+#endif
 		if (sn->ncl < 11) {
 			if (!IsValid7p(sn)) {// valid below
 				g_256h.NewVcl(sn->ncl, tclues[s->ncl]);
@@ -1158,7 +1249,6 @@ struct CRITB3 {
 		nmiss = nb3 - mincount;
 		if (!nmiss) critstack = 7;
 	}
-
 	inline int BadPerm() {
 		if(ncl!=18) return 0;// skip if 17
 		for (int i = 0; i < 3; i++)	if (stackf[i] > nb3) return 1;
@@ -1169,10 +1259,34 @@ struct CRITB3 {
 		return 0;
 		return (gchk.iperm > 2);
 	}
+	void Status(const char* lib) {
+		cout << lib << "critical Status mincount =" << mincount << " nmiss=" << nmiss
+			<< " critstack=" << critstack << endl;
+		cout << Char27out(critbf) << " critical bf" << endl;
+		cout << Char27out(pairs27) << " pairs 27" << endl;
+		cout << Char27out(assigned) << " assigned" << endl;
+		cout << Char27out(active) << " active" << endl;
+		if (minix[1])cout << Char9out(minix[1]) << "     minis bf1" << endl;
+		if (minix[2])cout << Char9out(minix[2]) << "     minis bf2" << endl;
+		if (minix[3])cout << Char9out(minix[3]) << "     minis bf3" << endl;
+		if (minix[0])cout << Char9out(minix[0]) << " mini triplets" << endl << endl;
+		cout << "b12 stacks " << stackb12[0] << stackb12[1] << stackb12[2] << endl;
+		cout << "minis stacks " << stackmin[0] << stackmin[1] << stackmin[2] << endl;
+		cout << "final stacks " << stackf[0] << stackf[1] << stackf[2] << endl;
+	}
+
 }scritb3;
 
 void GCHK::GoBelow(SPB03* sn) {
+#ifdef HAVEKNOWN
+	if (!((~pk54) & sn->all_previous_cells)) {
+		cout << Char54out(sn->all_previous_cells)<< " go below" << endl;
+		//g2_256[0].Dump(); g2_256[1].Dump();
+		//g_256h.Dumpvcl(sn->ncl);
+	}
+#endif
 	rclean_valid_done=  clean_valid_done;
+	g2_64.nv = 0; g3_64.nv = 0; gm_64.nv = 0;
 	int nclues = sn->ncl;
 	{// check limit per band  11 clues 747 567 657 12 clues 666
 		myacadd = sn->active_cells;
@@ -1200,6 +1314,11 @@ void GCHK::GoBelow(SPB03* sn) {
 			tadd[ntadd++] = cell;
 		}
 	}
+#ifdef HAVEKNOWN
+	if (!((~pk54) & sn->all_previous_cells)) {
+		cout  << " ntadd="<< ntadd << endl;
+	}
+#endif
 	ExpandAddB1B2(sn);
 }
 void GCHK::ExpandAddB1B2(SPB03* sne ) {// add up to n cells
@@ -1220,6 +1339,12 @@ next:	//____________ here start the search ad after valid
 		sn->all_previous_cells |= bit;
 		sn->v &= tuasb12.tv128h.tvc128[0].vc[cell];
 		g_256h.NewVcl(sn->ncl, tclues[s->ncl]);
+#ifdef HAVEKNOWN
+		if (!((~pk54) & sn->all_previous_cells)) {
+			cout << Char54out(sn->all_previous_cells) << " on the path below ncl=" << sn->ncl << endl;
+			//g_256h.Dumpvcl(sn->ncl);
+		}
+#endif
 		if (sn->ncl == 12 && sn->cbs.IsFilt12()) goto next;
 		else if (sn->ncl == 11 && sn->cbs.IsFilt11()) goto next;
 		if (!rclean_valid_done) {// must check fresh uas b3 (redundancy)
@@ -1235,9 +1360,8 @@ next:	//____________ here start the search ad after valid
 				}
 			}
 		}
-		//p_cpt2g[18]++;
-		//cout << Char54out(sn->all_previous_cells) << " call " << sn->ncl << endl;
 		GoAfterExpand(sn,ntuaddb12);//keep old uas add
+		if (aigstop) return;
 		if (sn->ncl >= lim) 	goto next;
 		s++; // switch to next spot (next cell)
 		goto next;
@@ -1246,6 +1370,14 @@ next:	//____________ here start the search ad after valid
 
 //_______________________
 void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
+	if (aigstop) return;
+#ifdef HAVEKNOWN
+	if (pk54 == sn->all_previous_cells) {
+		cout << Char54out(sn->all_previous_cells)<< " expected GoAfterExpand nadd="<<nadd 
+			<< " g2_64.nv=" << g2_64.nv << " g3_64.nv=" << g3_64.nv << endl;
+	}
+#endif
+
 	ntuaddb12 = nadd;// used only if add mode
 	nclgo = sn->ncl;
 	ncluesb3 = 18 - nclgo;
@@ -1263,6 +1395,12 @@ void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
 	scritb3.SetStackf(Bf);// stackf; nmisss; critstack if nmiss=0
 	if (scritb3.Stackx())return;
 	scritb3.AssignCritical();
+#ifdef HAVEKNOWN
+	if (pk54 == sn->all_previous_cells) {
+		scritb3.Status("aaaa");
+	}
+#endif
+
 	ntw3 = 0; // temporary before  split in/out
 	g_256h.ApplyMore(&tclues[6], nclgo - 6,
 		tw3, ntw3, scritb3.assigned);
@@ -1286,6 +1424,9 @@ void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
 		ntw3 = n1;
 	}
 	ntaddgob3 = 0;
+#ifdef HAVEKNOWN
+	if (pk54 == sn->all_previous_cells) cout << "call buildb2" << endl;
+#endif
 	if (BuildB2Table()) return;
 	int nass = _popcnt32(scritb3.assigned);
 	if (nass == scritb3.nb3) {// already ok to go
@@ -1299,6 +1440,9 @@ void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
 		return;
 	}
 	BuildFinalTable();
+#ifdef HAVEKNOWN
+	//if (pk54 == sn->all_previous_cells) aigstop = 1;
+#endif
 }
 
 
@@ -1453,7 +1597,6 @@ void GCHK::BuildFinalTable() {
 	 if( (!ntoass) && ntw3_2)return;
 	if (!ntoass) {// enough clues assigned in b3
 		if (ntw3_2) return;
-		p_cpt2g[10 ]++;
 		B3FinalNoExpand();//must be a valid b12 and valid "all" 
 		return;
 	}
@@ -1481,9 +1624,11 @@ void GCHK::BuildFinalTable() {
 		register int cell,
 			Ass = scritb3.assigned;
 		while (bitscanforward(cell, wadd)) {
+			CRITB3 critb3 = scritb3;
 			register uint32_t bit = 1 << cell;
 			wadd ^= bit; //clear bit
-			if (NotThisPermB3(Ass | bit))continue;
+			if (critb3.Addone(cell)) 	continue;
+			if (critb3.BadPerm()) 	continue;
 			if (IsValidB3(Ass | bit)) {
 				if (stopexpandb3) return;
 				wadd &= anduab3;
@@ -1496,11 +1641,15 @@ void GCHK::BuildFinalTable() {
 	if (ntoass == 2) {
 		uint32_t cell1, first = tw3_2 [0];// must exist checked upstream
 		while (bitscanforward(cell1, first)) {
+			CRITB3 critb3 = scritb3;
 			register uint32_t bit = 1 << cell1;
 			first ^= bit; //clear bit
-			register uint32_t bf1 = scritb3.assigned | bit,cell;
+			if (critb3.Addone(cell1)) 	continue;
+			//register uint32_t bf1 = scritb3.assigned | bit,cell;
 			//add can be any of active scritb3 hitting all uas
-			register uint32_t wadd = scritb3.active;
+			//register uint32_t wadd = scritb3.active;
+			register uint32_t wadd = critb3.active;
+			register uint32_t bf1 = critb3.assigned ,cell;
 			for (uint32_t i = 1; i < ntw3_2; i++) {
 				register uint32_t U= tw3_2[i];
 				if(!(U&bf1))	wadd &= U;
@@ -1511,9 +1660,11 @@ void GCHK::BuildFinalTable() {
 				if (IsValidB12(nclgo)) { clean_valid_done = 2; return; }
 			}
 			while (bitscanforward(cell, wadd)) {
+				CRITB3 critb3_2=critb3;
 				register uint32_t bit = 1 << cell;
 				wadd ^= bit; //clear bit
-				if (NotThisPermB3(bf1 | bit))continue;
+				if (critb3_2.Addone(cell)) 	continue;
+				if (critb3_2.BadPerm()) 	continue;
 				if (IsValidB3(bf1 | bit)) {
 					if (stopexpandb3) return;
 					wadd &= anduab3;
@@ -1537,7 +1688,7 @@ void GCHK::BuildFinalTable() {
 }
 
 void GCHK::B3FinalNoExpand() {
-	if (NotThisPermB3(scritb3.assigned)) return;
+	if (scritb3.BadPerm()) return;
 	if (!clean_valid_done) {
 		clean_valid_done = 1;
 		if (IsValidB12(nclgo)) { clean_valid_done = 2; return; }
@@ -1595,7 +1746,6 @@ next:
 			}
 		}
 		// no ua available must check( in 18 mode can not be valid)
-		p_cpt2g[19]++;
 		if (!clean_valid_done) {
 			clean_valid_done = 1;
 			if (IsValidB12(nclgo)) {clean_valid_done = 2; return; }
@@ -1639,9 +1789,11 @@ next:
 		}
 		register int cell;
 		while (bitscanforward(cell, andw)) {
+			CRITB3 critb3 = sn->critb3;
 			register uint32_t bit = 1 << cell;
 			andw ^= bit; //clear bit
-			if (NotThisPermB3(F | bit)) continue;
+			if (critb3.Addone(cell)) 	continue;
+			if (critb3.BadPerm()) 	continue;
 			if (IsValidB3(F | bit)) {
 				if (stopexpandb3) return;
 				andw &= anduab3;
@@ -1763,9 +1915,11 @@ next:
 		}
 		register int cell;
 		while (bitscanforward(cell, andw)) {
+			CRITB3 critb3 = sn->critb3;
 			register uint32_t bit = 1 << cell;
 			andw ^= bit; //clear bit
-			if (NotThisPermB3(F | bit)) continue;
+			if (critb3.Addone(cell)) 	continue;
+			if (critb3.BadPerm()) 	continue;
 			if (IsValidB3(F | bit)) {
 				if (stopexpandb3) return;
 				andw &= anduab3;
@@ -1777,11 +1931,6 @@ next:
 	goto next;// never here
 back:
 	if (--s >= spb)goto next;
-}
-// not yet revised redundancy source
-
-uint32_t GCHK::NotThisPermB3(uint32_t bf) {
-	return 0;
 }
 
 
@@ -2083,9 +2232,13 @@ void GCHK::Out17(uint32_t bfb3) {
 		ws[cell] = ze[cell] ;
 	}
 	cout << ws << " one sol  size " <<  ntcf  << endl;
- 
-
+	if (modefirst) { nok = n18seen=aigstop = 1; return; }
+	n18seen++;
+	for (int i = 0; i < nok; i++) if (!strcmp(ws,t18found[i])) return;
+	if (nok < 100) strcpy(t18found[nok++],ws);
+	fout1 << ws << " nok=" << nok << endl;
 }
+
 
 
 

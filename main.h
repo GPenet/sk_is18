@@ -17,9 +17,6 @@ struct SGO{
 	void ParseInt(char * ze, int  delimiter);
 	int atoi_nodot(char * o);
 	void Parse_zin();
-	int Canonical_EREPED();
-	int Canonical_401_11();
-	int Canonical_serate(char  * d, char  * o);
 };
 
 class FINPUT: public ifstream{
@@ -36,9 +33,6 @@ public:
 	int OpenFI(){
 		char zn[300];
 		strcpy(zn, namex);
-		//int ll = (int)strlen(zn);
-		//	strcpy(&zn[ll],".txt"); // add file type
-		ifstream::open(zn);
 		if (is_open()) return 0;
 		endf = 1;
 		return 1;
