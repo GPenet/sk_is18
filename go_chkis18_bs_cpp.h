@@ -37,6 +37,11 @@ int GCHK::Kn0() {
 	return 1;
 }
 void GCHK::Kn02() {
+	for (int ibs = 0; ibs < 3; ibs++) {
+		STD_B416& b = bax[ibs];
+		cout << b.band ;
+	}
+	cout << " reshaped  "  << endl;
 	for (int i = 0; i < 81; i++) cout << ze[i + 82];
 	cout << " known reshaped iperm="<< iperm << endl;
 }
@@ -1316,7 +1321,7 @@ void GCHK::GoBelow(SPB03* sn) {
 	}
 #ifdef HAVEKNOWN
 	if (!((~pk54) & sn->all_previous_cells)) {
-		cout  << " ntadd="<< ntadd << endl;
+		cout  << " ntadd="<< ntadd <<"  g2_64.nv =" << g2_64.nv << endl;
 	}
 #endif
 	ExpandAddB1B2(sn);
@@ -1341,7 +1346,8 @@ next:	//____________ here start the search ad after valid
 		g_256h.NewVcl(sn->ncl, tclues[s->ncl]);
 #ifdef HAVEKNOWN
 		if (!((~pk54) & sn->all_previous_cells)) {
-			cout << Char54out(sn->all_previous_cells) << " on the path below ncl=" << sn->ncl << endl;
+			cout << Char54out(sn->all_previous_cells) 
+				<< " on the path below ncl=" << sn->ncl << "  g2_64.nv =" << g2_64.nv << endl;
 			//g_256h.Dumpvcl(sn->ncl);
 		}
 #endif
@@ -1375,6 +1381,7 @@ void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
 	if (pk54 == sn->all_previous_cells) {
 		cout << Char54out(sn->all_previous_cells)<< " expected GoAfterExpand nadd="<<nadd 
 			<< " g2_64.nv=" << g2_64.nv << " g3_64.nv=" << g3_64.nv << endl;
+		if (g2_64.nv)g2_64.Dump();
 	}
 #endif
 
@@ -1439,6 +1446,9 @@ void GCHK::GoAfterExpand(SPB03* sn, uint32_t nadd){
 		if (!IsValidB3(scritb3.assigned)) Out17(scritb3.assigned);
 		return;
 	}
+#ifdef HAVEKNOWN
+	if (pk54 == myb12f) cout << "call BuildFinalTable" << endl;
+#endif
 	BuildFinalTable();
 #ifdef HAVEKNOWN
 	//if (pk54 == sn->all_previous_cells) aigstop = 1;
@@ -1593,6 +1603,11 @@ void GCHK::BuildFinalTable() {
 
 	}
 	int nass = _popcnt32(scritb3.assigned),ntoass= scritb3.nb3-nass;
+#ifdef HAVEKNOWN
+	if (pk54 == myb12f) {
+		cout << "ntoass ="<<ntoass << endl;
+	}
+#endif
 	 ntaddgob3 = 0;
 	 if( (!ntoass) && ntw3_2)return;
 	if (!ntoass) {// enough clues assigned in b3
@@ -1675,7 +1690,11 @@ void GCHK::BuildFinalTable() {
 		return;
 	}
 	// now 3 and more clues to add
-	//
+#ifdef HAVEKNOWN
+	if (pk54 == myb12f) {
+		cout << "ntw3_2 =" << ntw3_2 << endl;
+	}
+#endif
 	if (ntw3_2 < 10) {
 		ExpandB3Direct(ntoass);
 		return;
@@ -1807,6 +1826,12 @@ back:
 	if (--s >= spb)goto next;
 }
 void GCHK::ExpandB3Vect(int ntoass) {
+#ifdef HAVEKNOWN
+	if (pk54 == myb12f) {		
+		cout << "entry ExpandB3Vect"  << endl;
+		//b3direct.Debug(1);
+	}
+#endif
 	uint64_t limspot = (uint64_t)ntoass - 1, limm1 = limspot - 1;
 	struct SPB {
 		CRITB3 critb3;
@@ -1900,6 +1925,7 @@ next:
 				aig = 0;
 			}
 		}
+
 		// no more ua or "and all uas" not empty
 		if (!clean_valid_done) {
 			clean_valid_done = 1;
@@ -2015,9 +2041,7 @@ int ZHOU::CallCheckB3(uint32_t * t, int n, uint32_t bf, int nogo) {// 17 search 
 	//__________end assign last lot start solver
 	zhgxn.nua = 0;
 	zh_g.go_back = 0;	zh_g.nsol = 0; zh_g.lim = 1;// modevalid is set to  1
-	//zh_g2.isfalse_on = -1;
-	//ImageCandidats();
-	int ir = FullUpdate();
+	int ir = Full17Update();
 	if (ir == 2) return 0;// solved can not be multiple
 	Guess17(0);
 	return zhgxn.nua;
@@ -2126,9 +2150,9 @@ int ZHOU::Apply17SingleOrEmptyCellsB3() {
 		return 0;
 	}
 	// no single store apply  pair in priority ??
-	R2 &= ~R3; // now true singles
+	R2 &= ~R3; // now true pairs
 	if (!R2) {
-		R3 &= ~R4; // now true singles
+		R3 &= ~R4; // now true tripletss
 		if (R3) R2 = R3;
 		else R2 = R4;
 	}
@@ -2155,10 +2179,10 @@ int ZHOU::Full17Update() {
 }
 void ZHOU::Compute17Next(int index) {
 	int ir = Full17Update();
-	if (zh_g.diag) {
-		cout << "index=" << index << endl;
-		ImageCandidats();
-	}
+	//if (zh_g.diag) {
+		//cout << "index=" << index << endl;
+		//ImageCandidats();
+	//}
 	if (!ir) return;// locked 
 	if (ir == 2) {//solved
 		if (index) {// store false as ua
@@ -2170,10 +2194,10 @@ void ZHOU::Compute17Next(int index) {
 				if (FD[d][0].Off_c(i))	wua.Set_c(i);
 			}
 			if (wua.isNotEmpty()) {
-				if (zh_g.diag) {
-					cout << "zhgxn.nua=" << zhgxn.nua << endl;
-					wua.Print3(" ");
-				}
+				//if (zh_g.diag) {
+					//cout << "zhgxn.nua=" << zhgxn.nua << endl;
+					//wua.Print3(" ");
+				//}
 				int cc = _popcnt32(wua.bf.u32[2]);
 				if ((!zhgxn.nua) || cc < 3)
 					zhgxn.tua[zhgxn.nua++] = wua;

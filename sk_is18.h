@@ -434,7 +434,14 @@ struct G2_64Add {
 			tg[ntg++] = P;
 		}
 	}
+	void Dump() {
+		cout << "dump G2_64Add" << endl;
+		for (uint32_t i = 0; i < nv; i++) {
+			cout << Char27out(p[i]);
+			cout <<" " << Char54out(u[i])<<endl;
 
+		}
+	}
 }g2_64, g3_64, gm_64;
 struct G2_256Handler {
 	uint32_t n2,  nm;
@@ -450,7 +457,7 @@ struct G2_256Handler {
 	inline void Add128(BF128 w, uint32_t cc,int add=0) {
 		if (add) {
 			if (cc == 2) g2_64.Add(w);
-			else if (cc == 3) g2_64.Add(w);
+			else if (cc == 3) g3_64.Add(w);
 			else gm_64.Add(w);
 		}
 		if (cc < 4) {
@@ -677,10 +684,6 @@ struct CHUNKS_HANDLER {
 		band3[0].Init(); band3[1].Init();
 	}
 	inline int GetC2Count() { return 64 * ic2 + (int)c2[ic2].nt; }
-
-	//inline int  Check2(BF128 w54);
-	//inline int  Check3(BF128 w54);
-	//inline int  Check4(BF128 w54);
 	inline void Add128(BF128 w54, uint32_t cc) {
 		switch (cc) {
 		case 2:
